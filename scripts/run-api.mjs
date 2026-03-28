@@ -151,6 +151,10 @@ if (!existsSync(venvPython)) {
 
 pipInstall();
 
+// Run DB setup (schema + conditional seed) before starting the API server
+const SETUP_SCHEMA = path.join(__dirname, "setup-schema.mjs");
+run(process.execPath, [SETUP_SCHEMA]);
+
 const uvicorn = spawn(
   venvPython,
   [

@@ -65,3 +65,25 @@ export async function getOllamaCatalog(): Promise<OllamaCatalogResponse> {
 
   return (await response.json()) as OllamaCatalogResponse;
 }
+
+export type DbTable = {
+  name: string;
+  row_count: number;
+};
+
+export type DbStatusResponse = {
+  connected: boolean;
+  database?: string;
+  tables: DbTable[];
+  error?: string;
+};
+
+export async function getDbStatus(): Promise<DbStatusResponse> {
+  const response = await fetch("/api/v1/database/status");
+
+  if (!response.ok) {
+    throw new Error(`DB status check failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as DbStatusResponse;
+}

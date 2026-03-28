@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import {
+  getDbStatus,
   getHealth,
   getOllamaCatalog,
   postAgentsMVP,
   type AgentMVPResponse,
+  type DbStatusResponse,
   type HealthResponse,
   type OllamaCatalogResponse,
 } from "./lib/api";
@@ -13,6 +15,7 @@ export default function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [catalog, setCatalog] = useState<OllamaCatalogResponse | null>(null);
   const [agentResult, setAgentResult] = useState<AgentMVPResponse | null>(null);
+  const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +40,23 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
       setCatalog(null);
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function runDbCheck() {
+    setLoading("db");
+    setError(null);
+    try {
+      const result = await getDbStatus();
+      setDbStatus(result);
+      if (!result.connected && result.error) {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+      setDbStatus(null);
     } finally {
       setLoading(null);
     }
@@ -77,6 +97,9 @@ export default function App() {
           </button>
           <button onClick={initAgents} disabled={loading !== null}>
             {loading === "agents" ? "Initializing..." : "Init Agents"}
+          </button>
+          <button onClick={runDbCheck} disabled={loading !== null}>
+            {loading === "db" ? "Checking..." : "Test DB Connection"}
           </button>
         </div>
 
@@ -124,6 +147,28 @@ export default function App() {
             {agentResult.output && (
               <pre className="output-block">{agentResult.output}</pre>
             )}
+          </div>
+        )}
+
+        {dbStatus?.connected && (
+          <div className="status success">
+            <strong>Database: {dbStatus.database}</strong>
+            <table style={{ marginTop: "0.75rem", borderCollapse: "collapse", width: "100%" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", paddingRight: "2rem", paddingBottom: "0.25rem" }}>Table</th>
+                  <th style={{ textAlign: "right", paddingBottom: "0.25rem" }}>Rows</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dbStatus.tables.map((t) => (
+                  <tr key={t.name}>
+                    <td style={{ paddingRight: "2rem" }}><code>{t.name}</code></td>
+                    <td style={{ textAlign: "right" }}>{t.row_count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
