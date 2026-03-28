@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     orchestrator_timeout_seconds: int = 45
     gemini_api_key: str = ""
     elevenlabs_api_key: str = ""
+    jwt_secret: str = "change-me-in-production-use-a-long-random-string"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_hours: int = 48
+    cookie_name: str = "datalyze_token"
+    cookie_secure: bool = False
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),

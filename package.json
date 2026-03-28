@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "postinstall": "node scripts/check-python312.mjs",
+    "predev": "npm install",
     "dev": "concurrently -n WEB,API -c cyan,magenta \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm --prefix apps/web run dev",
     "dev:api": "node scripts/run-api.mjs",

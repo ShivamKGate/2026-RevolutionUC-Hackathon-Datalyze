@@ -37,21 +37,13 @@ async function setupSchema() {
     await client.connect();
     console.log(`OK  (${hostInfo})`);
 
-    // Schema uses CREATE TABLE IF NOT EXISTS — always safe to re-run
-    const schemaSQL = readFileSync(
-      path.join(
-        ROOT,
-        "apps",
-        "api",
-        "src",
-        "db",
-        "migrations",
-        "001_initial_schema.sql",
-      ),
-      "utf8",
-    );
-    await client.query(schemaSQL);
-    console.log("[db] Schema applied");
+    // Migrations use CREATE TABLE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS — always safe to re-run
+    const migrationsDir = path.join(ROOT, "apps", "api", "src", "db", "migrations");
+    for (const file of ["001_initial_schema.sql", "002_auth_schema.sql"]) {
+      const sql = readFileSync(path.join(migrationsDir, file), "utf8");
+      await client.query(sql);
+      console.log(`[db] Applied ${file}`);
+    }
 
     // Only seed if the users table is empty
     const { rows } = await client.query(
