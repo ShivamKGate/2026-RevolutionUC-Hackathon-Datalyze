@@ -1,0 +1,1153 @@
+=============================================================
+  PLAN.TXT — RevolutionUC Hackathon Project
+  Project name: Datalyze
+  Tagline: Raw Data ↓, AI-Driven Strategies ↑
+  Authors: Kartavya Singh & Shivam Kharangate
+=============================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. THE IDEA — WHAT WE ARE BUILDING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+We are building a multi-agent AI-powered business intelligence platform
+that allows any company to import their raw, messy, unstructured data —
+hundreds of files across any format — and receive structured, actionable
+business insights, strategic recommendations, forecasts, automation
+suggestions, and visual analytics through an intelligent orchestrated
+pipeline of AI agents.
+
+The platform operates in two modes:
+  - PRIVATE MODE: The company uploads their own internal data (CSV, PDF,
+    Excel, JSON, images, etc.) and the system processes it entirely locally.
+  - PUBLIC MODE: An admin-controlled web scraping agent collects publicly
+    available data relevant to the company's industry and use case, which
+    supplements or stands alone as the analysis source.
+
+The key differentiator is the multi-agent orchestration architecture.
+Rather than a single LLM trying to do everything, each agent has a
+specialized responsibility, and a powerful orchestrator (running a heavy
+reasoning model locally via Ollama) directs the entire pipeline — deciding
+what to do next, which agents to fire, and when to loop for more data.
+
+The entire application is LOCAL, ZERO-COST, and OPEN SOURCE. Anyone can
+clone the repository and run it. There is no subscription, no cloud
+dependency (except optional Gemini API calls, covered by hackathon credits),
+and no rate-limited third-party lock-in.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. TEAM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Team Members: Kartavya Singh & Shivam Kharangate
+  Size: 2 people
+  Contribution Model: Equal across all domains — frontend, backend, AI/agents
+  Tools used for development: Cursor IDE, Claude (AI coding assistant)
+
+  Hardware:
+    Machine 1 (Kartavya):
+      - CPU: Intel i9-12900K
+      - RAM: 64GB DDR5
+      - GPU: 16GB VRAM
+    Machine 2 (Shivam):
+      - CPU: AMD Ryzen 7 7700X
+      - RAM: 32GB DDR5
+      - GPU: NVIDIA RTX 4070 (12GB VRAM)
+
+  Both machines must be able to run all LLMs without GPU offloading.
+  This caps the heavy model at <12GB VRAM.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. TECH STACK (EVERY LAYER)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  FRONTEND:
+    - Next.js (App Router)
+    - TypeScript (entire project)
+    - Tailwind CSS
+    - D3.js (complex data visualizations, knowledge graph)
+    - Chart.js (standard charts)
+    - Plotly.js (scientific/statistical plots)
+    - Shadcn/ui or Radix UI (component library)
+
+  BACKEND:
+    - Next.js API Routes (TypeScript)
+    - Python FastAPI or Flask (agent backend server)
+    - PostgreSQL (primary database for all data storage)
+    - pgvector extension (semantic search / natural language queries)
+
+  AI / AGENT LAYER:
+    - Ollama (local LLM server — runs via `ollama serve` in terminal 2)
+    - Heavy reasoning model via Ollama: e.g., deepseek-r1:14b or qwen2.5:14b
+      (under 12GB VRAM, high reasoning capability)
+    - Lightweight model via Ollama: e.g., llama3.2:3b or phi3:mini
+      (fast, cheap sub-agent tasks)
+    - LangChain (Python) — agent framework for chaining and orchestration
+    - Google Gemini API — pipeline classifier / decision agent role
+      (covered by hackathon credits, zero additional cost)
+    - ElevenLabs API — podcast-style voice narration of final insights
+    - Firecrawl (or custom scraping agent) — public web data collection
+
+  DATA / STORAGE:
+    - PostgreSQL with pgvector
+    - File system (local uploads directory)
+    - Metadata store for all ingested files
+
+  DEV TOOLS:
+    - Cursor IDE
+    - Claude (AI assistant)
+    - Git / GitHub
+    - Two simultaneous terminals:
+        Terminal 1: `npm run dev` (Next.js)
+        Terminal 2: `ollama serve` (local LLM server)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. THE AGENT ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+There are two types of LLMs in use:
+  - HEAVY MODEL (orchestrator): Reasoning/thinking Ollama model (<12GB VRAM)
+  - LIGHT MODEL (sub-agents): Fast, lightweight Ollama model
+
+The system dynamically swaps between these as each agent is invoked.
+
+--- AGENT ROSTER ---
+
+1. ORCHESTRATOR AGENT (Heavy Model)
+   The central brain. All other agents report to it. It decides which
+   agent fires next, what data is needed, when to loop back for more,
+   and when the pipeline is complete. It is also the home of the
+   Strategic Recommendation Engine — a sub-module within the orchestrator
+   that continuously proposes next steps to keep the pipeline flowing.
+
+2. PIPELINE SELECTOR / GEMINI CLASSIFIER AGENT (Gemini API)
+   First agent that runs after the user declares their use case. Uses the
+   Gemini API to classify the pipeline track and configure which agents
+   will be active. This is the critical decision gate of the whole system.
+   Four primary pipeline tracks:
+     a) Predictive / Trend Forecasting
+     b) Automation Strategy
+     c) Business Optimization
+     d) Supply Chain & Operations
+   Agents are reused across tracks with different configurations and priorities.
+
+3. PUBLIC DATA SCRAPER AGENT (Light Model + Firecrawl)
+   Scrapes publicly available data relevant to the company and selected
+   pipeline track. Admin-controlled — admin can play/pause scraping.
+   Only one company can be scraped at a time. Data is credible, relevant,
+   and targeted based on the pipeline type chosen.
+
+4. FILE TYPE CLASSIFIER AGENT (Light Model)
+   Receives all uploaded files and identifies their type (PDF, CSV, Excel,
+   JSON, image, plain text, etc.). Routes each file to the appropriate
+   specialized processor agent. Also generates metadata tags for each file
+   to help the aggregator.
+
+5. SPECIALIZED FILE PROCESSOR AGENTS (Light Model + RAG for text-based files)
+   One per file type:
+     - PDF Processor: Uses a RAG pipeline to extract and chunk text
+     - CSV Processor: Parses structured tabular data
+     - Excel Processor: Handles multi-sheet workbooks
+     - JSON Processor: Parses nested/flat JSON structures
+     - Image/Multimodal Processor: Gemini Vision to extract charts, diagrams,
+       handwritten notes, whiteboard photos
+     - Plain Text Processor: Direct extraction
+
+6. DATA CLEANING AGENT (Light Model)
+   Cleans raw extracted text and structured data. Removes noise, fixes
+   encoding issues, standardizes formats, and flags duplicate files
+   (same file imported twice should not be processed twice).
+
+7. SMART CATEGORIZER / METADATA AGENT (Light Model)
+   Tags each processed file as: financial, HR, marketing, operations,
+   sales, customer, product, etc. Provides this metadata to the aggregator
+   as pre-classified context so the aggregator can work smarter.
+
+8. AGGREGATOR AGENT (Heavy Model)
+   The most critical data-layer agent. Takes all cleaned, classified data
+   and decides:
+     - Which data is highly useful
+     - Which data is low priority
+     - How different data pieces connect to each other
+     - What the overall data story is
+   Outputs structured data artifacts (chunks, datasets) ready for insight
+   generation. Also builds the foundation of the Knowledge Graph.
+
+9. CONFLICT DETECTION AGENT (Light Model)
+   Cross-checks data sources for contradictions. If two files report
+   different numbers for the same metric, it flags this as a warning
+   in the dashboard. Helps surface internal inconsistencies — e.g., if
+   a department is reporting different figures than another.
+
+10. KNOWLEDGE GRAPH BUILDER AGENT (Light / Heavy Model)
+    Builds an interactive visual knowledge graph of relationships between
+    entities, departments, metrics, and data points across the entire
+    dataset. Users can click on nodes to drill down into specifics.
+    This is a core visual feature of the dashboard.
+
+11. TREND FORECASTING AGENT (Heavy Model — toggled on/off by user)
+    Detects time-series data and generates predictive forecasts for KPIs
+    (revenue, churn, growth, etc.). Toggle in the dashboard. Outputs
+    forecasting charts powered by D3.js / Plotly.
+
+12. SENTIMENT ANALYSIS AGENT (Light Model)
+    Analyzes any customer feedback, reviews, survey responses, or social
+    data present in the uploaded or scraped data. Surfaces positive/
+    negative sentiment trends.
+
+13. INSIGHT GENERATION AGENT (Heavy Model)
+    Synthesizes everything from the aggregator into human-readable,
+    structured business insights. Decides what type of visualization
+    to create (chart, table, graph) based on data type. Outputs:
+      - Key insight cards with confidence score
+      - Data provenance tags (which files generated which insight)
+      - Chart/visualization specifications
+      - Strategic recommendations
+
+14. SWOT ANALYSIS AGENT (Heavy Model)
+    Automatically generates a Strengths, Weaknesses, Opportunities,
+    and Threats analysis from the combined data. One of the default
+    output sections.
+
+15. EXECUTIVE SUMMARY AGENT (Heavy Model)
+    One-click generation of a board-ready executive summary of all
+    insights. Clean, professional, exportable.
+
+16. AUTOMATION STRATEGY AGENT (Light/Heavy Model)
+    Based on the data, identifies where the company could implement
+    automation. Generates a sample mini-prototype workflow description
+    (2-3 step demo of what automation would look like for them), not
+    the full automation itself.
+
+17. DATA PROVENANCE TRACKER (System Layer)
+    Not a separate LLM agent — a system-level tracker that tags every
+    insight, chart, and recommendation with the exact source file(s)
+    that contributed to it. Always visible in the UI.
+
+18. NATURAL LANGUAGE SEARCH AGENT (pgvector + Light Model)
+    Allows users to type a natural language question about their data
+    and receive an answer grounded in the stored metadata. Also capable
+    of generating charts on-demand from natural language requests.
+    ("Show me a bar chart of monthly revenue by region.")
+
+19. ELEVENLABS NARRATION AGENT (ElevenLabs API)
+    Takes the executive summary and key insights and generates a
+    podcast-style audio narration. Professional AI voice. Downloadable.
+    This is the ElevenLabs integration for the prize category.
+
+20. PRESAGE FOCUS AGENT (Presage SDK — OPTIONAL, SKIPPABLE)
+    Tracks user focus/stress levels during data review. Does not affect
+    the pipeline if not implemented or if it fails. Low priority.
+
+21. SOLANA DATA LEDGER (Solana — OPTIONAL, SKIPPABLE)
+    Immutable on-chain record of when data was ingested and which
+    insights were generated — a lightweight audit trail. Completely
+    skippable. Does not affect core pipeline.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. PIPELINE FLOW — HOW IT ALL WORKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: ONBOARDING
+  User lands on the app. They are asked:
+    - Company name / context
+    - What type of insights do you want? (Select: Predictive Forecasting /
+      Automation / Business Optimization / Supply Chain)
+    - Do you want public data scraped as well? (Yes/No)
+
+Step 2: PIPELINE CLASSIFICATION (Gemini)
+  The Gemini classifier agent reads the user's choices and configures the
+  pipeline — which agents to prioritize, what data to look for, what
+  insights to focus on.
+
+Step 3: DATA INGESTION
+  - User uploads files (any format, as many as they want — "one single
+    import, in and out, finished")
+  - File Type Classifier categorizes each file
+  - Specialized processors extract raw text/data from each
+  - (Optional) Public Scraper begins scraping in the background
+
+Step 4: DATA CLEANING & CATEGORIZATION
+  - Cleaning agent normalizes and cleans all extracted data
+  - Metadata agent tags each file by domain
+  - Duplicate detector flags repeated files
+
+Step 5: AGGREGATION
+  - Aggregator combines everything, scores usefulness, creates data chunks
+  - Knowledge Graph builder begins mapping relationships
+  - Conflict Detection agent flags inconsistencies
+
+Step 6: ANALYSIS & INSIGHT GENERATION
+  - Trend Forecasting (if toggled on)
+  - Sentiment Analysis
+  - Insight Generation (charts, tables, cards)
+  - SWOT Analysis
+  - Automation Strategy suggestions
+
+Step 7: SYNTHESIS
+  - Executive Summary generated
+  - ElevenLabs audio narration generated
+  - All insights tagged with data provenance
+
+Step 8: DASHBOARD DISPLAY
+  - Full dashboard renders with:
+      * Insight cards (with confidence scores and source tags)
+      * Knowledge graph (interactive)
+      * Forecasting charts (if enabled)
+      * SWOT section
+      * Automation strategy section
+      * Executive summary
+      * Agent activity live feed (collapsible console)
+      * Animated agent orchestration diagram
+  - User can now chat with their data (natural language search)
+  - User can request custom charts via chat
+
+Step 9: EXPORT
+  - Export full report as PDF
+  - Export raw processed data as CSV
+  - Generate shareable link (local network)
+  - Download ElevenLabs audio narration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. KEY UI FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - Onboarding flow: use-case selector, file upload, mode toggle
+  - Main Dashboard: insight cards, charts, tables, SWOT, knowledge graph
+  - Agent Activity Live Feed: collapsible console with timestamps,
+    showing which agent is running, what decisions were made, log output
+  - Animated Agent Orchestration Diagram: visual graph showing agents
+    communicating in real time (major demo factor)
+  - Conversational Data Chat: ask questions about data, request charts,
+    get spoken answers (voice mode toggle like ChatGPT voice)
+  - Trend Forecasting Toggle: on/off in dashboard settings
+  - Insight Cards: each with confidence score, source file tag, and
+    click-to-explain (plain English explanation on demand)
+  - Insight Voting: team members upvote/downvote insights
+  - Progress Tracker: visual pipeline showing which stage is complete
+  - Data Provenance Panel: trace any insight back to its source file
+  - PDF Export button
+  - CSV Export button
+  - ElevenLabs audio player (play/download podcast summary)
+  - Knowledge Graph: interactive D3.js node graph, clickable nodes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. PRIZE STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PRIMARY TARGETS (go hard):
+    ★ 1st Place Overall
+    ★ Most Technically Impressive
+    ★ Best Business Plan
+
+  SECONDARY TARGETS (built in, should qualify):
+    ◎ Best Social Impact — Free, open-source, locally runnable tool.
+      Any nonprofit, startup, or individual can clone and use it.
+      Democratizes business intelligence for anyone.
+    ◎ Best Use of Gemini API — Gemini as the pipeline classification
+      and vision (chart extraction from PDFs) agent.
+    ◎ Best Use of ElevenLabs — Podcast-style AI voice narration of
+      business insights and executive summaries.
+
+  STRETCH / LOW PRIORITY (implement only if time allows):
+    △ Best Use of Solana — Minimal data audit ledger layer. Skippable.
+    △ Best Use of Presage — Focus detection agent. Skippable.
+    △ Best Use of .Tech — Register a cool domain. Easy win if deployed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. MVP vs STRETCH GOALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  MVP (must work for a successful demo):
+    1. Import raw company data (any file format)
+    2. Multi-agent pipeline processes it and generates actionable insights
+    3. Dashboard displays charts, tables, and strategic recommendations
+
+  CORE (strongly aim for):
+    - All 19 primary agents working in sequence
+    - Agent activity live feed + orchestration diagram
+    - Knowledge graph
+    - Natural language data search / chatbot
+    - PDF export
+    - ElevenLabs narration
+    - Gemini classifier
+
+  STRETCH (if time allows after core is solid):
+    - Solana audit ledger
+    - Presage focus agent
+    - Custom chart generation via chat
+    - Voice conversation mode
+    - Multimodal image/whiteboard input
+    - .tech domain deployment
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. DEMO PLAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Format: HTML business pitch presentation (second browser tab) +
+          live demo of the running application.
+
+  Presentation Sections:
+    - Problem: Companies are drowning in raw, unstructured data
+    - Solution: Datalyze — multi-agent AI business intelligence
+    - Live Demo: Import files → watch agents run → see dashboard populate
+    - Tech Stack breakdown slide
+    - Business model / why this matters
+    - Social impact angle
+    - What's next
+
+  Synthetic Demo Data (for judging):
+    - Use Claude to generate realistic synthetic data for 3-4 industries:
+        a) SaaS company (usage metrics, churn, revenue)
+        b) Retail company (sales, inventory, customer feedback)
+        c) Healthcare clinic (patient records — anonymized, visits, trends)
+        d) Logistics firm (delivery data, route efficiency, costs)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. PLAN.MD SECTIONS (for Devpost submission)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Required sections for plan.md (Devpost format):
+    1. Title
+    2. Tagline (one punchy line)
+    3. Description (2-3 sentences)
+    4. Inspiration
+    5. What It Does
+    6. How We Built It (technical deep-dive by domain)
+    7. Challenges We Ran Into
+    8. Accomplishments That We're Proud Of
+    9. What We Learned
+    10. What's Next
+    11. Built With (entire tech stack, every tool, library, framework, OS)
+    12. Links (GitHub, demo video, etc.)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. IMPORTANT PROJECT PRINCIPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - ZERO COST: The entire application must cost $0 to run.
+    Use Ollama for local LLMs, Gemini hackathon credits, free tiers.
+  - LOCAL FIRST: No cloud deployment required. Runs from terminal.
+  - OPEN SOURCE: Fully public GitHub repo during hackathon.
+    Post-hackathon: sensitive keys and configs will be removed,
+    repo will become private, then a clean public version released.
+  - NO RATE LIMITS: Prefer tools with no hard API rate limiters
+    so the demo can run freely without interruption.
+  - EQUAL CONTRIBUTION: Both team members work across all domains.
+  - LICENSE: The project license must prohibit reproduction or
+    redistribution without permission.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CURSOR PROMPT — GENERATE plan.md AND projectscope.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Paste the following prompt into Cursor to generate both files:
+
+---BEGIN CURSOR PROMPT---
+
+You are a technical writer and senior software architect. Your task is to
+generate two comprehensive Markdown files for a hackathon project:
+  1. plan.md — a human-readable project overview and Devpost submission document
+  2. projectscope.md — an exhaustive, deeply technical project scope document
+
+Use ALL of the information below. Do not omit any detail. Both files should
+be production-quality Markdown with proper headers, subheaders, code blocks,
+and lists where appropriate.
+
+=============================================================
+PROJECT CONTEXT
+=============================================================
+
+PROJECT NAME: Datalyze
+HACKATHON: RevolutionUC (University of Cincinnati annual hackathon)
+TEAM: Kartavya Singh & Shivam Kharangate (2 people, equal contribution)
+TOOLS USED TO BUILD: Cursor IDE, Claude AI assistant
+
+---
+
+CORE CONCEPT:
+A multi-agent AI-powered business intelligence platform. Companies import
+their raw, unstructured data (any file format, any quantity) and receive
+structured, actionable business insights, strategic recommendations,
+trend forecasts, automation strategy suggestions, sentiment analysis,
+SWOT analysis, and visual analytics — all processed through an orchestrated
+pipeline of specialized AI agents running entirely locally.
+
+Two operating modes:
+  - PRIVATE MODE: Company uploads internal files; processed locally.
+  - PUBLIC MODE: Admin-controlled web scraper collects public data
+    relevant to the company's industry and selected use case.
+
+The application is LOCAL, ZERO-COST, OPEN SOURCE. Runs from two terminals:
+  Terminal 1: `npm run dev` (Next.js frontend + API routes)
+  Terminal 2: `ollama serve` (local LLM server)
+
+---
+
+HARDWARE CONSTRAINTS:
+  Machine 1: Intel i9-12900K, 64GB DDR5, 16GB VRAM
+  Machine 2: AMD Ryzen 7 7700X, 32GB DDR5, NVIDIA RTX 4070 (12GB VRAM)
+  Constraint: Heavy LLM must use less than 12GB VRAM (to run on both machines)
+
+---
+
+TECH STACK (include every single item in the Built With section):
+
+  Frontend:
+    - Next.js (App Router)
+    - TypeScript (entire codebase)
+    - Tailwind CSS
+    - D3.js
+    - Chart.js
+    - Plotly.js
+    - Shadcn/ui or Radix UI
+
+  Backend:
+    - Next.js API Routes (TypeScript)
+    - Python (FastAPI or Flask for agent backend)
+    - PostgreSQL (primary database)
+    - pgvector (semantic search extension)
+
+  AI / Agents:
+    - Ollama (local LLM server)
+    - Heavy reasoning model via Ollama (e.g., deepseek-r1:14b or qwen2.5:14b,
+      <12GB VRAM, used for orchestrator and heavy agent tasks)
+    - Lightweight model via Ollama (e.g., llama3.2:3b or phi3:mini,
+      used for fast sub-agent tasks)
+    - LangChain (Python, agent orchestration framework)
+    - Google Gemini API (pipeline classifier + vision/chart extraction from PDFs)
+    - ElevenLabs API (podcast-style voice narration of insights)
+    - Firecrawl (or custom Python scraping agent using BeautifulSoup/Playwright)
+
+  Dev Tools:
+    - Cursor IDE
+    - Claude (AI coding assistant)
+    - Git / GitHub
+    - Windows / Linux (both machines)
+
+---
+
+THE AGENT ARCHITECTURE:
+There are 21 agents (some optional). Two LLM types: Heavy (orchestrator,
+complex reasoning) and Light (fast, repetitive tasks). The system dynamically
+swaps between them per agent invocation.
+
+AGENT LIST:
+
+1. ORCHESTRATOR AGENT (Heavy Ollama model)
+   - The central brain. All agents report to it.
+   - Decides which agent fires next based on current pipeline state.
+   - Contains the Strategic Recommendation Engine sub-module.
+   - Loops back to scraper or processors if more data is needed.
+   - Manages state across the entire pipeline run.
+
+2. PIPELINE CLASSIFIER AGENT (Gemini API — CRITICAL ROLE)
+   - First agent to run after user onboarding inputs.
+   - Classifies which of the 4 pipeline tracks to activate:
+       a) Predictive / Trend Forecasting
+       b) Automation Strategy
+       c) Business Optimization
+       d) Supply Chain & Operations
+   - Configures which agents are prioritized and what data to look for.
+   - Agents are reused across tracks with different configurations.
+   - Also serves as Gemini Vision handler for chart/image extraction from PDFs.
+
+3. PUBLIC DATA SCRAPER AGENT (Light Model + Firecrawl/Playwright)
+   - Scrapes publicly available, credible data relevant to the company
+     and selected pipeline track.
+   - Admin-controlled: admin panel can play/pause scraping.
+   - Only one company scraping session at a time.
+   - Targets data relevant to the chosen use case (e.g., if automation
+     track chosen, scrapes automation case studies and benchmarks).
+
+4. FILE TYPE CLASSIFIER AGENT (Light Model)
+   - Identifies file type of every uploaded file.
+   - Routes each file to the appropriate specialized processor.
+   - Generates metadata tags per file (domain, format, estimated content type).
+
+5a. PDF PROCESSOR AGENT (Light Model + RAG pipeline)
+    - Extracts and chunks text from PDFs using a RAG-style approach.
+    - Handles scanned PDFs via Gemini Vision OCR if needed.
+5b. CSV PROCESSOR AGENT
+    - Parses structured tabular data, identifies column meanings.
+5c. EXCEL PROCESSOR AGENT
+    - Handles multi-sheet workbooks, extracts all sheet data.
+5d. JSON PROCESSOR AGENT
+    - Parses nested and flat JSON structures.
+5e. IMAGE / MULTIMODAL PROCESSOR AGENT (Gemini Vision)
+    - Extracts insights from uploaded images: charts, diagrams,
+      whiteboard photos, handwritten notes.
+5f. PLAIN TEXT PROCESSOR AGENT
+    - Direct text extraction and chunking.
+
+6. DATA CLEANING AGENT (Light Model)
+   - Normalizes and cleans all extracted text/data.
+   - Removes noise, fixes encoding issues, standardizes date/number formats.
+   - Duplicate file detection: flags files that are the same to avoid
+     repeat processing (same file imported twice → only process once).
+
+7. SMART CATEGORIZER / METADATA AGENT (Light Model)
+   - Tags each cleaned file as: financial, HR, marketing, operations,
+     sales, customer, product, legal, etc.
+   - Provides pre-classified metadata to the aggregator for smarter processing.
+
+8. AGGREGATOR AGENT (Heavy Model — MOST CRITICAL DATA AGENT)
+   - Combines all cleaned, categorized data.
+   - Scores each data chunk for usefulness given the chosen pipeline track.
+   - Prioritizes high-value data; deprioritizes but retains low-value data.
+   - Creates structured data artifacts and chunks ready for insight generation.
+   - Lays the foundation for the Knowledge Graph.
+   - Makes final decisions about what the overall "data story" is.
+
+9. CONFLICT DETECTION AGENT (Light Model)
+   - Cross-references data sources for contradictions or inconsistencies.
+   - Example: two departments reporting different revenue figures for same period.
+   - Surfaces warnings in the dashboard as flagged insight cards.
+   - Helps companies identify internal data quality issues.
+
+10. KNOWLEDGE GRAPH BUILDER AGENT (Heavy Model)
+    - Constructs an interactive knowledge graph of relationships between:
+      entities, departments, metrics, time periods, and data points.
+    - Output is a D3.js force-directed graph rendered on the dashboard.
+    - Users can click on nodes to drill down into specifics.
+    - One of the most visually impactful features.
+
+11. TREND FORECASTING AGENT (Heavy Model — user toggleable on/off)
+    - Detects time-series data patterns across uploaded files.
+    - Generates predictive forecasts for key business KPIs.
+    - Outputs forecasting charts (line charts, confidence intervals).
+    - Rendered with D3.js or Plotly.
+    - Toggle in dashboard settings panel.
+
+12. SENTIMENT ANALYSIS AGENT (Light Model)
+    - Analyzes customer feedback, reviews, survey results, social mentions
+      present in uploaded or scraped data.
+    - Outputs sentiment trend charts and summary cards.
+
+13. INSIGHT GENERATION AGENT (Heavy Model)
+    - Synthesizes aggregated data into human-readable business insights.
+    - Determines appropriate visualization type per insight
+      (bar chart, pie chart, line chart, table, heatmap).
+    - Each insight includes:
+        * Confidence score (% certainty based on data quality)
+        * Data provenance tag (which source files generated it)
+        * Plain-English explanation (click-to-reveal on dashboard)
+    - Feeds insights into Executive Summary and SWOT agents.
+
+14. SWOT ANALYSIS AGENT (Heavy Model)
+    - Auto-generates Strengths, Weaknesses, Opportunities, Threats.
+    - Rendered as a structured 2x2 grid on the dashboard.
+    - Grounded in the actual uploaded data, not generic output.
+
+15. EXECUTIVE SUMMARY AGENT (Heavy Model)
+    - One-click generation of a board-ready executive summary.
+    - Concise, professional, covers all key insights.
+    - Exportable as part of the PDF report.
+
+16. AUTOMATION STRATEGY AGENT (Light/Heavy Model)
+    - Identifies areas where the company could implement automation.
+    - Generates a 2-3 step sample prototype description of what
+      automation would look like for their specific data context.
+    - Does NOT build the full automation — demonstrates the concept.
+
+17. DATA PROVENANCE TRACKER (System Layer — not an LLM agent)
+    - System-level tracker embedded in the pipeline.
+    - Every insight, chart, and recommendation is tagged with the
+      exact source file(s) that contributed to generating it.
+    - Visible in the dashboard as a clickable source tag on each insight.
+
+18. NATURAL LANGUAGE SEARCH AGENT (pgvector + Light Model)
+    - Enables users to query their entire dataset in plain English.
+    - Uses pgvector for semantic similarity search over file metadata
+      and processed data chunks.
+    - Can generate charts on demand from natural language requests.
+      Example: "Show me a bar chart of monthly revenue by region."
+    - Powers the conversational data chatbot on the dashboard.
+
+19. ELEVENLABS NARRATION AGENT (ElevenLabs API)
+    - Takes the Executive Summary and key insight highlights.
+    - Generates a podcast-style audio narration using ElevenLabs.
+    - Professional AI voice, downloadable audio file.
+    - Audio player embedded in the dashboard.
+    - This is the primary ElevenLabs prize integration.
+
+20. PRESAGE FOCUS AGENT (Presage SDK — OPTIONAL, SKIPPABLE)
+    - Monitors user focus/stress levels during data review sessions.
+    - Suggests breaks or highlights if user appears fatigued.
+    - Does NOT affect the core pipeline. Can be disabled or omitted.
+
+21. SOLANA AUDIT LEDGER (Solana — OPTIONAL, SKIPPABLE)
+    - Creates an immutable on-chain record of when data was ingested
+      and what insights were generated (lightweight audit trail).
+    - Completely independent of the core pipeline. Skippable.
+
+---
+
+PIPELINE FLOW (step-by-step):
+
+Step 1 — ONBOARDING:
+  User is asked:
+    - Company name and brief context
+    - Use case / pipeline track selection (Predictive / Automation /
+      Optimization / Supply Chain)
+    - Whether to enable public data scraping (Yes/No)
+    - Whether to enable trend forecasting (Yes/No toggle)
+
+Step 2 — PIPELINE CLASSIFICATION (Gemini):
+  Gemini classifier reads user inputs and configures the pipeline.
+  Sets agent priorities and data targeting for the session.
+
+Step 3 — DATA INGESTION:
+  - User uploads all files via the upload interface (any format, any quantity).
+  - Single import session — "import in, finished." One-time ingestion.
+  - File Type Classifier categorizes each file.
+  - Specialized processors extract raw content from each file type.
+  - (If enabled) Public Scraper begins asynchronously in background.
+
+Step 4 — CLEANING & CATEGORIZATION:
+  - Cleaning agent normalizes and deduplicates.
+  - Metadata agent tags all files by domain.
+
+Step 5 — AGGREGATION:
+  - Aggregator combines everything, scores usefulness, creates data artifacts.
+  - Knowledge Graph builder begins mapping entity relationships.
+  - Conflict Detection agent identifies contradictions.
+
+Step 6 — ANALYSIS:
+  - Trend Forecasting (if toggled on)
+  - Sentiment Analysis
+  - Insight Generation
+  - SWOT Analysis
+  - Automation Strategy suggestions
+
+Step 7 — SYNTHESIS:
+  - Executive Summary generated.
+  - ElevenLabs narration generated from summary.
+  - All insights tagged with data provenance.
+
+Step 8 — DASHBOARD:
+  Dashboard renders with all outputs. User can:
+    - Browse insight cards, charts, SWOT, knowledge graph
+    - Open agent activity live feed (collapsible)
+    - View animated agent orchestration diagram
+    - Chat with their data (natural language)
+    - Request custom charts via chat
+    - Toggle trend forecasting
+    - Vote on insights (upvote/downvote)
+    - Export report (PDF / CSV / shareable link)
+    - Play ElevenLabs audio narration
+
+Step 9 — EXPORT:
+  - Full PDF report
+  - CSV of processed data
+  - Shareable local link
+  - ElevenLabs audio download
+
+---
+
+KEY UI FEATURES & DESIGN:
+
+  - Onboarding flow: multi-step wizard for use-case selection and file upload
+  - Main Dashboard: insight cards, charts, tables, SWOT grid, knowledge graph
+  - Agent Activity Live Feed:
+      * Collapsible panel (collapsed: shows "Pipeline running — 4 agents active")
+      * Expanded: shows full console with timestamps, agent names, decisions,
+        log output from each agent as they complete work
+  - Animated Agent Orchestration Diagram:
+      * Visual node graph showing all agents and their connections
+      * Highlights which agent is currently active
+      * Shows data flowing between agents in real time
+      * Major visual demo factor — judges will love this
+  - Conversational Data Chat:
+      * Chat interface on dashboard for natural language questions
+      * Voice toggle (like ChatGPT voice mode) for spoken answers
+  - Trend Forecasting Toggle: on/off switch in settings
+  - Insight Cards:
+      * Each card shows: insight text, confidence score, source file tag,
+        visualization, upvote/downvote buttons
+      * Click card → reveals plain-English explanation of why this insight
+        was generated and what data supports it
+  - Progress Tracker:
+      * Visual pipeline showing which stage is complete / in progress / pending
+  - Knowledge Graph:
+      * Interactive D3.js force-directed graph
+      * Click nodes to drill into entity-specific insights
+  - Export Panel:
+      * PDF report button
+      * CSV download button
+      * Shareable link generator
+  - ElevenLabs Audio Player:
+      * Embedded audio player in dashboard
+      * Download button for audio file
+
+---
+
+DEMO PLAN:
+
+  The demo video and live presentation will consist of:
+    1. An HTML business pitch presentation in one browser tab
+       (acts as slides — title, problem, solution, tech, business case,
+        social impact, what's next)
+    2. A live demo of the actual running application in a second browser tab:
+       - Show onboarding flow
+       - Import synthetic company data files
+       - Watch the agent activity feed and orchestration diagram in real time
+       - Dashboard populates with insights, charts, SWOT, knowledge graph
+       - Demo the chat interface
+       - Play the ElevenLabs narration
+       - Show PDF export
+
+  Synthetic Demo Data (generated with Claude):
+    Four industry datasets to demo with:
+      a) SaaS company: usage metrics, churn rates, revenue by tier, support tickets
+      b) Retail company: sales data, inventory levels, customer feedback, returns
+      c) Healthcare clinic: visit logs (anonymized), billing data, patient outcomes
+      d) Logistics firm: delivery records, route efficiency, cost breakdowns
+
+---
+
+PRIZE STRATEGY:
+
+  PRIMARY (go all-in):
+    - 1st Place Overall
+    - Most Technically Impressive
+    - Best Business Plan
+
+  SECONDARY (built in, should qualify naturally):
+    - Best Social Impact: Free, open-source, locally runnable. No cost to use.
+      Democratizes business intelligence for nonprofits, startups, anyone.
+    - Best Use of Gemini API: Gemini as pipeline classifier and vision agent.
+    - Best Use of ElevenLabs: Podcast-style narration of business insights.
+
+  STRETCH (only if time allows, non-blocking):
+    - Best Use of Solana: Minimal on-chain audit ledger.
+    - Best Use of Presage: Focus/stress detection agent for data reviewers.
+    - Best Use of .Tech: Register a cool domain for the demo URL.
+
+---
+
+IMPORTANT PROJECT PRINCIPLES:
+  - ZERO COST: Entire app runs for $0. Ollama is local. Gemini uses
+    hackathon credits. No paid APIs required for core functionality.
+  - LOCAL FIRST: No mandatory cloud deployment. Runs from the developer's
+    terminal. Two terminals: `npm run dev` + `ollama serve`.
+  - OPEN SOURCE: Fully public GitHub during hackathon.
+  - LICENSE: Proprietary — must explicitly state the project is not
+    reproducible or redistributable without permission.
+  - NO HARD RATE LIMITS: All tools chosen must allow free demo without
+    interruption from API limits.
+  - EQUAL CONTRIBUTION: Both team members contribute across frontend,
+    backend, and AI agent domains.
+
+=============================================================
+END OF CONTEXT
+=============================================================
+
+=============================================================
+FILE 1: plan.md — INSTRUCTIONS
+=============================================================
+
+Create a file called plan.md with EXACTLY these sections in order.
+Write in clear, human, engaging language — not overly technical.
+This is the Devpost submission document. Make it polished and compelling.
+Leave placeholder text in brackets where specific details are not yet known
+(e.g., [INSERT GITHUB LINK], [ADD AFTER BUILD]).
+
+Sections:
+
+# [Title]
+Use a compelling, memorable project name. Suggest options but pick the best one.
+Chosen project name: "Datalyze" — tagline: Raw Data ↓, AI-Driven Strategies ↑
+
+## Tagline
+One punchy sentence. What does this do in 10 words or less?
+
+## Description
+2-3 sentences. What is the product? Who is it for? What does it do?
+Do not use bullet points — flowing sentences only.
+
+## Inspiration
+Paragraph(s) explaining what inspired the team to build this. Talk about:
+the problem of raw, siloed, unstructured company data; the lack of accessible
+business intelligence tools for smaller teams; the opportunity that multi-agent
+AI presents; the hackathon as a forcing function to build something real.
+
+## What It Does
+Explain the full product at a high level. Cover:
+- The two modes (private data upload + public data scraping)
+- The onboarding flow (use-case selection)
+- The multi-agent pipeline (describe without going too deep technically)
+- The dashboard and its outputs (insights, charts, SWOT, knowledge graph,
+  ElevenLabs narration, conversational chat, export options)
+- The zero-cost, local-first, open-source nature
+
+## How We Built It
+Deep technical breakdown divided into these sub-sections:
+  ### Frontend
+  ### Backend & Data Layer
+  ### AI Agent Architecture
+  ### LLM Infrastructure (Ollama)
+  ### Data Ingestion Pipeline
+  ### Visualization Layer
+  ### Voice & Audio (ElevenLabs)
+  ### Semantic Search (pgvector)
+  ### External API Integrations (Gemini, ElevenLabs, optional: Solana, Presage)
+  ### Development Environment & Tooling
+
+## Challenges We Ran Into
+Format: multiple entries, each as:
+### [Challenge Name]
+[Short paragraph describing the challenge]
+
+Pre-populate with likely/expected challenges such as:
+  - Getting multi-agent orchestration to not deadlock
+  - Running large LLMs within VRAM constraints
+  - Processing diverse file formats reliably
+  - Building real-time agent activity streaming to the frontend
+  - Keeping the app zero-cost without sacrificing capability
+  - Time constraints of a typical hackathon sprint
+  - Coordinating equal contributions across two people in all domains
+  (Add [To be filled in as the project progresses] note at the end of this section)
+
+## Accomplishments That We're Proud Of
+Format: multiple entries, each as:
+### [Accomplishment Name]
+[Short paragraph]
+
+Include:
+  - Building a fully local, zero-cost multi-agent system under tight schedule pressure
+  - The animated real-time agent orchestration diagram
+  - Knowledge graph with interactive drill-down
+  - ElevenLabs podcast-style narration of business insights
+  - Supporting every major file format through specialized agents
+  - Keeping the entire stack reproducible by anyone with a clone
+  (Add [To be filled in as the project progresses] note)
+
+## What We Learned
+Format: multiple entries, each as:
+### [What Was Learned]
+[Short paragraph]
+
+## What's Next for Datalyze
+Paragraph or bullet list of future plans:
+  - Cloud deployment option (optional mode alongside local)
+  - Industry benchmarking against publicly available company data
+  - White-label version for consulting firms (with proper licensing)
+  - Scheduled/incremental data ingestion (weekly re-runs)
+  - Deeper Solana integration (full data marketplace)
+  - Mobile companion app for executive summary viewing
+  - Integration with CRM/ERP systems (Salesforce, SAP)
+  - Subscription intelligence report emails
+
+## Built With
+List EVERY item in the tech stack, no matter how small:
+Next.js, TypeScript, Tailwind CSS, D3.js, Chart.js, Plotly.js, Shadcn/ui,
+Radix UI, Python, FastAPI (or Flask), PostgreSQL, pgvector, Ollama,
+LangChain, Google Gemini API, ElevenLabs API, Firecrawl (or Playwright),
+BeautifulSoup, Git, GitHub, Cursor, Claude, Windows, Linux,
+NVIDIA CUDA (for GPU inference), deepseek-r1 (or qwen2.5), llama3.2
+
+## Links
+- GitHub Repository: [INSERT GITHUB LINK]
+- Demo Video: [INSERT VIDEO LINK]
+- Live Demo (if deployed): [INSERT LINK]
+- Devpost: [INSERT DEVPOST LINK]
+
+=============================================================
+FILE 2: projectscope.md — INSTRUCTIONS
+=============================================================
+
+Create a file called projectscope.md that is an EXHAUSTIVE, deeply technical
+project scope document. This is an internal reference document — it should
+be the single source of truth for every implementation decision.
+
+It should be extremely detailed. Every feature, every agent, every API call,
+every database table, every UI component should be described with enough
+detail that a developer can implement it from this document alone.
+
+Include the following sections:
+
+# Project Scope — [Project Name]
+## Overview
+## Team & Contribution Model
+## Hardware Specifications & Constraints
+## Architecture Overview (with text diagram of the full system)
+## Tech Stack (exhaustive, with version notes and rationale for each choice)
+## Agent Specifications
+  For EACH of the 21 agents, include:
+    - Agent Name
+    - Model Used (Heavy/Light/External API)
+    - Input
+    - Output
+    - Responsibilities
+    - Dependencies (which agents it depends on / which depend on it)
+    - Implementation notes
+    - Priority (Core / Optional / Stretch)
+
+## Database Schema
+  For PostgreSQL — define every table:
+    - companies
+    - uploaded_files
+    - file_metadata
+    - processed_chunks
+    - insights
+    - agents_log
+    - pipeline_runs
+    - knowledge_graph_nodes
+    - knowledge_graph_edges
+    - exports
+  Include column names, types, and notes for each.
+
+## API Routes
+  Document every Next.js API route:
+    POST /api/pipeline/start
+    POST /api/upload
+    GET  /api/pipeline/status/:runId
+    GET  /api/insights/:companyId
+    POST /api/chat
+    GET  /api/export/pdf/:runId
+    GET  /api/export/csv/:runId
+    POST /api/admin/scraper/play
+    POST /api/admin/scraper/pause
+    GET  /api/knowledge-graph/:runId
+    GET  /api/agents/log/:runId (SSE stream for live feed)
+    POST /api/narration/generate
+
+## Frontend Pages & Components
+  List every page and major component with description:
+    Pages: /, /onboarding, /dashboard, /admin, /export
+    Components: OnboardingWizard, FileUpload, PipelineTracker,
+    AgentLiveFeed, OrchestrationDiagram, InsightCard, KnowledgeGraph,
+    TrendChart, SWOTGrid, ExecutiveSummary, DataChat, VoiceToggle,
+    ExportPanel, AudioPlayer, ProgressBar, InsightVoting, ConflictWarning
+
+## Pipeline Track Configurations
+  For each of the 4 tracks, specify:
+    - Which agents are active
+    - Which agents are prioritized
+    - What type of data is targeted by the scraper
+    - What types of visualizations are produced
+    - What types of insights are emphasized
+
+## File Format Support Matrix
+  Table of: file type → processor agent → extraction method → output format
+
+## LLM Configuration
+  - Heavy model: recommended models, VRAM usage, Ollama pull command,
+    use cases, context window, temperature settings
+  - Light model: recommended models, VRAM usage, Ollama pull command,
+    use cases
+  - Model swapping logic: how the orchestrator decides which model to use
+  - Ollama server setup: command, port, environment variables
+
+## Gemini API Integration
+  - Role: Pipeline Classifier + Vision (chart extraction from PDFs)
+  - Specific API calls used
+  - Prompt templates for the classifier
+  - Fallback if Gemini is unavailable
+  - Credit management strategy
+
+## ElevenLabs Integration
+  - Role: Podcast-style voice narration
+  - Voice selection
+  - Input: executive summary text
+  - Output: audio file (MP3)
+  - Player component in dashboard
+  - Download option
+
+## pgvector Semantic Search
+  - PostgreSQL setup with pgvector extension
+  - Embedding model used (e.g., nomic-embed-text via Ollama)
+  - How chunks are embedded and stored
+  - Query flow for natural language search
+  - How results are used to answer chat questions
+
+## Agent Activity Live Feed
+  - Server-Sent Events (SSE) implementation
+  - Log entry format: { timestamp, agentName, action, detail, status }
+  - Frontend display: collapsible panel, auto-scroll, color-coded by agent
+  - Performance: ensure streaming does not block the main pipeline
+
+## Animated Agent Orchestration Diagram
+  - D3.js force-directed graph
+  - Nodes: one per agent
+  - Edges: data flow between agents
+  - Real-time animation: highlight active agent, pulse edges on data transfer
+  - Data fed via SSE from the same pipeline log stream
+  - Static fallback if SSE is slow
+
+## Knowledge Graph
+  - D3.js force-directed graph
+  - Node types: company, department, metric, time period, entity, file
+  - Edge types: reports-to, contains, related-to, contradicts
+  - Interaction: click node → sidebar with entity-specific insights
+  - Built by Knowledge Graph Builder Agent
+  - Stored in knowledge_graph_nodes and knowledge_graph_edges tables
+
+## Export System
+  - PDF: use Puppeteer or pdfkit to generate from dashboard HTML
+  - CSV: export processed_chunks and insights tables
+  - Shareable link: base64-encoded run ID link, works on local network
+  - ElevenLabs audio: direct download from stored MP3
+
+## Security Considerations
+  - All data stays local — no external transmission of company data
+  - Gemini API calls only pass insight summaries (not raw company data)
+  - ElevenLabs API calls only pass summary text (not raw data)
+  - Admin panel is password-protected (simple local auth)
+  - File upload validation: mime type check + file size limit
+  - SQL injection prevention: parameterized queries throughout
+  - License: proprietary — not reproducible or redistributable
+
+## Zero-Cost Strategy
+  - Ollama: free, local, no API key required
+  - PostgreSQL: free, local
+  - Gemini: covered by hackathon credits (MLH prize category)
+  - ElevenLabs: covered by hackathon credits / free tier
+  - Firecrawl: free tier or custom scraper (no cost)
+  - All other tools: open source, free
+
+## Development Environment Setup
+  Step-by-step instructions:
+    1. Clone repository
+    2. Install Node.js dependencies (`npm install`)
+    3. Install Python dependencies (`pip install -r requirements.txt`)
+    4. Install Ollama and pull required models
+    5. Set up PostgreSQL and run migrations
+    6. Configure .env file (API keys for Gemini, ElevenLabs)
+    7. Start Ollama: `ollama serve` (Terminal 2)
+    8. Start app: `npm run dev` (Terminal 1)
+    9. Open browser to localhost:3000
+
+## Hackathon Submission Checklist
+  - [ ] Demo video (3 minutes or less)
+  - [ ] GitHub repository public
+  - [ ] Devpost submission complete
+  - [ ] plan.md updated with build details
+  - [ ] All prize categories noted in Devpost submission
+  - [ ] Synthetic demo data ready for judges
+
+## Prize Category Requirements
+  For each prize being targeted, document:
+    - Prize name
+    - What we're building to qualify
+    - Judging criteria
+    - How our implementation addresses each criterion
+    - Priority level (Primary / Secondary / Stretch)
+
+## Future Roadmap
+  - Cloud deployment option
+  - Industry benchmarking agent
+  - Scheduled incremental ingestion
+  - Mobile companion app
+  - CRM/ERP integrations
+  - Subscription intelligence reports
+  - Full Solana data marketplace
+  - Public API for third-party integrations
+
+---END CURSOR PROMPT---
+
+=============================================================
+END OF plan.txt
+=============================================================
