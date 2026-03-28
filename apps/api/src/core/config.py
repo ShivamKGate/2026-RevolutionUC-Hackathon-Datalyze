@@ -8,7 +8,7 @@ empty-string default when the variable is absent.
 
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
@@ -32,10 +32,44 @@ class Settings(BaseSettings):
     light_model: str
     embedding_model: str
     database_url: str = Field(default="")
-    orchestrator_max_retries: int
-    orchestrator_timeout_seconds: int
+    orchestrator_max_retries: int = Field(default=2)
+    orchestrator_timeout_seconds: int = Field(default=45)
     gemini_api_key: str = Field(default="")
+    gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")
+
+    @field_validator("orchestrator_max_retries", "orchestrator_timeout_seconds", mode="before")
+    @classmethod
+    def _empty_int_uses_default(cls, v: object, info: ValidationInfo) -> object:
+        if isinstance(v, str) and not v.strip():
+            if info.field_name == "orchestrator_max_retries":
+                return 2
+            return 45
+        return v
+
+    @field_validator(
+        "llm_provider",
+        "llm_base_url",
+        "heavy_model",
+        "heavy_alt_model",
+        "light_model",
+        "embedding_model",
+        "gemini_model",
+        mode="before",
+    )
+    @classmethod
+    def _strip_modelish_strings(cls, v: object) -> object:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+    @property
+    def gemini_api_key_configured(self) -> bool:
+        return bool((self.gemini_api_key or "").strip())
+
+    @property
+    def elevenlabs_api_key_configured(self) -> bool:
+        return bool((self.elevenlabs_api_key or "").strip())
 
     @property
     def allowed_origins(self) -> list[str]:

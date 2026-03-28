@@ -357,9 +357,9 @@ class AgentRegistry:
         if model_type == "hybrid":
             return f"{settings.light_model} (default) + {settings.heavy_alt_model} (escalation)"
         if model_type == "gemini_api":
-            return "gemini-api"
+            return settings.gemini_model
         if model_type == "gemini_vision":
-            return "gemini-vision"
+            return settings.gemini_model
         if model_type == "elevenlabs_api":
             return "elevenlabs-api"
         return "system-service"

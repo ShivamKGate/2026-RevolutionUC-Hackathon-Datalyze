@@ -1,0 +1,28 @@
+python "apps/api/scripts/verify_all_agents.py"
+[SUMMARY] status=ok total=24 passed=23 failed=0 skipped=1
+------------------------------------------------------------------------------------------------------------------------
+OK      | orchestrator                 | heavy              | moonshotai/Kimi-K2.5         | Hi, how can I help you?
+OK      | pipeline_classifier          | gemini_api         | gemini-2.5-flash             | Hi, how can I help you?
+OK      | public_data_scraper          | light_plus_scraper | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | file_type_classifier         | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | pdf_processor                | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | csv_processor                | rule_plus_light    | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | excel_processor              | rule_plus_light    | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | json_processor               | rule_plus_light    | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | image_multimodal_processor   | gemini_vision      | gemini-2.5-flash             | Hi, how can I help you?
+OK      | plain_text_processor         | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | data_cleaning                | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | smart_categorizer_metadata   | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | aggregator                   | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | conflict_detection           | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | knowledge_graph_builder      | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | trend_forecasting            | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | sentiment_analysis           | light              | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | insight_generation           | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | swot_analysis                | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | executive_summary            | heavy_alt          | deepseek-ai/DeepSeek-V3.2    | Hi, how can I help you?
+OK      | automation_strategy          | hybrid             | Qwen/Qwen2.5-7B-Instruct (de | Hi, how can I help you?
+SKIPPED | data_provenance_tracker      | system_service     | system-service               |
+          detail: System-service agent has no direct chat model endpoint.
+OK      | natural_language_search      | light_plus_pgvector | Qwen/Qwen2.5-7B-Instruct     | Hi, how can I help you?
+OK      | elevenlabs_narration         | elevenlabs_api     | elevenlabs-api               | 24285 bytes mp3
