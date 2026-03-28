@@ -24,30 +24,47 @@ Local-first, multi-agent business intelligence platform scaffold for RevolutionU
 
 ## Quick Start (Windows / PowerShell)
 
+### Prerequisites
+
+- **Node.js** 20+ or 22+ (LTS recommended)
+- **Python 3.12** on your PATH (see below if missing)
+
+`npm run dev` does **not** auto-download Python. Install 3.12 once per machine; the dev script then manages a **local venv** and dependencies for you.
+
 ### 1) Install Node dependencies at repo root
 
 ```bash
 npm install
 ```
 
-### 2) Install Python dependencies for API
-
-```bash
-pip install -r apps/api/requirements.txt
-```
-
-### 3) Optional env files
+### 2) Optional env files
 
 ```bash
 copy apps/web/.env.example apps/web/.env.local
 copy apps/api/.env.example apps/api/.env
 ```
 
-### 4) Run both servers together
+### 3) Run both servers together
 
 ```bash
 npm run dev
 ```
+
+### What `npm run dev` does for the API
+
+`npm run dev:api` runs `node scripts/run-api.mjs`, which:
+
+1. Finds an interpreter that is **exactly Python 3.12** (`py -3.12` on Windows, then `python3.12` / `python3` / `python` on other platforms).
+2. Creates **`apps/api/.venv`** if it does not exist (no need to `activate` manually).
+3. Runs **`pip install -r apps/api/requirements.txt`** when that file changes (tracked via a small hash stamp inside the venv).
+4. Starts **Uvicorn** with the venv’s Python.
+
+If Python 3.12 is missing, the script prints install hints (e.g. `winget install -e --id Python.Python.3.12` on Windows).
+
+### Terminals
+
+- **Typical:** **one** terminal — `npm run dev` (web + API).
+- **With Ollama:** **two** terminals — `npm run dev` and `ollama serve`.
 
 ## Running Services
 

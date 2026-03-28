@@ -2,6 +2,10 @@
 
 FastAPI backend for Datalyze.
 
+## Local Python environment
+
+From the repo root, `npm run dev:api` runs `scripts/run-api.mjs`, which creates **`apps/api/.venv`** with **Python 3.12** and installs dependencies from `requirements.txt`. You do not need to activate the venv manually.
+
 ## Purpose
 
 - Provide versioned REST endpoints for frontend and agents.
