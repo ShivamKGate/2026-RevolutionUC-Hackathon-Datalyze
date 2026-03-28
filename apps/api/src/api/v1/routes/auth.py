@@ -11,6 +11,38 @@ from schemas.auth import LoginRequest, RegisterRequest, UserOut
 
 router = APIRouter()
 
+_USER_SELECT_BY_ID = """
+SELECT u.id, u.email, u.name, u.role, u.setup_complete, u.onboarding_path,
+       u.display_name, u.job_title, c.id AS company_id, c.name AS company_name,
+       COALESCE(c.public_scrape_enabled, false) AS public_scrape_enabled
+FROM users u
+LEFT JOIN companies c ON c.id = u.company_id
+WHERE u.id = :uid
+"""
+
+
+def _user_out_from_row(row) -> UserOut:
+    return UserOut(
+        id=row.id,
+        email=row.email,
+        name=row.name,
+        role=row.role,
+        setup_complete=row.setup_complete,
+        onboarding_path=row.onboarding_path,
+        display_name=row.display_name,
+        job_title=row.job_title,
+        company_id=row.company_id,
+        company_name=row.company_name,
+        public_scrape_enabled=bool(row.public_scrape_enabled),
+    )
+
+
+def fetch_user_out(db, user_id: int) -> UserOut:
+    row = db.execute(text(_USER_SELECT_BY_ID), {"uid": user_id}).fetchone()
+    if row is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return _user_out_from_row(row)
+
 
 def _hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
@@ -52,22 +84,10 @@ def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Not authenticated")
     db = SessionLocal()
     try:
-        row = db.execute(
-            text("SELECT id, email, name, role, setup_complete, onboarding_path FROM users WHERE id = :uid"),
-            {"uid": int(user_id)},
-        ).fetchone()
+        out = fetch_user_out(db, int(user_id))
     finally:
         db.close()
-    if row is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return {
-        "id": row.id,
-        "email": row.email,
-        "name": row.name,
-        "role": row.role,
-        "setup_complete": row.setup_complete,
-        "onboarding_path": row.onboarding_path,
-    }
+    return out.model_dump()
 
 
 @router.post("/register", response_model=UserOut, status_code=201)
@@ -88,7 +108,7 @@ def register(body: RegisterRequest, response: Response):
             text(
                 "INSERT INTO users (name, email, role, password_hash, company_id) "
                 "VALUES (:name, :email, 'viewer', :pw_hash, :company_id) "
-                "RETURNING id, email, name, role, setup_complete, onboarding_path"
+                "RETURNING id"
             ),
             {
                 "name": body.name,
@@ -98,6 +118,7 @@ def register(body: RegisterRequest, response: Response):
             },
         ).fetchone()
         db.commit()
+        profile = fetch_user_out(db, user_row.id)
     except HTTPException:
         db.rollback()
         raise
@@ -106,16 +127,9 @@ def register(body: RegisterRequest, response: Response):
         raise
     finally:
         db.close()
-    token = _create_token(user_row.id)
+    token = _create_token(profile.id)
     _set_auth_cookie(response, token)
-    return UserOut(
-        id=user_row.id,
-        email=user_row.email,
-        name=user_row.name,
-        role=user_row.role,
-        setup_complete=user_row.setup_complete,
-        onboarding_path=user_row.onboarding_path,
-    )
+    return profile
 
 
 @router.post("/login", response_model=UserOut)
@@ -123,26 +137,17 @@ def login(body: LoginRequest, response: Response):
     db = SessionLocal()
     try:
         row = db.execute(
-            text(
-                "SELECT id, email, name, role, setup_complete, onboarding_path, password_hash "
-                "FROM users WHERE email = :email"
-            ),
+            text("SELECT id, password_hash FROM users WHERE email = :email"),
             {"email": body.email},
         ).fetchone()
+        if row is None or not row.password_hash or not _verify_password(body.password, row.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        profile = fetch_user_out(db, row.id)
     finally:
         db.close()
-    if row is None or not row.password_hash or not _verify_password(body.password, row.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = _create_token(row.id)
+    token = _create_token(profile.id)
     _set_auth_cookie(response, token)
-    return UserOut(
-        id=row.id,
-        email=row.email,
-        name=row.name,
-        role=row.role,
-        setup_complete=row.setup_complete,
-        onboarding_path=row.onboarding_path,
-    )
+    return profile
 
 
 @router.post("/logout")

@@ -1,8 +1,7 @@
 """
-Ollama model configuration for Datalyze.
+Model configuration for Datalyze.
 
-Hardware floor: Machine B — RTX 4070 12GB VRAM, Ryzen 7 7700X, 32GB RAM.
-All models must run comfortably on both team systems.
+Current default provider: Featherless (remote inference).
 """
 
 from typing import TypedDict
@@ -15,33 +14,37 @@ class OllamaModelEntry(TypedDict):
 
 
 HARDWARE_SUMMARY = (
-    "Machine A: i9-12900K, 64GB RAM, 16GB VRAM | "
-    "Machine B: Ryzen 7 7700X, 32GB RAM, RTX 4070 12GB VRAM. "
-    "All models chosen to fit 12GB VRAM single-model GPU inference."
+    "Featherless remote inference enabled. Local GPU VRAM is no longer the primary model-size constraint."
 )
 
-DEFAULT_HEAVY_MODEL = "qwen2.5:14b"
-DEFAULT_LIGHT_MODEL = "llama3.2:3b"
+DEFAULT_HEAVY_MODEL = "Kimi-K2.5"
+DEFAULT_HEAVY_ALT_MODEL = "DeepSeek-V3.2"
+DEFAULT_LIGHT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 
 MODELS: list[OllamaModelEntry] = [
     {
-        "id": "qwen2.5:14b",
+        "id": DEFAULT_HEAVY_MODEL,
         "tier": "heavy",
-        "notes": "Primary heavy model for orchestration, synthesis, insights, and summaries.",
+        "notes": "Orchestrator-only: planning, coordination, dispatch (HEAVY_MODEL).",
     },
     {
-        "id": "llama3.2:3b",
+        "id": DEFAULT_HEAVY_ALT_MODEL,
+        "tier": "heavy_alt",
+        "notes": "Non-orchestrator heavy work: aggregation, insights, SWOT, exec summary (HEAVY_ALT_MODEL).",
+    },
+    {
+        "id": DEFAULT_LIGHT_MODEL,
         "tier": "light",
-        "notes": "Primary light model for routing, tagging, cleaning, and low-latency sub-agents.",
+        "notes": "Fast sub-agents: routing, tagging, cleaning, and bulk steps (LIGHT_MODEL).",
     },
     {
-        "id": "nomic-embed-text",
+        "id": DEFAULT_EMBEDDING_MODEL,
         "tier": "embedding",
-        "notes": "Embedding model for pgvector / retrieval agents.",
+        "notes": "Embedding model for pgvector / retrieval (configure separately if not on Featherless).",
     },
 ]
 
 
 def pull_commands() -> list[str]:
-    return [f"ollama pull {m['id']}" for m in MODELS]
+    return ["No local pull required (Featherless remote models)."]

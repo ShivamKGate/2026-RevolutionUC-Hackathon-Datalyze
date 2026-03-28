@@ -38,17 +38,26 @@ async function setupSchema() {
     console.log(`OK  (${hostInfo})`);
 
     // Migrations use CREATE TABLE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS — always safe to re-run
-    const migrationsDir = path.join(ROOT, "apps", "api", "src", "db", "migrations");
-    for (const file of ["001_initial_schema.sql", "002_auth_schema.sql"]) {
+    const migrationsDir = path.join(
+      ROOT,
+      "apps",
+      "api",
+      "src",
+      "db",
+      "migrations",
+    );
+    for (const file of [
+      "001_initial_schema.sql",
+      "002_auth_schema.sql",
+      "003_uploads_pipeline.sql",
+    ]) {
       const sql = readFileSync(path.join(migrationsDir, file), "utf8");
       await client.query(sql);
       console.log(`[db] Applied ${file}`);
     }
 
     // Only seed if the users table is empty
-    const { rows } = await client.query(
-      "SELECT COUNT(*) AS n FROM users",
-    );
+    const { rows } = await client.query("SELECT COUNT(*) AS n FROM users");
     const userCount = parseInt(rows[0].n, 10);
 
     if (userCount > 0) {
@@ -59,15 +68,7 @@ async function setupSchema() {
     }
 
     const seedSQL = readFileSync(
-      path.join(
-        ROOT,
-        "apps",
-        "api",
-        "src",
-        "db",
-        "seeds",
-        "001_seed.sql",
-      ),
+      path.join(ROOT, "apps", "api", "src", "db", "seeds", "001_seed.sql"),
       "utf8",
     );
     await client.query(seedSQL);

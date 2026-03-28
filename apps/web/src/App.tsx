@@ -12,9 +12,11 @@ import PipelinePage from "./pages/PipelinePage";
 import AgentsPage from "./pages/AgentsPage";
 import DeveloperPage from "./pages/DeveloperPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import AnalysisDetailPage from "./pages/AnalysisDetailPage";
 import ProfilePage from "./pages/settings/ProfilePage";
 import CompanyPage from "./pages/settings/CompanyPage";
 import PreferencesPage from "./pages/settings/PreferencesPage";
+import UploadedFilesPage from "./pages/settings/UploadedFilesPage";
 
 export default function App() {
   return (
@@ -30,11 +32,13 @@ export default function App() {
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/pipeline" element={<PipelinePage />} />
             <Route path="/agents" element={<AgentsPage />} />
+            <Route path="/analysis/:slug" element={<AnalysisDetailPage />} />
             <Route path="/settings">
               <Route index element={<Navigate to="profile" replace />} />
               <Route element={<SettingsLayout />}>
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="company" element={<CompanyPage />} />
+                <Route path="files" element={<UploadedFilesPage />} />
                 <Route path="preferences" element={<PreferencesPage />} />
                 <Route path="developer" element={<DeveloperPage />} />
               </Route>

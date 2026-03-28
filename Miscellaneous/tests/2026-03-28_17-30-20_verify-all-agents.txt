@@ -1,0 +1,28 @@
+python "apps/api/scripts/verify_all_agents.py"
+[SUMMARY] status=ok total=24 passed=23 failed=0 skipped=1
+------------------------------------------------------------------------------------------------------------------------
+OK      | orchestrator                 | heavy              | qwen2.5:14b                  | Hi, how can I help you?
+OK      | pipeline_classifier          | gemini_api         | gemini-2.5-flash             | Hi, how can I help you?
+OK      | public_data_scraper          | light_plus_scraper | llama3.2:3b                  | How can I assist you today?
+OK      | file_type_classifier         | light              | llama3.2:3b                  | How can I assist you today?
+OK      | pdf_processor                | light              | llama3.2:3b                  | How can I assist you today?
+OK      | csv_processor                | rule_plus_light    | llama3.2:3b                  | How can I assist you today?
+OK      | excel_processor              | rule_plus_light    | llama3.2:3b                  | How can I assist you today?
+OK      | json_processor               | rule_plus_light    | llama3.2:3b                  | How can I assist you today?
+OK      | image_multimodal_processor   | gemini_vision      | gemini-2.5-flash             | Hi, how can I help you?
+OK      | plain_text_processor         | light              | llama3.2:3b                  | How can I assist you today?
+OK      | data_cleaning                | light              | llama3.2:3b                  | How can I assist you today?
+OK      | smart_categorizer_metadata   | light              | llama3.2:3b                  | How can I assist you today?
+OK      | aggregator                   | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | conflict_detection           | light              | llama3.2:3b                  | How can I assist you today?
+OK      | knowledge_graph_builder      | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | trend_forecasting            | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | sentiment_analysis           | light              | llama3.2:3b                  | How can I assist you today?
+OK      | insight_generation           | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | swot_analysis                | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | executive_summary            | heavy_alt          | qwen2.5:14b                  | Hi, how can I help you?
+OK      | automation_strategy          | hybrid             | llama3.2:3b (default) + qwen | How can I assist you today?
+SKIPPED | data_provenance_tracker      | system_service     | system-service               |
+          detail: System-service agent has no direct chat model endpoint.
+OK      | natural_language_search      | light_plus_pgvector | llama3.2:3b                  | How can I assist you today?
+OK      | elevenlabs_narration         | elevenlabs_api     | elevenlabs-api               | 24703 bytes mp3

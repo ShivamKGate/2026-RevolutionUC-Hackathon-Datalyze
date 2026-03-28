@@ -10,7 +10,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <nav className="navbar">
         <div className="navbar-brand">
-          <Link to="/dashboard" className="navbar-logo">Datalyze</Link>
+          <Link to="/" className="navbar-logo">Datalyze</Link>
         </div>
         <div className="nav-links">
           <Link to="/dashboard" className="nav-btn nav-btn-ghost">Dashboard</Link>

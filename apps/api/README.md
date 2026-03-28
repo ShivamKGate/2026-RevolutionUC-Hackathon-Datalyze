@@ -47,15 +47,15 @@ From the repo root, `npm run dev:api` runs `scripts/run-api.mjs`, which creates 
   - Includes all scoped agents with dependencies, model type, runtime mode, and initialization state.
   - Returns orchestrator policy (`ORCHESTRATOR_MAX_RETRIES`, `ORCHESTRATOR_TIMEOUT_SECONDS`).
 
-## Ollama model catalog (team hardware)
+## Model catalog (Featherless)
 
 - Route: `GET /api/v1/agents/ollama-catalog`
-- Purpose: return the recommended model matrix (12GB VRAM floor) plus `ollama pull` lines.
-- Env vars (see `.env.example`): `OLLAMA_HOST`, `HEAVY_MODEL`, `LIGHT_MODEL`, `EMBEDDING_MODEL`.
+- Purpose: return the active model matrix and provider defaults used by the API.
+- Env vars (see `.env.example`): `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_API_KEY`, `HEAVY_MODEL`, `LIGHT_MODEL`, `EMBEDDING_MODEL`.
 
-## One-shot model pulls (Windows)
+## Local pulls (optional legacy Ollama flow)
 
-From repo root:
+For Featherless, no local model pull is required. The script remains for teams that switch back to local Ollama inference.
 
 ```powershell
 .\scripts\pull-datalyze-ollama-models.ps1

@@ -7,15 +7,17 @@ export default function RequireAuth() {
 
   if (isLoading) {
     return (
-      <div className="spinner-page">
+      <div className="spinner-page spinner-page--full">
         <div className="spinner" />
       </div>
     );
   }
 
   if (!user) return <Navigate to="/" replace />;
-  if (!user.setup_complete && location.pathname !== "/setup") return <Navigate to="/setup" replace />;
-  if (user.setup_complete && location.pathname === "/setup") return <Navigate to="/dashboard" replace />;
+  if (!user.setup_complete && location.pathname !== "/setup")
+    return <Navigate to="/setup" replace />;
+  if (user.setup_complete && location.pathname === "/setup")
+    return <Navigate to="/dashboard" replace />;
 
   return <Outlet />;
 }

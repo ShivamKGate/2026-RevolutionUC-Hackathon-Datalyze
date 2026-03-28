@@ -6,25 +6,41 @@ export default function SettingsLayout() {
       <aside className="settings-sidebar">
         <NavLink
           to="/settings/profile"
-          className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+          className={({ isActive }) =>
+            "sidebar-link" + (isActive ? " active" : "")
+          }
         >
           Profile
         </NavLink>
         <NavLink
           to="/settings/company"
-          className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+          className={({ isActive }) =>
+            "sidebar-link" + (isActive ? " active" : "")
+          }
         >
           Company
         </NavLink>
         <NavLink
+          to="/settings/files"
+          className={({ isActive }) =>
+            "sidebar-link" + (isActive ? " active" : "")
+          }
+        >
+          Uploaded files
+        </NavLink>
+        <NavLink
           to="/settings/preferences"
-          className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+          className={({ isActive }) =>
+            "sidebar-link" + (isActive ? " active" : "")
+          }
         >
           Preferences
         </NavLink>
         <NavLink
           to="/settings/developer"
-          className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}
+          className={({ isActive }) =>
+            "sidebar-link" + (isActive ? " active" : "")
+          }
         >
           Developer
         </NavLink>

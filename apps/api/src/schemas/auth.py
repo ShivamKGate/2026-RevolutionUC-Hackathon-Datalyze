@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RegisterRequest(BaseModel):
@@ -19,6 +19,21 @@ class UserOut(BaseModel):
     role: str
     setup_complete: bool
     onboarding_path: str | None = None
+    display_name: str | None = None
+    job_title: str | None = None
+    company_id: int | None = None
+    company_name: str | None = None
+    public_scrape_enabled: bool = False
+
+
+class ProfileUpdateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    job_title: str | None = Field(default=None, max_length=100)
+
+
+class CompanyUpdateRequest(BaseModel):
+    company_name: str = Field(min_length=1, max_length=200)
+    public_scrape_enabled: bool | None = None
 
 
 class SetupRequest(BaseModel):

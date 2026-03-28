@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import os
 from typing import Any, Literal
 
 from crewai import Agent, LLM
@@ -10,6 +11,7 @@ from core.config import settings
 
 ModelType = Literal[
     "heavy",
+    "heavy_alt",
     "light",
     "gemini_api",
     "gemini_vision",
@@ -47,9 +49,12 @@ class AgentNode:
 
 
 def _normalize_model(model: str) -> str:
-    if "/" in model:
-        return model
-    return f"ollama/{model}"
+    return model
+
+
+def _prime_openai_compat_env() -> None:
+    os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
+    os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 
 
 def _agent_specs() -> list[AgentSpec]:
@@ -196,7 +201,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="aggregator",
             name="Aggregator Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Cleaned + categorized chunks + scraper artifacts",
             output_description="Structured analysis corpus, usefulness scores, storyline hypotheses",
             responsibilities="Prioritize evidence and prepare synthesis-ready dataset",
@@ -218,7 +223,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="knowledge_graph_builder",
             name="Knowledge Graph Builder Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Aggregated corpus and entity map",
             output_description="Nodes/edges for graph tables and UI rendering",
             responsibilities="Build entity relationship network",
@@ -229,7 +234,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="trend_forecasting",
             name="Trend Forecasting Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Time-series candidates from aggregated corpus",
             output_description="Forecast values, confidence bands, plotting payloads",
             responsibilities="Predict KPI trajectories when enabled",
@@ -251,7 +256,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="insight_generation",
             name="Insight Generation Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Aggregated evidence + conflict/sentiment/forecast signals",
             output_description="Insight cards with confidence and provenance tags",
             responsibilities="Primary business insight synthesis",
@@ -267,7 +272,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="swot_analysis",
             name="SWOT Analysis Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Insight set + aggregated corpus",
             output_description="Structured SWOT quadrants",
             responsibilities="Strategic framing",
@@ -278,7 +283,7 @@ def _agent_specs() -> list[AgentSpec]:
         AgentSpec(
             id="executive_summary",
             name="Executive Summary Agent",
-            model_type="heavy",
+            model_type="heavy_alt",
             input_description="Finalized insight package + SWOT + risk/conflict highlights",
             output_description="Board-ready concise summary",
             responsibilities="Human-readable synthesis for decision-makers",
@@ -345,37 +350,51 @@ class AgentRegistry:
     def _resolve_model(self, model_type: ModelType) -> str:
         if model_type == "heavy":
             return settings.heavy_model
+        if model_type == "heavy_alt":
+            return settings.heavy_alt_model
         if model_type in {"light", "light_plus_scraper", "rule_plus_light", "light_plus_pgvector"}:
             return settings.light_model
         if model_type == "hybrid":
-            return f"{settings.light_model} (default) + {settings.heavy_model} (escalation)"
+            return f"{settings.light_model} (default) + {settings.heavy_alt_model} (escalation)"
         if model_type == "gemini_api":
-            return "gemini-api"
+            return settings.gemini_model
         if model_type == "gemini_vision":
-            return "gemini-vision"
+            return settings.gemini_model
         if model_type == "elevenlabs_api":
             return "elevenlabs-api"
         return "system-service"
 
     def _runtime_kind(self, model_type: ModelType) -> str:
-        if model_type in {"heavy", "light", "light_plus_scraper", "rule_plus_light", "hybrid", "light_plus_pgvector"}:
-            return "local-crewai"
+        if model_type in {
+            "heavy",
+            "heavy_alt",
+            "light",
+            "light_plus_scraper",
+            "rule_plus_light",
+            "hybrid",
+            "light_plus_pgvector",
+        }:
+            return f"{settings.llm_provider}-crewai"
         if model_type in {"gemini_api", "gemini_vision", "elevenlabs_api"}:
             return "external-service"
         return "system-layer"
 
     def _get_llm(self, model_name: str) -> LLM:
+        _prime_openai_compat_env()
         normalized = _normalize_model(model_name)
         if normalized not in self._llm_cache:
             self._llm_cache[normalized] = LLM(
                 model=normalized,
-                base_url=settings.ollama_host,
+                base_url=settings.llm_base_url,
+                api_key=settings.llm_api_key,
             )
         return self._llm_cache[normalized]
 
     def _build_local_agent(self, spec: AgentSpec) -> Agent:
         if spec.model_type == "heavy":
             llm = self._get_llm(settings.heavy_model)
+        elif spec.model_type == "heavy_alt":
+            llm = self._get_llm(settings.heavy_alt_model)
         else:
             llm = self._get_llm(settings.light_model)
         return Agent(
@@ -405,7 +424,7 @@ class AgentRegistry:
             runtime_agent: Agent | None = None
             initialized = True
 
-            if runtime_kind == "local-crewai":
+            if runtime_kind == f"{settings.llm_provider}-crewai" or runtime_kind == "local-crewai":
                 try:
                     runtime_agent = self._build_local_agent(spec)
                 except Exception as exc:
@@ -425,16 +444,43 @@ class AgentRegistry:
         self.booted_at = datetime.now(UTC)
 
     def snapshot(self) -> dict[str, Any]:
-        local_count = sum(1 for node in self.nodes.values() if node.runtime_kind == "local-crewai")
+        local_count = sum(
+            1
+            for node in self.nodes.values()
+            if node.runtime_kind == f"{settings.llm_provider}-crewai"
+            or node.runtime_kind == "local-crewai"
+        )
         external_count = sum(1 for node in self.nodes.values() if node.runtime_kind == "external-service")
         system_count = sum(1 for node in self.nodes.values() if node.runtime_kind == "system-layer")
         initialized_count = sum(1 for node in self.nodes.values() if node.initialized)
 
+        crewai_nodes = [
+            n
+            for n in self.nodes.values()
+            if n.runtime_kind == f"{settings.llm_provider}-crewai"
+            or n.runtime_kind == "local-crewai"
+        ]
+        crewai_total = len(crewai_nodes)
+        crewai_initialized = sum(1 for n in crewai_nodes if n.initialized)
+        init_summary = (
+            f"{crewai_initialized}/{crewai_total} CrewAI LLM agents ready; "
+            f"{initialized_count}/{len(self.nodes)} registry slots OK."
+        )
+
         return {
-            "status": "ready" if initialized_count == len(self.nodes) and not self.errors else "degraded",
+            "status": (
+                "ready"
+                if initialized_count == len(self.nodes)
+                and crewai_initialized == crewai_total
+                and not self.errors
+                else "degraded"
+            ),
             "booted_at": self.booted_at.isoformat() if self.booted_at else None,
             "total_agents": len(self.nodes),
             "initialized_agents": initialized_count,
+            "crewai_total": crewai_total,
+            "crewai_initialized": crewai_initialized,
+            "init_summary": init_summary,
             "local_agents": local_count,
             "external_agents": external_count,
             "system_agents": system_count,
