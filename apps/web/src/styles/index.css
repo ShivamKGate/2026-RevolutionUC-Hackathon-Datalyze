@@ -38,6 +38,7 @@ button {
   border-radius: 10px;
   padding: 0.65rem 1rem;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 button:disabled {
@@ -45,10 +46,69 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .status {
   margin-top: 1rem;
   padding: 0.7rem;
   border-radius: 10px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.detail-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+}
+
+.detail-card code {
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.detail-card p {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  background: #1e3a5f;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+}
+
+ul {
+  padding-left: 1.2rem;
+  margin: 0.4rem 0;
+}
+
+.output-block {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .success {
