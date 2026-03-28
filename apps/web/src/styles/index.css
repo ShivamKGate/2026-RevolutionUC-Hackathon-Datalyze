@@ -64,6 +64,15 @@ button:disabled {
   margin-top: 0.6rem;
 }
 
+.scroll-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
 .detail-card {
   background: #1e293b;
   border: 1px solid #334155;

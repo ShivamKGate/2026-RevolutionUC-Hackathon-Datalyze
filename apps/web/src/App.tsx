@@ -2,9 +2,11 @@ import { useState } from "react";
 
 import {
   getDbStatus,
+  getAgentBootStatus,
   getHealth,
   getOllamaCatalog,
   postAgentsMVP,
+  type AgentBootStatusResponse,
   type AgentMVPResponse,
   type DbStatusResponse,
   type HealthResponse,
@@ -14,6 +16,9 @@ import {
 export default function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [catalog, setCatalog] = useState<OllamaCatalogResponse | null>(null);
+  const [bootStatus, setBootStatus] = useState<AgentBootStatusResponse | null>(
+    null,
+  );
   const [agentResult, setAgentResult] = useState<AgentMVPResponse | null>(null);
   const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -66,17 +71,30 @@ export default function App() {
     setLoading("agents");
     setError(null);
     try {
-      setAgentResult(
-        await postAgentsMVP({
-          company_context:
-            "Small business with mixed sales and operations files.",
-          user_goal: "Find key business risks and top growth opportunities.",
-          run: false,
-        }),
-      );
+      const mvp = await postAgentsMVP({
+        company_context:
+          "Small business with mixed sales and operations files.",
+        user_goal: "Find key business risks and top growth opportunities.",
+        run: false,
+      });
+      setAgentResult(mvp);
+      setBootStatus(await getAgentBootStatus());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
       setAgentResult(null);
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function fetchBootStatus() {
+    setLoading("boot");
+    setError(null);
+    try {
+      setBootStatus(await getAgentBootStatus());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+      setBootStatus(null);
     } finally {
       setLoading(null);
     }
@@ -94,6 +112,9 @@ export default function App() {
           </button>
           <button onClick={fetchCatalog} disabled={loading !== null}>
             {loading === "catalog" ? "Loading..." : "Ollama Catalog"}
+          </button>
+          <button onClick={fetchBootStatus} disabled={loading !== null}>
+            {loading === "boot" ? "Loading..." : "Boot Status"}
           </button>
           <button onClick={initAgents} disabled={loading !== null}>
             {loading === "agents" ? "Initializing..." : "Init Agents"}
@@ -133,14 +154,14 @@ export default function App() {
 
         {agentResult && (
           <div className="status success">
-            <strong>Agents initialized:</strong>
+            <strong>Agents initialized (registry):</strong>
             <ul>
               {agentResult.agents_initialized.map((name) => (
                 <li key={name}>{name}</li>
               ))}
             </ul>
             <p>
-              Tasks: {agentResult.tasks_initialized} | Heavy:{" "}
+              MVP tasks: {agentResult.tasks_initialized} | Heavy:{" "}
               <code>{agentResult.heavy_model}</code> | Light:{" "}
               <code>{agentResult.light_model}</code>
             </p>
@@ -153,22 +174,68 @@ export default function App() {
         {dbStatus?.connected && (
           <div className="status success">
             <strong>Database: {dbStatus.database}</strong>
-            <table style={{ marginTop: "0.75rem", borderCollapse: "collapse", width: "100%" }}>
+            <table
+              style={{
+                marginTop: "0.75rem",
+                borderCollapse: "collapse",
+                width: "100%",
+              }}
+            >
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", paddingRight: "2rem", paddingBottom: "0.25rem" }}>Table</th>
-                  <th style={{ textAlign: "right", paddingBottom: "0.25rem" }}>Rows</th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      paddingRight: "2rem",
+                      paddingBottom: "0.25rem",
+                    }}
+                  >
+                    Table
+                  </th>
+                  <th style={{ textAlign: "right", paddingBottom: "0.25rem" }}>
+                    Rows
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {dbStatus.tables.map((t) => (
                   <tr key={t.name}>
-                    <td style={{ paddingRight: "2rem" }}><code>{t.name}</code></td>
+                    <td style={{ paddingRight: "2rem" }}>
+                      <code>{t.name}</code>
+                    </td>
                     <td style={{ textAlign: "right" }}>{t.row_count}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {bootStatus && (
+          <div className="status success">
+            <strong>Registry:</strong> {bootStatus.status} | initialized{" "}
+            {bootStatus.initialized_agents}/{bootStatus.total_agents}
+            <p>
+              Local: {bootStatus.local_agents} | External:{" "}
+              {bootStatus.external_agents} | System: {bootStatus.system_agents}
+            </p>
+            <p>
+              Orchestrator policy: retries{" "}
+              {bootStatus.orchestrator_policy.max_retries}, timeout{" "}
+              {bootStatus.orchestrator_policy.timeout_seconds}s
+            </p>
+            <div className="scroll-list">
+              {bootStatus.agents.map((node) => (
+                <div className="detail-card" key={node.id}>
+                  <code>{node.name}</code>
+                  <span className="badge">{node.model_type}</span>
+                  <p>
+                    {node.runtime_kind} | model {node.model_resolved} | deps{" "}
+                    {node.dependencies.length}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>

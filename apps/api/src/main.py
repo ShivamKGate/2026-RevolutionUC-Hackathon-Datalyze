@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.error("Database connection FAILED: %s", exc)
     yield
+from services.agent_registry import boot_registry
 
 
 app = FastAPI(
@@ -41,6 +42,11 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.on_event("startup")
+def initialize_agents_on_boot() -> None:
+    boot_registry()
 
 
 @app.get("/")

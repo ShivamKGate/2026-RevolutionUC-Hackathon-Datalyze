@@ -87,3 +87,38 @@ export async function getDbStatus(): Promise<DbStatusResponse> {
 
   return (await response.json()) as DbStatusResponse;
 }
+
+export type BootAgentNode = {
+  id: string;
+  name: string;
+  model_type: string;
+  model_resolved: string;
+  runtime_kind: string;
+  priority: string;
+  dependencies: string[];
+  dependencies_resolved: boolean;
+  initialized: boolean;
+};
+
+export type AgentBootStatusResponse = {
+  status: string;
+  booted_at: string | null;
+  total_agents: number;
+  initialized_agents: number;
+  local_agents: number;
+  external_agents: number;
+  system_agents: number;
+  errors: string[];
+  agents: BootAgentNode[];
+  orchestrator_policy: { max_retries: number; timeout_seconds: number };
+};
+
+export async function getAgentBootStatus(): Promise<AgentBootStatusResponse> {
+  const response = await fetch("/api/v1/agents/boot-status");
+
+  if (!response.ok) {
+    throw new Error(`Boot status fetch failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as AgentBootStatusResponse;
+}

@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     light_model: str = "llama3.2:3b"
     embedding_model: str = "nomic-embed-text"
     database_url: str = ""
+    orchestrator_max_retries: int = 2
+    orchestrator_timeout_seconds: int = 45
+    gemini_api_key: str = ""
+    elevenlabs_api_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
