@@ -67,9 +67,25 @@ function findPython312Launcher() {
     } catch {
       /* continue */
     }
+    const la = process.env.LOCALAPPDATA;
+    if (la) {
+      const exe = path.join(la, "Programs", "Python", "Python312", "python.exe");
+      if (existsSync(exe)) {
+        try {
+          execFileSync(exe, versionProbe, { stdio: "pipe" });
+          return { cmd: exe, prefix: [] };
+        } catch {
+          /* not 3.12 */
+        }
+      }
+    }
   }
 
-  for (const cmd of ["python3.12", "python3", "python"]) {
+  // Windows: try `python` before `python3` — `python3` often resolves to the Store stub.
+  const shims = isWin
+    ? ["python3.12", "python", "python3"]
+    : ["python3.12", "python3", "python"];
+  for (const cmd of shims) {
     try {
       execFileSync(cmd, versionProbe, { stdio: "pipe" });
       return { cmd, prefix: [] };
@@ -113,7 +129,10 @@ Install Python 3.12, then re-run npm run dev.
 
   Or download: https://www.python.org/downloads/release/python-3120/
 
-  After install, ensure "py -3.12" or "python3.12" works in this terminal.
+  After install, fully quit and reopen Cursor (or open a new terminal) so PATH updates.
+
+  If 3.12 is installed but not found, ensure your User PATH lists
+  ...\\Python\\Python312\\ before older Python versions.
 `);
 }
 
