@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BootAgentNodeResponse(BaseModel):
@@ -22,7 +22,16 @@ class AgentBootStatusResponse(BaseModel):
     status: str
     booted_at: str | None
     total_agents: int
-    initialized_agents: int
+    initialized_agents: int = Field(
+        description="Agents with a successful registry slot (CrewAI LLM built, or non-LLM stub).",
+    )
+    crewai_total: int = Field(
+        description="Agents backed by CrewAI + configured LLM provider.",
+    )
+    crewai_initialized: int = Field(
+        description="CrewAI agents whose LLM instance constructed successfully (install litellm for custom Featherless model slugs).",
+    )
+    init_summary: str
     local_agents: int
     external_agents: int
     system_agents: int

@@ -129,3 +129,8 @@ ul {
   background: #450a0a;
   border: 1px solid #991b1b;
 }
+
+.warning {
+  background: #422006;
+  border: 1px solid #a16207;
+}

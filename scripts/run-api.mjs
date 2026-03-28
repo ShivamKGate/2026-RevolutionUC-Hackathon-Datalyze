@@ -20,6 +20,7 @@ const venvPython = isWin
   ? path.join(VENV_DIR, "Scripts", "python.exe")
   : path.join(VENV_DIR, "bin", "python");
 
+// Stamp lives inside .venv: deleting apps/api/.venv (e.g. after git pull) drops the stamp → pip runs again.
 const REQUIREMENTS_STAMP = path.join(VENV_DIR, ".datalyze-requirements.sha256");
 
 function run(cmd, args, opts = {}) {
@@ -112,8 +113,9 @@ function pipInstall() {
   if (!needsPipInstall()) {
     return;
   }
-  console.log("[api] pip install -r apps/api/requirements.txt");
+  console.log("[api] pip install -r apps/api/requirements.txt (new venv or requirements.txt changed)");
   run(venvPython, ["-m", "pip", "install", "--upgrade", "pip"]);
+  // Satisfies new pins and adds any missing packages; skips wheels already satisfied.
   run(venvPython, ["-m", "pip", "install", "-r", REQUIREMENTS]);
   writeRequirementsStamp();
 }

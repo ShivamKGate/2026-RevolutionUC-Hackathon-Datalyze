@@ -1,34 +1,52 @@
+"""
+Application settings are loaded from `apps/api/.env` (see `.env.example`).
+
+Pydantic Settings maps env vars to fields (e.g. HEAVY_MODEL → heavy_model). Do not
+duplicate business defaults here: set values in `.env`. Only optional secrets use an
+empty-string default when the variable is absent.
+"""
+
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Resolve .env relative to this file (apps/api/.env) so it loads correctly
-# regardless of the working directory uvicorn is started from.
 _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
-    app_name: str = "Datalyze API"
-    environment: str = "development"
-    allowed_origins_raw: str = "http://localhost:5173,http://127.0.0.1:5173"
-    ollama_host: str = "http://127.0.0.1:11434"
-    heavy_model: str = "qwen2.5:14b"
-    light_model: str = "llama3.2:3b"
-    embedding_model: str = "nomic-embed-text"
-    database_url: str = ""
-    orchestrator_max_retries: int = 2
-    orchestrator_timeout_seconds: int = 45
-    gemini_api_key: str = ""
-    elevenlabs_api_key: str = ""
-
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
+        extra="ignore",
     )
+
+    app_name: str
+    environment: str
+    allowed_origins_raw: str
+    llm_provider: str
+    llm_base_url: str
+    llm_api_key: str = Field(default="")
+    heavy_model: str
+    heavy_alt_model: str
+    light_model: str
+    embedding_model: str
+    database_url: str = Field(default="")
+    orchestrator_max_retries: int
+    orchestrator_timeout_seconds: int
+    gemini_api_key: str = Field(default="")
+    elevenlabs_api_key: str = Field(default="")
 
     @property
     def allowed_origins(self) -> list[str]:
         return [origin.strip() for origin in self.allowed_origins_raw.split(",") if origin.strip()]
+
+    @property
+    def llm_api_key_configured(self) -> bool:
+        k = (self.llm_api_key or "").strip()
+        if not k or k == "DATALYZE_PLACEHOLDER_KEY":
+            return False
+        return True
 
 
 settings = Settings()

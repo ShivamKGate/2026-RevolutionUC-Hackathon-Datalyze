@@ -1,25 +1,33 @@
+import os
+
 from crewai import Agent, Crew, LLM, Process, Task
 
 from core.config import settings
 
 
 def _normalize_model(model: str) -> str:
-    if "/" in model:
-        return model
-    return f"ollama/{model}"
+    return model
+
+
+def _prime_openai_compat_env() -> None:
+    # CrewAI's OpenAI-compatible providers expect OPENAI_API_KEY at import/runtime.
+    os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
+    os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 
 
 def _build_llm(model_name: str) -> LLM:
+    _prime_openai_compat_env()
     return LLM(
         model=_normalize_model(model_name),
-        base_url=settings.ollama_host,
+        base_url=settings.llm_base_url,
+        api_key=settings.llm_api_key,
     )
 
 
 def build_mvp_crew(user_goal: str, company_context: str) -> tuple[Crew, list[Task], list[Agent]]:
-    # Orchestrator uses heavy (planning / coordination). Sub-agents use light to limit VRAM churn.
-    llm_heavy = _build_llm(settings.heavy_model)
-    llm_light = _build_llm(settings.light_model)
+    # Orchestrator: HEAVY_MODEL (Kimi). Synthesis chain: HEAVY_ALT_MODEL (DeepSeek). LIGHT_MODEL for future light-only steps.
+    llm_orchestrator = _build_llm(settings.heavy_model)
+    llm_heavy_alt = _build_llm(settings.heavy_alt_model)
 
     orchestrator = Agent(
         role="Orchestrator Agent",
@@ -28,7 +36,7 @@ def build_mvp_crew(user_goal: str, company_context: str) -> tuple[Crew, list[Tas
             "You are the Data Allies MVP coordinator for Datalyze. "
             "You convert a business goal into an ordered, practical plan."
         ),
-        llm=llm_heavy,
+        llm=llm_orchestrator,
         verbose=False,
     )
 
@@ -39,7 +47,7 @@ def build_mvp_crew(user_goal: str, company_context: str) -> tuple[Crew, list[Tas
             "You combine mixed business context into a short, structured set "
             "of high-signal findings and assumptions."
         ),
-        llm=llm_light,
+        llm=llm_heavy_alt,
         verbose=False,
     )
 
@@ -50,7 +58,7 @@ def build_mvp_crew(user_goal: str, company_context: str) -> tuple[Crew, list[Tas
             "You produce clear insight bullets that can be rendered in cards "
             "for an executive dashboard."
         ),
-        llm=llm_light,
+        llm=llm_heavy_alt,
         verbose=False,
     )
 
@@ -61,7 +69,7 @@ def build_mvp_crew(user_goal: str, company_context: str) -> tuple[Crew, list[Tas
             "You write concise executive summaries with practical "
             "recommendations and follow-up actions."
         ),
-        llm=llm_light,
+        llm=llm_heavy_alt,
         verbose=False,
     )
 

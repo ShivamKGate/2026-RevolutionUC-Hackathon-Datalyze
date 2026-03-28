@@ -111,7 +111,7 @@ export default function App() {
             {loading === "health" ? "Checking..." : "Check API"}
           </button>
           <button onClick={fetchCatalog} disabled={loading !== null}>
-            {loading === "catalog" ? "Loading..." : "Ollama Catalog"}
+            {loading === "catalog" ? "Loading..." : "Model Catalog"}
           </button>
           <button onClick={fetchBootStatus} disabled={loading !== null}>
             {loading === "boot" ? "Loading..." : "Boot Status"}
@@ -137,9 +137,15 @@ export default function App() {
           </div>
         )}
 
+        {catalog && !catalog.llm_api_key_configured && (
+          <div className="status warning">
+            <strong>LLM sanity:</strong> {catalog.llm_sanity_message}
+          </div>
+        )}
+
         {catalog && (
           <div className="status success">
-            <strong>Hardware:</strong> {catalog.hardware_summary}
+            <strong>LLM Stack:</strong> {catalog.hardware_summary}
             <div className="detail-grid">
               {catalog.models.map((m) => (
                 <div key={m.id} className="detail-card">
@@ -161,8 +167,9 @@ export default function App() {
               ))}
             </ul>
             <p>
-              MVP tasks: {agentResult.tasks_initialized} | Heavy:{" "}
-              <code>{agentResult.heavy_model}</code> | Light:{" "}
+              MVP tasks: {agentResult.tasks_initialized} | Orchestrator (heavy):{" "}
+              <code>{agentResult.heavy_model}</code> | Heavy alt:{" "}
+              <code>{agentResult.heavy_alt_model}</code> | Light:{" "}
               <code>{agentResult.light_model}</code>
             </p>
             {agentResult.output && (
@@ -215,6 +222,7 @@ export default function App() {
           <div className="status success">
             <strong>Registry:</strong> {bootStatus.status} | initialized{" "}
             {bootStatus.initialized_agents}/{bootStatus.total_agents}
+            <p>{bootStatus.init_summary}</p>
             <p>
               Local: {bootStatus.local_agents} | External:{" "}
               {bootStatus.external_agents} | System: {bootStatus.system_agents}

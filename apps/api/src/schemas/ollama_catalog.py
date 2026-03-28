@@ -10,3 +10,5 @@ class OllamaCatalogResponse(BaseModel):
     )
     models: list[OllamaModelEntry]
     pull_commands: list[str]
+    llm_api_key_configured: bool
+    llm_sanity_message: str

@@ -47,8 +47,10 @@ def build_agents_mvp(payload: AgentMVPRequest) -> AgentMVPResponse:
     return AgentMVPResponse(
         status="ok",
         run_executed=payload.run,
-        ollama_host=settings.ollama_host,
+        llm_provider=settings.llm_provider,
+        llm_base_url=settings.llm_base_url,
         heavy_model=settings.heavy_model,
+        heavy_alt_model=settings.heavy_alt_model,
         light_model=settings.light_model,
         embedding_model=settings.embedding_model,
         agents_initialized=registry_agent_names,
@@ -59,14 +61,24 @@ def build_agents_mvp(payload: AgentMVPRequest) -> AgentMVPResponse:
 
 @router.get("/ollama-catalog", response_model=OllamaCatalogResponse)
 def ollama_catalog() -> OllamaCatalogResponse:
+    key_ok = settings.llm_api_key_configured
+    sanity = (
+        "LLM_API_KEY is set; remote inference should work for run=true."
+        if key_ok
+        else "Set LLM_API_KEY in apps/api/.env (Featherless API key). Init/boot works; live generation will fail until the key is set."
+    )
     return OllamaCatalogResponse(
         hardware_summary=HARDWARE_SUMMARY,
         defaults={
-            "ollama_host": settings.ollama_host,
+            "llm_provider": settings.llm_provider,
+            "llm_base_url": settings.llm_base_url,
             "heavy_model": settings.heavy_model,
+            "heavy_alt_model": settings.heavy_alt_model,
             "light_model": settings.light_model,
             "embedding_model": settings.embedding_model,
         },
         models=MODELS,
         pull_commands=pull_commands(),
+        llm_api_key_configured=key_ok,
+        llm_sanity_message=sanity,
     )

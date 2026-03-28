@@ -23,8 +23,10 @@ export type AgentMVPRequest = {
 export type AgentMVPResponse = {
   status: string;
   run_executed: boolean;
-  ollama_host: string;
+  llm_provider: string;
+  llm_base_url: string;
   heavy_model: string;
+  heavy_alt_model: string;
   light_model: string;
   embedding_model: string;
   agents_initialized: string[];
@@ -54,6 +56,8 @@ export type OllamaCatalogResponse = {
   defaults: Record<string, string>;
   models: { id: string; tier: string; notes: string }[];
   pull_commands: string[];
+  llm_api_key_configured: boolean;
+  llm_sanity_message: string;
 };
 
 export async function getOllamaCatalog(): Promise<OllamaCatalogResponse> {
@@ -105,6 +109,9 @@ export type AgentBootStatusResponse = {
   booted_at: string | null;
   total_agents: number;
   initialized_agents: number;
+  crewai_total: number;
+  crewai_initialized: number;
+  init_summary: string;
   local_agents: number;
   external_agents: number;
   system_agents: number;

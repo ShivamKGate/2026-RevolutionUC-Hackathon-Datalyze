@@ -16,8 +16,10 @@ class AgentMVPRequest(BaseModel):
 class AgentMVPResponse(BaseModel):
     status: str
     run_executed: bool
-    ollama_host: str
+    llm_provider: str
+    llm_base_url: str
     heavy_model: str
+    heavy_alt_model: str
     light_model: str
     embedding_model: str
     agents_initialized: list[str]
