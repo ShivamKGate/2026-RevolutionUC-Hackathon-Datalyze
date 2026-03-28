@@ -38,6 +38,15 @@ From the repo root, `npm run dev:api` runs `scripts/run-api.mjs`, which creates 
   - `run=false` only initializes crew objects (safe MVP handshake with the API skeleton).
   - `run=true` runs a sequential crew: **`HEAVY_MODEL`** for the orchestrator only; **`LIGHT_MODEL`** for aggregator, insights, and executive summary (see `src/services/crew_mvp.py`).
 
+## Boot-Time Agent Registry
+
+- Route: `GET /api/v1/agents/boot-status`
+- Purpose: expose startup status for the full architecture registry.
+- Behavior:
+  - Registry initializes at API startup (`src/main.py` startup hook).
+  - Includes all scoped agents with dependencies, model type, runtime mode, and initialization state.
+  - Returns orchestrator policy (`ORCHESTRATOR_MAX_RETRIES`, `ORCHESTRATOR_TIMEOUT_SECONDS`).
+
 ## Ollama model catalog (team hardware)
 
 - Route: `GET /api/v1/agents/ollama-catalog`
