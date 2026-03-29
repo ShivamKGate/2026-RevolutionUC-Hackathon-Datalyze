@@ -34,6 +34,7 @@ class ProfileUpdateRequest(BaseModel):
 class CompanyUpdateRequest(BaseModel):
     company_name: str = Field(min_length=1, max_length=200)
     public_scrape_enabled: bool | None = None
+    onboarding_path: str | None = Field(default=None, max_length=120)
 
 
 class SetupRequest(BaseModel):

@@ -101,6 +101,7 @@ export async function updateUserProfile(
 export async function updateUserCompany(body: {
   company_name: string;
   public_scrape_enabled?: boolean | null;
+  onboarding_path?: string | null;
 }): Promise<User> {
   const response = await fetch("/api/v1/users/me/company", {
     method: "PATCH",
@@ -244,7 +245,7 @@ export async function getAgentBootStatus(): Promise<AgentBootStatusResponse> {
   return (await response.json()) as AgentBootStatusResponse;
 }
 
-// ─── Uploads & pipeline runs (placeholder backend) ───────────────────────────
+// ─── Uploads & pipeline runs ──────────────────────────────────────────────────
 
 export type UploadedFile = {
   id: number;
@@ -301,6 +302,28 @@ export type PipelineRun = {
   pipeline_log: string[];
   agent_activity: AgentActivityRow[];
   source_file_ids: number[];
+  track: string | null;
+  config_json: Record<string, unknown>;
+  final_status_class: string | null;
+  replay_payload: Record<string, unknown> | null;
+  run_dir_path: string | null;
+};
+
+export type PipelineRunLog = {
+  id: number;
+  timestamp: string | null;
+  stage: string;
+  agent: string;
+  action: string;
+  detail: string;
+  status: string;
+  meta: Record<string, unknown>;
+};
+
+export type PipelineRunReplay = {
+  run: PipelineRun;
+  logs: PipelineRunLog[];
+  replay_payload: Record<string, unknown>;
 };
 
 export async function listPipelineRuns(): Promise<PipelineRun[]> {
@@ -341,4 +364,30 @@ export async function startPipelineRun(body: {
     throw new Error(`Start run failed (${response.status}): ${detail}`);
   }
   return (await response.json()) as PipelineRun;
+}
+
+export async function getPipelineRunLogs(
+  slug: string,
+): Promise<PipelineRunLog[]> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/logs`,
+    {
+      credentials: "include",
+    },
+  );
+  if (!response.ok) throw new Error(`Run logs failed (${response.status})`);
+  return (await response.json()) as PipelineRunLog[];
+}
+
+export async function getPipelineRunReplay(
+  slug: string,
+): Promise<PipelineRunReplay> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/replay`,
+    {
+      credentials: "include",
+    },
+  );
+  if (!response.ok) throw new Error(`Run replay failed (${response.status})`);
+  return (await response.json()) as PipelineRunReplay;
 }

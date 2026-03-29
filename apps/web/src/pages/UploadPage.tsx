@@ -76,7 +76,7 @@ export default function UploadPage() {
           <p className="upload-header-hint">
             Enable <strong>Transcrape public data</strong> in Settings → Company
             to start an analysis without uploading files (uses public context
-            only — placeholder for now).
+            only).
           </p>
         )}
       </div>

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     database_url: str = Field(default="")
     orchestrator_max_retries: int = Field(default=2)
     orchestrator_timeout_seconds: int = Field(default=45)
+    # Orchestrator runtime policy flags
+    orch_enable_parallel_branches: bool = Field(default=False)
+    orch_enable_adaptive_policy: bool = Field(default=False)
+    orch_enable_stage_gates: bool = Field(default=True)
+    orch_max_run_seconds: int = Field(default=900)
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")
@@ -45,13 +50,19 @@ class Settings(BaseSettings):
     cookie_name: str = Field(default="datalyze_token")
     cookie_secure: bool = Field(default=False)
 
-    @field_validator("orchestrator_max_retries", "orchestrator_timeout_seconds", mode="before")
+    @field_validator(
+        "orchestrator_max_retries", "orchestrator_timeout_seconds", "orch_max_run_seconds",
+        mode="before",
+    )
     @classmethod
     def _empty_int_uses_default(cls, v: object, info: ValidationInfo) -> object:
         if isinstance(v, str) and not v.strip():
-            if info.field_name == "orchestrator_max_retries":
-                return 2
-            return 45
+            defaults = {
+                "orchestrator_max_retries": 2,
+                "orchestrator_timeout_seconds": 45,
+                "orch_max_run_seconds": 900,
+            }
+            return defaults.get(info.field_name, 0)
         return v
 
     @field_validator(

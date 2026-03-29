@@ -23,5 +23,9 @@ Thumbs.db
 
 Miscellaneous/data/sources
 
+# Orchestrator live-test artifacts (timestamped smoke, replay validation); keep under version control only if you opt in
+Miscellaneous/tests/Orchestrator_tests/
+
 # Local private uploads per company (public scrape artifacts under data/company/*/public/ may be committed)
 data/company/**/private/
+data/pipeline_runs/

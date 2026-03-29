@@ -69,7 +69,12 @@ export default function DashboardPage() {
     }
   }
 
-  const completed = runs.filter((r) => r.status === "completed").length;
+  const completed = runs.filter(
+    (r) => r.status === "completed" || r.status === "completed_with_warnings",
+  ).length;
+  const running = runs.filter(
+    (r) => r.status === "running" || r.status === "pending",
+  ).length;
 
   return (
     <div>
@@ -80,16 +85,19 @@ export default function DashboardPage() {
           <div className="stat-value">{runs.length}</div>
         </div>
         <div className="stat-card">
-          <h3>Completed (stub)</h3>
+          <h3>Completed</h3>
           <div className="stat-value">{completed}</div>
         </div>
         <div className="stat-card">
-          <h3>Status</h3>
+          <h3>In progress</h3>
           <div
             className="stat-value"
-            style={{ fontSize: "1.25rem", color: "#4ade80" }}
+            style={{
+              fontSize: "1.25rem",
+              color: running > 0 ? "#fbbf24" : "#4ade80",
+            }}
           >
-            Ready
+            {running > 0 ? `${running} running` : "Idle"}
           </div>
         </div>
       </div>

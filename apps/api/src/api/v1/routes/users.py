@@ -44,25 +44,60 @@ def patch_company(body: CompanyUpdateRequest, request: Request):
     user_id = user["id"]
     db = SessionLocal()
     try:
-        if body.public_scrape_enabled is not None:
+        company_name = body.company_name.strip()
+        current_row = db.execute(
+            text("SELECT company_id FROM users WHERE id=:uid"),
+            {"uid": user_id},
+        ).fetchone()
+        if current_row is None or current_row.company_id is None:
+            raise ValueError("User has no company assignment")
+        current_company_id = int(current_row.company_id)
+
+        target_row = db.execute(
+            text(
+                "SELECT id FROM companies WHERE lower(name)=lower(:company_name) "
+                "ORDER BY id ASC LIMIT 1"
+            ),
+            {"company_name": company_name},
+        ).fetchone()
+        target_company_id = int(target_row.id) if target_row else current_company_id
+
+        onboarding_path = _normalize_optional_str(body.onboarding_path)
+        if target_company_id != current_company_id:
             db.execute(
-                text(
-                    "UPDATE companies SET name=:company_name, public_scrape_enabled=:pse "
-                    "WHERE id=(SELECT company_id FROM users WHERE id=:uid)"
-                ),
-                {
-                    "company_name": body.company_name.strip(),
-                    "pse": body.public_scrape_enabled,
-                    "uid": user_id,
-                },
+                text("UPDATE users SET company_id=:cid, updated_at=NOW() WHERE id=:uid"),
+                {"cid": target_company_id, "uid": user_id},
             )
+            if body.public_scrape_enabled is not None:
+                db.execute(
+                    text("UPDATE companies SET public_scrape_enabled=:pse WHERE id=:cid"),
+                    {"pse": body.public_scrape_enabled, "cid": target_company_id},
+                )
         else:
+            if body.public_scrape_enabled is not None:
+                db.execute(
+                    text(
+                        "UPDATE companies SET name=:company_name, public_scrape_enabled=:pse "
+                        "WHERE id=:cid"
+                    ),
+                    {
+                        "company_name": company_name,
+                        "pse": body.public_scrape_enabled,
+                        "cid": current_company_id,
+                    },
+                )
+            else:
+                db.execute(
+                    text("UPDATE companies SET name=:company_name WHERE id=:cid"),
+                    {"company_name": company_name, "cid": current_company_id},
+                )
+        if onboarding_path is not None:
             db.execute(
                 text(
-                    "UPDATE companies SET name=:company_name "
-                    "WHERE id=(SELECT company_id FROM users WHERE id=:uid)"
+                    "UPDATE users SET onboarding_path=:onboarding_path, updated_at=NOW() "
+                    "WHERE id=:uid"
                 ),
-                {"company_name": body.company_name.strip(), "uid": user_id},
+                {"onboarding_path": onboarding_path, "uid": user_id},
             )
         db.commit()
         return fetch_user_out(db, user_id)

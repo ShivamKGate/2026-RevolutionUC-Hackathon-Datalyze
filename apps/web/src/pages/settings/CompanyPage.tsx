@@ -2,10 +2,18 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { updateUserCompany } from "../../lib/api";
 
+const TRACK_OPTIONS = [
+  { value: "deep_analysis", label: "Predictive / Deep Analysis" },
+  { value: "automations", label: "Automation Strategy" },
+  { value: "business_automations", label: "Business Optimization" },
+  { value: "supply_chain", label: "Supply Chain & Operations" },
+];
+
 export default function CompanyPage() {
   const { user, refreshUser } = useAuth();
   const [companyName, setCompanyName] = useState("");
   const [publicScrape, setPublicScrape] = useState(false);
+  const [onboardingPath, setOnboardingPath] = useState("deep_analysis");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +22,7 @@ export default function CompanyPage() {
     if (!user) return;
     setCompanyName(user.company_name ?? "");
     setPublicScrape(Boolean(user.public_scrape_enabled));
+    setOnboardingPath(user.onboarding_path ?? "deep_analysis");
   }, [user]);
 
   async function handleSubmit(e: FormEvent) {
@@ -30,6 +39,7 @@ export default function CompanyPage() {
       await updateUserCompany({
         company_name: name,
         public_scrape_enabled: publicScrape,
+        onboarding_path: onboardingPath,
       });
       await refreshUser();
       setSaved(true);
@@ -90,14 +100,31 @@ export default function CompanyPage() {
             />
             <span className="toggle-hint">
               When on, you can start an analysis from the dashboard without
-              uploading files (placeholder pipeline). Uploads are still saved
-              under{" "}
-              <code className="inline-code">
-                data/company/&lt;name&gt;/private
-              </code>
-              .
+              uploading files. Uploads remain shared across users in your
+              company workspace.
             </span>
           </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="track-path">
+            Default analysis track
+          </label>
+          <select
+            id="track-path"
+            className="form-input"
+            value={onboardingPath}
+            onChange={(e) => setOnboardingPath(e.target.value)}
+          >
+            {TRACK_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <p className="toggle-hint" style={{ marginTop: "0.5rem" }}>
+            Track changes apply to future runs only.
+          </p>
         </div>
 
         <div

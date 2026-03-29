@@ -407,10 +407,12 @@ DONE CRITERIA:
 You are the implementation agent for Datalyze. Execute this work end-to-end with production quality.
 
 ABSOLUTE CONTEXT SOURCES (read these first, fully):
-1) .cursor/plans/agent_specialization_refactor_1e99bf6f.plan.md
-2) .cursor/plans/orchestrator_pipeline_runtime_master_plan_6103e03d.plan.md
+
+1. .cursor/plans/agent_specialization_refactor_1e99bf6f.plan.md
+2. .cursor/plans/orchestrator_pipeline_runtime_master_plan_6103e03d.plan.md
 
 MANDATORY RULE:
+
 - Do NOT drop or weaken any requirement from Kartavya’s existing “Claude Code Execution Prompt (Large Block)” in the orchestrator plan.
 - Treat all requirements in that prompt as still active.
 - This prompt ADDS specialization and test rigor on top of it; it does not replace or remove anything.
@@ -419,25 +421,27 @@ PRIMARY OBJECTIVE:
 Implement all phases in the specialization plan completely, while preserving clean integration boundaries with orchestrator runtime work.
 Focus scope: non-orchestrator agent specialization (except data_provenance_tracker), modular per-agent files, strict JSON outputs, deterministic behavior, low/medium token outputs, behavior-aware verification, and merge-safe handoff.
 
-==================================================
+# ==================================================
+
 IMPLEMENTATION REQUIREMENTS
-==================================================
 
 A) Scope and boundaries
+
 - In-scope: all current non-orchestrator agents except `data_provenance_tracker`.
 - Out-of-scope: orchestrator runtime internals/policies/persistence/replay logic.
 - Preserve integration seam with orchestrator adapter envelope:
   {
-    "status": "ok|warning|error",
-    "summary": "string",
-    "artifacts": [],
-    "next_hints": [],
-    "confidence": 0.0,
-    "errors": []
+  "status": "ok|warning|error",
+  "summary": "string",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.0,
+  "errors": []
   }
 - Keep model assignment centralized in registry (not hardcoded in per-agent files).
 
 B) Architecture refactor goals
+
 - Replace MVP single-file pattern with one file per specialized agent.
 - Each agent file must include:
   - identity constants
@@ -451,6 +455,7 @@ B) Architecture refactor goals
 - Update route wiring and imports accordingly without breaking compatibility unnecessarily.
 
 C) Behavior quality requirements
+
 - Strict agents (processors/classifiers/cleaning/metadata/conflict/search/transforms): hard in-scope behavior.
 - Guarded agents (synthesis/summary/strategy): scoped synthesis with guardrails.
 - JSON-only outputs across all in-scope agents.
@@ -461,13 +466,15 @@ D) Verification and testing requirements (HIGH PRIORITY)
 You must go beyond “hi/hello” checks.
 
 1. Upgrade verification logic to test:
+
 - valid JSON parseability
 - required keys per agent schema
 - role/scope compliance heuristics
 - concise response budget checks
 - adapter-envelope normalization compatibility
 
-2. Build an intensive test matrix including:
+1. Build an intensive test matrix including:
+
 - nominal case per agent
 - edge input case per agent
 - malformed/insufficient input case per agent
@@ -476,18 +483,21 @@ You must go beyond “hi/hello” checks.
 - performance/timing checks where practical
 - external adapter behavior checks for gemini/vision/elevenlabs pathways as applicable
 
-3. Persist deep test evidence in:
+1. Persist deep test evidence in:
+
 - Miscellaneous/tests/
 
-4. Required test artifacts (timestamped):
-- <timestamp>_agent-specialization-validation.md
-- <timestamp>_agent-schema-compliance.json
-- <timestamp>_agent-scope-guard-results.json
-- <timestamp>_agent-determinism-report.json
-- <timestamp>_agent-performance-smoke.txt
-- <timestamp>_integration-normalization-report.md
+1. Required test artifacts (timestamped):
 
-5. Iteration tracking over time:
+- agent-specialization-validation.md
+- agent-schema-compliance.json
+- agent-scope-guard-results.json
+- agent-determinism-report.json
+- agent-performance-smoke.txt
+- integration-normalization-report.md
+
+1. Iteration tracking over time:
+
 - Maintain/append a cumulative ledger:
   - Miscellaneous/tests/agent_test_history.jsonl
 - One JSONL record per test run with:
@@ -506,6 +516,7 @@ You must go beyond “hi/hello” checks.
   - show pass rate deltas and regressions by agent.
 
 E) Execution sequence (must follow)
+
 1. Read both plan files fully and produce a concrete execution checklist.
 2. Implement Phase 0 alignment guardrails and contract seam freezing.
 3. Implement Phase 1 contract pack (per-agent schema + strictness profiles).
@@ -517,6 +528,7 @@ E) Execution sequence (must follow)
 9. Save all reports under Miscellaneous/tests with timestamps.
 
 F) Safety and merge quality constraints
+
 - Minimize conflict surface with orchestrator branch.
 - Do not alter orchestrator internals except adapter-facing normalization seams.
 - Keep changes modular and easy to cherry-pick.
@@ -527,6 +539,7 @@ F) Safety and merge quality constraints
   - how normalization bridges to orchestrator adapter
 
 G) Definition of done (must satisfy all)
+
 - One-file-per-agent specialization complete for all in-scope non-orchestrator agents.
 - JSON-only output contracts enforced.
 - Verify flow validates behavior + schema + scope + normalization (not just connectivity).
@@ -535,16 +548,18 @@ G) Definition of done (must satisfy all)
 - Historical test tracking enabled for iteration-over-time comparisons.
 - Merge handoff notes explicitly document integration with orchestrator plan.
 
-==================================================
+# ==================================================
+
 DELIVERABLE FORMAT
-==================================================
+
 When finished, output:
-1) What was implemented by phase
-2) Files changed/added
-3) Test matrix executed
-4) Pass/fail summary by agent
-5) Regression or risk list
-6) Exact paths of all saved test artifacts in Miscellaneous/tests
-7) Merge handoff notes for teammate integration
+
+1. What was implemented by phase
+2. Files changed/added
+3. Test matrix executed
+4. Pass/fail summary by agent
+5. Regression or risk list
+6. Exact paths of all saved test artifacts in Miscellaneous/tests
+7. Merge handoff notes for teammate integration
 
 Do not stop at partial completion. Complete implementation, verification, and documentation end-to-end.
