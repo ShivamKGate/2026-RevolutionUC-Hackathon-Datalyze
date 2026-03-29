@@ -1,11 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 type Props = {
   title: string;
   summary?: ReactNode;
   defaultOpen?: boolean;
   storageKey?: string;
-  priority?: number;
   children: ReactNode;
 };
 
@@ -23,7 +22,6 @@ export function CollapsibleAnalysisSection({
     }
     return defaultOpen;
   });
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (storageKey) {
@@ -48,7 +46,7 @@ export function CollapsibleAnalysisSection({
         </span>
       </button>
       {open && (
-        <div ref={contentRef} className="collapsible-section-body">
+        <div className="collapsible-section-body">
           {children}
         </div>
       )}
