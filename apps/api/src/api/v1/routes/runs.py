@@ -17,11 +17,15 @@ from sqlalchemy import text
 from api.v1.routes.auth import get_current_user
 from db.session import SessionLocal
 from schemas.files_runs import (
+    AnalysisChatRequest,
+    AnalysisChatResponse,
     PipelineRunLogOut,
     PipelineRunOut,
     RunTitlePatchRequest,
     StartPipelineRunRequest,
 )
+from services.analysis_chat_context import build_analysis_chat_context
+from services.external_agent_clients import llm_chat_with_messages
 from services.run_title import propose_analysis_title_from_replay_payload
 from services.orchestrator_runtime.cancellation import request_cancel_run
 from services.orchestrator_runtime.persistence import db_get_run_logs
@@ -242,16 +246,23 @@ def _terminate_run_process(slug: str) -> None:
         logger.error("Run %s: worker process could not be stopped", slug)
 
 
-@router.post("/start", response_model=PipelineRunOut)
-def start_run(request: Request, body: StartPipelineRunRequest):
-    user = get_current_user(request)
+def execute_pipeline_start(user: dict, body: StartPipelineRunRequest) -> PipelineRunOut:
+    """Queue a pipeline run (DB row + orchestrator worker). Used by POST /runs/start and Datalyze Chat."""
     company_id, _ = _require_company(user)
     user_id = int(user["id"])
     user_name = str(user.get("name") or "user")
     onboarding_path = body.onboarding_path or user.get("onboarding_path")
-    scrape = bool(user.get("public_scrape_enabled"))
+    if body.public_scrape_enabled is not None:
+        scrape = bool(body.public_scrape_enabled)
+    else:
+        scrape = bool(user.get("public_scrape_enabled"))
 
     file_ids = [int(x) for x in body.uploaded_file_ids]
+    custom_base = (body.custom_base_track or "").strip() or None
+    if custom_base and custom_base.lower() == "auto":
+        custom_base = "predictive"
+    pick_rationale = (body.pipeline_selection_rationale or "").strip() or None
+    dz_goal = (body.datalyze_user_instruction or "").strip() or None
 
     if not file_ids and not scrape:
         raise HTTPException(
@@ -262,7 +273,11 @@ def start_run(request: Request, body: StartPipelineRunRequest):
     db = SessionLocal()
     try:
         track = resolve_track(onboarding_path).value
-        _validate_file_ids(db, company_id, file_ids, track=track if file_ids else None)
+        if file_ids:
+            if track == "custom_analysis":
+                _validate_file_ids(db, company_id, file_ids, track=None)
+            else:
+                _validate_file_ids(db, company_id, file_ids, track=track)
         source_files_meta = _fetch_source_file_meta(db, company_id, file_ids)
 
         slug = secrets.token_urlsafe(12).replace("-", "_")[:32]
@@ -297,6 +312,17 @@ def start_run(request: Request, body: StartPipelineRunRequest):
                         "public_scrape_enabled": scrape,
                         "source_file_count": len(file_ids),
                         "force_new": bool(body.force_new),
+                        "custom_base_track": custom_base,
+                        **(
+                            {"datalyze_pipeline_rationale": pick_rationale}
+                            if pick_rationale
+                            else {}
+                        ),
+                        **(
+                            {"datalyze_user_instruction": dz_goal}
+                            if dz_goal
+                            else {}
+                        ),
                     },
                 ),
             },
@@ -324,7 +350,8 @@ def start_run(request: Request, body: StartPipelineRunRequest):
             source_files_meta,
             onboarding_path,
             scrape,
-            bool(body.force_new),  # skip_input_dedup: "force new" bypasses 24h duplicate short-circuit
+            bool(body.force_new),
+            custom_base,
         ),
         name=f"run-{row.slug[:12]}",
         daemon=True,
@@ -344,6 +371,12 @@ def start_run(request: Request, body: StartPipelineRunRequest):
         started_by_name=str(user.get("name") or user.get("email") or "").strip()
         or None,
     )
+
+
+@router.post("/start", response_model=PipelineRunOut)
+def start_run(request: Request, body: StartPipelineRunRequest):
+    user = get_current_user(request)
+    return execute_pipeline_start(user, body)
 
 
 @router.post("/stop-active")
@@ -683,6 +716,83 @@ def generate_run_title(request: Request, slug: str):
     if row2 is None:
         raise HTTPException(status_code=404, detail="Run not found")
     return _row_to_out(row2)
+
+
+_ANALYSIS_CHAT_SYSTEM = (
+    "You are “Analysis Chat” for one completed Datalyze pipeline run. "
+    "Answer only using the CONTEXT block (orchestrator memory, replay subset, file excerpts). "
+    "If something is not in context, say you do not have it. Be concise, accurate, and helpful. "
+    "Do not claim you can add files or re-run the pipeline from this chat."
+)
+
+
+@router.post("/{slug}/analysis-chat", response_model=AnalysisChatResponse)
+def post_analysis_chat(request: Request, slug: str, body: AnalysisChatRequest):
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    if not body.messages:
+        raise HTTPException(status_code=400, detail="messages required")
+
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                f"SELECT pr.status, pr.memory_json, pr.replay_payload, pr.source_file_ids "
+                f"FROM pipeline_runs pr WHERE pr.slug=:slug AND pr.company_id=:cid"
+            ),
+            {"slug": slug, "cid": company_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    st = str(row.status)
+    if st not in ("completed", "completed_with_warnings"):
+        raise HTTPException(
+            status_code=400,
+            detail="Analysis Chat is only available after the run completes.",
+        )
+
+    mem = _coerce_json_obj(getattr(row, "memory_json", None))
+    rp = _coerce_json_obj(getattr(row, "replay_payload", None))
+    sfi = row.source_file_ids
+    if isinstance(sfi, list):
+        fids = [int(x) for x in sfi]
+    else:
+        fids = []
+
+    context = build_analysis_chat_context(
+        company_id=company_id,
+        memory_json=mem,
+        replay_payload=rp,
+        source_file_ids=fids,
+    )
+    system = f"{_ANALYSIS_CHAT_SYSTEM}\n\n--- CONTEXT ---\n{context}"
+
+    chat_turns: list[tuple[str, str]] = []
+    for m in body.messages[-40:]:
+        role = (m.role or "").strip().lower()
+        msg_body = (m.content or "").strip()
+        if not msg_body:
+            continue
+        if role == "assistant":
+            chat_turns.append(("model", msg_body))
+        else:
+            chat_turns.append(("user", msg_body))
+
+    if not chat_turns:
+        raise HTTPException(status_code=400, detail="No non-empty messages")
+
+    try:
+        reply = llm_chat_with_messages(chat_turns, system_instruction=system)
+    except Exception as e:
+        logger.warning("analysis-chat LLM failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail="Could not generate a reply (model error).",
+        ) from e
+
+    return AnalysisChatResponse(reply=reply)
 
 
 @router.get("/{slug}", response_model=PipelineRunOut)

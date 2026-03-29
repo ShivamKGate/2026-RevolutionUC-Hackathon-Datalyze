@@ -6,7 +6,7 @@ Track edits affect future runs only.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 
 from services.orchestrator_runtime.contracts import StageID
@@ -17,6 +17,7 @@ class TrackID(str, Enum):
     AUTOMATION = "automation"
     OPTIMIZATION = "optimization"
     SUPPLY_CHAIN = "supply_chain"
+    CUSTOM = "custom_analysis"  # Datalyze Chat only (not a preferences track)
 
 
 # Map user-facing onboarding_path values to canonical track IDs
@@ -35,6 +36,13 @@ ONBOARDING_PATH_TO_TRACK: dict[str, TrackID] = {
     "optimization": TrackID.OPTIMIZATION,
     "supply chain": TrackID.SUPPLY_CHAIN,
     "supply_chain": TrackID.SUPPLY_CHAIN,
+    "Datalyze Chat": TrackID.CUSTOM,
+    "DatalyzeChat": TrackID.CUSTOM,
+    "datalyze_chat": TrackID.CUSTOM,
+    # Legacy aliases (older clients / stored onboarding_path)
+    "DataLyz Chat": TrackID.CUSTOM,
+    "datalyz_chat": TrackID.CUSTOM,
+    "custom_analysis": TrackID.CUSTOM,
 }
 
 DEFAULT_TRACK = TrackID.PREDICTIVE
@@ -221,8 +229,70 @@ TRACK_PROFILES: dict[TrackID, TrackProfile] = {
             _FINALIZE_STAGE,
         ],
     ),
+    # Placeholder; `profile_for_run` replaces stages from `custom_base_track` when needed.
+    TrackID.CUSTOM: TrackProfile(
+        track_id=TrackID.CUSTOM,
+        name="Custom analysis",
+        description="Datalyze Chat — pipeline stages follow the selected base track.",
+        focus_agents=["trend_forecasting", "insight_generation", "sentiment_analysis"],
+        stages=[
+            _CLASSIFY_STAGE,
+            _INGEST_STAGE,
+            _PROCESS_STAGE,
+            StageConfig(
+                stage_id=StageID.AGGREGATE,
+                agents=["aggregator"],
+                optional_agents=["public_data_scraper"],
+                quality_gate=True,
+            ),
+            StageConfig(
+                stage_id=StageID.ANALYZE,
+                agents=["conflict_detection", "trend_forecasting",
+                        "sentiment_analysis", "knowledge_graph_builder"],
+                quality_gate=True,
+            ),
+            StageConfig(
+                stage_id=StageID.SYNTHESIZE,
+                agents=["insight_generation", "swot_analysis"],
+                quality_gate=True,
+            ),
+            _FINALIZE_STAGE,
+        ],
+    ),
 }
 
 
 def get_track_profile(track_id: TrackID) -> TrackProfile:
     return TRACK_PROFILES[track_id]
+
+
+def profile_for_run(track_id: TrackID, custom_base_track: str | None) -> TrackProfile:
+    """
+    For CUSTOM runs, reuse stages/focus from one of the four standard tracks (default: predictive).
+    """
+    if track_id != TrackID.CUSTOM:
+        return get_track_profile(track_id)
+    raw = (custom_base_track or "").strip() or TrackID.PREDICTIVE.value
+    try:
+        base_tid = TrackID(raw)
+    except ValueError:
+        base_tid = TrackID.PREDICTIVE
+    if base_tid == TrackID.CUSTOM:
+        base_tid = TrackID.PREDICTIVE
+    if base_tid not in (
+        TrackID.PREDICTIVE,
+        TrackID.AUTOMATION,
+        TrackID.OPTIMIZATION,
+        TrackID.SUPPLY_CHAIN,
+    ):
+        base_tid = TrackID.PREDICTIVE
+    base = get_track_profile(base_tid)
+    return replace(
+        base,
+        track_id=TrackID.CUSTOM,
+        name="Custom analysis",
+        description=(
+            "Datalyze Chat — same orchestrator and agents as "
+            f"“{base.name}”, scoped to your uploads and settings."
+        ),
+    )

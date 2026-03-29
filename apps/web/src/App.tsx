@@ -11,6 +11,7 @@ import UploadPage from "./pages/UploadPage";
 import DeveloperPage from "./pages/DeveloperPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AnalysisDetailPage from "./pages/AnalysisDetailPage";
+import DatalyzeChatPage from "./pages/DatalyzeChatPage";
 import AdminPage from "./pages/AdminPage";
 import ProfilePage from "./pages/settings/ProfilePage";
 import CompanyPage from "./pages/settings/CompanyPage";
@@ -28,6 +29,11 @@ export default function App() {
           <Route path="/setup" element={<SetupPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/datalyze-chat" element={<DatalyzeChatPage />} />
+            <Route
+              path="/datalyz-chat"
+              element={<Navigate to="/datalyze-chat" replace />}
+            />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/analysis/:slug" element={<AnalysisDetailPage />} />
             <Route path="/admin" element={<AdminPage />} />

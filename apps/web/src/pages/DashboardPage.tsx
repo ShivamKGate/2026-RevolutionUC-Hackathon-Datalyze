@@ -20,6 +20,7 @@ const TRACK_BADGE: Record<string, string> = {
   automation: "#22c55e",
   optimization: "#f97316",
   supply_chain: "#a855f7",
+  custom_analysis: "#14b8a6",
 };
 
 function trackBadgeColor(track: string | null | undefined): string {
@@ -292,6 +293,7 @@ export default function DashboardPage() {
             <option value="automation">Automation</option>
             <option value="optimization">Optimization</option>
             <option value="supply_chain">Supply chain</option>
+            <option value="custom_analysis">Custom analysis</option>
           </select>
         </div>
         <button

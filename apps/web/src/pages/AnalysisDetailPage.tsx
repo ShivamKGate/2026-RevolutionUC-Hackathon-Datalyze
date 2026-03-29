@@ -18,6 +18,7 @@ import {
   type PipelineRunLog,
 } from "../lib/api";
 import { ExecutiveSummarySection, TrackRenderer } from "../components/analysis";
+import { AnalysisChatSection } from "../components/analysis/AnalysisChatSection";
 import { ExportButton } from "../components/analysis/shared/ExportButton";
 const OrchestrationModeling = lazy(() =>
   import("../components/analysis/orchestration/OrchestrationModeling").then(
@@ -336,6 +337,18 @@ export default function AnalysisDetailPage() {
     return null;
   }, [viewRun, vizPlan]);
 
+  /** Must run before any early return — hooks order must not depend on load state. */
+  const effectiveTrackForOutputs = useMemo(() => {
+    if (!viewRun) return "predictive";
+    const t = viewRun.track ?? "predictive";
+    if (t === "custom_analysis") {
+      const b = viewRun.config_json?.custom_base_track;
+      if (typeof b === "string" && b.trim()) return b.trim();
+      return "predictive";
+    }
+    return t;
+  }, [viewRun]);
+
   async function copyShareLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -413,6 +426,10 @@ export default function AnalysisDetailPage() {
     viewRun.status === "pending" || viewRun.status === "running";
 
   const storageBase = viewRun.slug;
+
+  const showAnalysisChat =
+    viewRun.status === "completed" ||
+    viewRun.status === "completed_with_warnings";
 
   /* Standalone knowledge graph card/tab retired — graph is shown inside 3D orchestration.
    * Kept for reference:
@@ -801,6 +818,10 @@ export default function AnalysisDetailPage() {
           </section>
         )}
 
+        {showRich && showAnalysisChat && viewRun.track && (
+          <AnalysisChatSection slug={viewRun.slug} />
+        )}
+
         {showRich && viewRun.track && (
           <section
             className="analysis-detail-section analysis-detail-section--charts"
@@ -833,7 +854,7 @@ export default function AnalysisDetailPage() {
             )}
             */}
             <TrackRenderer
-              track={viewRun.track}
+              track={effectiveTrackForOutputs}
               agentResults={agentResults}
               visualizationPlan={vizPlan}
               slug={viewRun.slug}

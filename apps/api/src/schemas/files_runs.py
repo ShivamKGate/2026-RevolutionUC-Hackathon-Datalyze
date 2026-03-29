@@ -1,6 +1,30 @@
 from pydantic import BaseModel, Field
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class AnalysisChatRequest(BaseModel):
+    messages: list[ChatMessage] = Field(default_factory=list)
+
+
+class AnalysisChatResponse(BaseModel):
+    reply: str
+
+
+class DatalyzeChatRequest(BaseModel):
+    messages: list[ChatMessage] = Field(default_factory=list)
+    uploaded_file_ids: list[int] = Field(default_factory=list)
+    enable_public_scrape: bool = False
+    """
+    predictive | automation | optimization | supply_chain, or auto to classify from
+    prompt + files + public-scrape setting before the run starts.
+    """
+    custom_base_track: str = "auto"
+
+
 class UploadedFileOut(BaseModel):
     id: int
     original_filename: str
@@ -17,6 +41,23 @@ class StartPipelineRunRequest(BaseModel):
     onboarding_path: str | None = None
     """When true, skip 24h duplicate-input short-circuit."""
     force_new: bool = False
+    """When set, overrides the user's company default for this run only (e.g. Datalyze Chat toggle)."""
+    public_scrape_enabled: bool | None = None
+    """
+    For Datalyze Chat (`onboarding_path` → custom analysis): which standard track's agent/stage
+    pack to use (predictive, automation, optimization, supply_chain). Ignored for normal runs.
+    """
+    custom_base_track: str | None = None
+    pipeline_selection_rationale: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Auto-selection rationale stored in config_json.",
+    )
+    datalyze_user_instruction: str | None = Field(
+        default=None,
+        max_length=4000,
+        description="Latest user goal from Datalyze Chat (config_json).",
+    )
 
 
 class PipelineRunOut(BaseModel):
@@ -46,6 +87,11 @@ class PipelineRunOut(BaseModel):
         default=None,
         description="Run owner for company-wide lists.",
     )
+
+
+class DatalyzeChatResponse(BaseModel):
+    reply: str
+    started_run: PipelineRunOut | None = None
 
 
 class RunTitlePatchRequest(BaseModel):

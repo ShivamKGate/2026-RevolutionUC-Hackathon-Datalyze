@@ -326,8 +326,8 @@ def _run_gemini_test(
     prompt: str,
     system_prompt: str | None,
 ) -> dict[str, Any]:
-    """Run a test via Gemini API."""
-    from services.external_agent_clients import gemini_chat_completion
+    """Run a test via Gemini when possible, else LIGHT_MODEL (same as production fallbacks)."""
+    from services.external_agent_clients import gemini_or_light_chat_completion_pair
     from services.agents.contracts import get_contract
     from services.agents.normalizer import normalize_agent_output, validate_envelope
     from core.config import settings
@@ -338,8 +338,14 @@ def _run_gemini_test(
         "model": settings.gemini_model,
     }
 
-    if not settings.gemini_api_key_configured:
-        record.update({"pass": False, "error": "GEMINI_API_KEY not set", "latency_ms": 0})
+    if not settings.gemini_api_key_configured and not settings.llm_api_key_configured:
+        record.update(
+            {
+                "pass": False,
+                "error": "GEMINI_API_KEY and LLM_API_KEY not set",
+                "latency_ms": 0,
+            },
+        )
         return record
 
     # Gemini Vision requires actual image bytes — text-only tests are inherently
@@ -348,7 +354,11 @@ def _run_gemini_test(
 
     t0 = time.time()
     try:
-        reply = gemini_chat_completion(prompt, system_instruction=system_prompt[:3000] if system_prompt else None)
+        reply, src = gemini_or_light_chat_completion_pair(
+            prompt,
+            system_instruction=system_prompt[:3000] if system_prompt else None,
+        )
+        record["model"] = settings.gemini_model if src == "gemini" else settings.light_model
         latency_ms = int((time.time() - t0) * 1000)
     except Exception as exc:
         latency_ms = int((time.time() - t0) * 1000)

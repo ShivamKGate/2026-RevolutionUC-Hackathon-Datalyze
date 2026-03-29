@@ -80,6 +80,8 @@ def test_openapi_includes_sprint_routes() -> None:
     )
     assert any("/export/pdf" in pk for pk in path_keys)
     assert any("/export/html" in pk for pk in path_keys)
+    assert "/api/v1/chat/datalyze" in path_keys
+    assert any("analysis-chat" in pk for pk in path_keys)
 
 
 def test_root_ok() -> None:

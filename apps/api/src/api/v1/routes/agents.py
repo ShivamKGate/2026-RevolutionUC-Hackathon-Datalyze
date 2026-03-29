@@ -23,7 +23,7 @@ from services.agents.normalizer import normalize_agent_output, validate_envelope
 from services.crew_mvp import initialize_only_mvp, kickoff_mvp
 from services.crew_specialized import initialize_specialized, kickoff_specialized
 from services.external_agent_clients import (
-    gemini_chat_completion,
+    gemini_or_light_chat_completion_pair,
     elevenlabs_synthesize_mp3,
     llm_chat_completion,
 )
@@ -44,31 +44,32 @@ def agent_boot_status() -> AgentBootStatusResponse:
 @router.post(
     "/verify/pipeline-classifier",
     response_model=GeminiAgentVerifyResponse,
-    summary="Chat check for Pipeline Classifier (Gemini API)",
+    summary="Chat check for Pipeline Classifier (Gemini with light-model fallback)",
 )
 def verify_pipeline_classifier_gemini(
     payload: GeminiAgentVerifyRequest,
 ) -> GeminiAgentVerifyResponse:
-    if not settings.gemini_api_key_configured:
-        raise HTTPException(
-            status_code=503,
-            detail="GEMINI_API_KEY is not set in apps/api/.env",
-        )
     try:
-        reply = gemini_chat_completion(
+        reply, src = gemini_or_light_chat_completion_pair(
             payload.message,
             system_instruction=(
                 "You are the Datalyze pipeline classifier agent. "
                 "Keep answers concise unless the user asks for detail."
             ),
         )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=str(exc),
+        ) from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+    model_used = settings.gemini_model if src == "gemini" else settings.light_model
     return GeminiAgentVerifyResponse(
         agent_id="pipeline_classifier",
         agent_name="Pipeline Classifier Agent",
-        model=settings.gemini_model,
+        model=model_used,
         reply=reply,
     )
 
@@ -215,12 +216,12 @@ def verify_all_agents() -> AgentHealthCheckResponse:
                     ping_cache[cache_key] = ("failed", str(exc), None)
             status, detail, reply_preview = ping_cache[cache_key]
         elif model_type in {"gemini_api", "gemini_vision"}:
-            cache_key = f"gemini::{settings.gemini_model}::{agent_id}"
+            cache_key = f"gemini_or_light::{settings.gemini_model}::{settings.light_model}::{agent_id}"
             if cache_key not in ping_cache:
                 try:
                     from services.agents import get_agent_system_prompt
                     sys_prompt = get_agent_system_prompt(agent_id)
-                    reply = gemini_chat_completion(
+                    reply, src = gemini_or_light_chat_completion_pair(
                         behavior_prompt,
                         system_instruction=sys_prompt[:2000] if sys_prompt else None,
                     )
@@ -232,11 +233,14 @@ def verify_all_agents() -> AgentHealthCheckResponse:
                         gemini_json_valid = True
                     except json.JSONDecodeError:
                         pass
+                    via = "Gemini" if src == "gemini" else f"light model ({settings.light_model})"
                     ping_cache[cache_key] = (
                         "ok",
-                        f"Gemini behavior check OK ({len(reply)} chars, json={gemini_json_valid}).",
+                        f"{via} behavior check OK ({len(reply)} chars, json={gemini_json_valid}).",
                         reply[:200],
                     )
+                except ValueError as exc:
+                    ping_cache[cache_key] = ("failed", str(exc), None)
                 except Exception as exc:
                     ping_cache[cache_key] = ("failed", str(exc), None)
             status, detail, reply_preview = ping_cache[cache_key]

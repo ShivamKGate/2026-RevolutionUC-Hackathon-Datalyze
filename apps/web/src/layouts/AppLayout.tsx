@@ -66,6 +66,14 @@ export default function AppLayout() {
       <div className="page-container">
         <aside className="sidebar">
           <NavLink
+            to="/datalyze-chat"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
+            DatalyzeChat
+          </NavLink>
+          <NavLink
             to="/dashboard"
             className={({ isActive }) =>
               "sidebar-link" + (isActive ? " active" : "")

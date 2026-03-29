@@ -534,6 +534,8 @@ export async function startPipelineRun(body: {
   uploaded_file_ids: number[];
   onboarding_path?: string | null;
   force_new?: boolean;
+  public_scrape_enabled?: boolean | null;
+  custom_base_track?: string | null;
 }): Promise<PipelineRun> {
   const response = await fetch("/api/v1/runs/start", {
     method: "POST",
@@ -546,6 +548,48 @@ export async function startPipelineRun(body: {
     throw new Error(`Start run failed (${response.status}): ${detail}`);
   }
   return (await response.json()) as PipelineRun;
+}
+
+export async function postAnalysisChat(
+  slug: string,
+  messages: { role: string; content: string }[],
+): Promise<{ reply: string }> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/analysis-chat`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ messages }),
+    },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Analysis chat failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as { reply: string };
+}
+
+export async function postDatalyzeChat(body: {
+  messages: { role: string; content: string }[];
+  uploaded_file_ids: number[];
+  enable_public_scrape: boolean;
+  custom_base_track: string;
+}): Promise<{ reply: string; started_run: PipelineRun | null }> {
+  const response = await fetch("/api/v1/chat/datalyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Datalyze chat failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as {
+    reply: string;
+    started_run: PipelineRun | null;
+  };
 }
 
 export async function getPipelineRunLogs(
