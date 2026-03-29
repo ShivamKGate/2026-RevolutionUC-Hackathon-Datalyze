@@ -254,11 +254,18 @@ export type UploadedFile = {
   visibility: string;
   content_type: string | null;
   created_at: string;
+  analysis_track?: string | null;
 };
 
-export async function uploadDataFile(file: File): Promise<UploadedFile> {
+export async function uploadDataFile(
+  file: File,
+  analysisTrack?: string | null,
+): Promise<UploadedFile> {
   const body = new FormData();
   body.append("file", file);
+  if (analysisTrack) {
+    body.append("analysis_track", analysisTrack);
+  }
   const response = await fetch("/api/v1/files/upload", {
     method: "POST",
     credentials: "include",
@@ -271,8 +278,14 @@ export async function uploadDataFile(file: File): Promise<UploadedFile> {
   return (await response.json()) as UploadedFile;
 }
 
-export async function listUploadedFiles(): Promise<UploadedFile[]> {
-  const response = await fetch("/api/v1/files", { credentials: "include" });
+export async function listUploadedFiles(
+  track?: string | null,
+): Promise<UploadedFile[]> {
+  const q =
+    track && track.trim() ? `?track=${encodeURIComponent(track.trim())}` : "";
+  const response = await fetch(`/api/v1/files${q}`, {
+    credentials: "include",
+  });
   if (!response.ok) throw new Error(`List files failed (${response.status})`);
   return (await response.json()) as UploadedFile[];
 }
@@ -359,6 +372,8 @@ export async function getLatestPipelineRun(): Promise<PipelineRun | null> {
 
 export async function startPipelineRun(body: {
   uploaded_file_ids: number[];
+  onboarding_path?: string | null;
+  force_new?: boolean;
 }): Promise<PipelineRun> {
   const response = await fetch("/api/v1/runs/start", {
     method: "POST",
@@ -411,6 +426,46 @@ export async function exportRunPDF(slug: string): Promise<Blob> {
     throw new Error(`PDF export failed (${response.status}): ${detail}`);
   }
   return response.blob();
+}
+
+export type DemoReplayListEntry = {
+  track: string;
+  captured_at: string | null;
+  run_id: number;
+  source_slug: string;
+  run_summary: string | null;
+  run_status: string | null;
+};
+
+export type DemoReplayDataResponse = {
+  replay_data: Record<string, unknown>;
+  run_id: number;
+  source_slug: string;
+};
+
+export async function getAdminReplayList(): Promise<DemoReplayListEntry[]> {
+  const response = await fetch("/api/v1/admin/replay", {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Replay list failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as DemoReplayListEntry[];
+}
+
+export async function getAdminReplayData(
+  track: string,
+): Promise<DemoReplayDataResponse> {
+  const response = await fetch(
+    `/api/v1/admin/replay/${encodeURIComponent(track)}`,
+    { credentials: "include" },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Replay data failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as DemoReplayDataResponse;
 }
 
 export async function clearAllPipelineRuns(): Promise<ClearRunsResponse> {

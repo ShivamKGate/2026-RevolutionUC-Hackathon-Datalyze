@@ -1,0 +1,9 @@
+month,category,units_on_hand,days_of_supply,stockout_events,reorder_point
+2024-01,Electronics,12500,38,0,8000
+2024-01,Apparel,8900,29,1,6000
+2024-01,Food,4200,18,2,3500
+2024-01,Industrial,3100,45,0,2000
+2025-12,Electronics,14200,41,0,8500
+2025-12,Apparel,7600,24,0,6200
+2025-12,Food,5100,22,1,3800
+2025-12,Industrial,2800,40,0,2100

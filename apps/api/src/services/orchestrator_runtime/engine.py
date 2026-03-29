@@ -35,6 +35,7 @@ from services.orchestrator_runtime.contracts import (
 )
 from services.orchestrator_runtime.persistence import (
     append_decision,
+    db_capture_demo_replay,
     db_find_latest_matching_completed_run,
     db_insert_artifacts,
     db_insert_run_log,
@@ -138,6 +139,26 @@ def _artifact_primary_payload(artifacts: list[Any]) -> dict[str, Any]:
         if isinstance(v, dict):
             return v
     return {}
+
+
+def _collect_structured_outputs(
+    prior_outputs: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Map agent_id → parsed JSON dict for output_evaluator / UI."""
+    out: dict[str, Any] = {}
+    for aid, env in prior_outputs.items():
+        arts = env.get("artifacts") or []
+        for block in arts:
+            if not isinstance(block, dict):
+                continue
+            for key in ("data", "result"):
+                inner = block.get(key)
+                if isinstance(inner, dict) and inner:
+                    out[aid] = inner
+                    break
+            if aid in out:
+                break
+    return out
 
 
 def _build_dependency_map() -> dict[str, list[str]]:
@@ -443,6 +464,7 @@ class OrchestratorEngine:
         source_files_meta: list[dict[str, Any]] | None = None,
         onboarding_path: str | None = None,
         public_scrape_enabled: bool = False,
+        skip_input_dedup: bool = False,
     ):
         self.run_id = run_id
         self.run_slug = run_slug
@@ -454,6 +476,7 @@ class OrchestratorEngine:
         self.source_files_meta = source_files_meta or []
         self.public_scrape_enabled = public_scrape_enabled
         self.onboarding_path = onboarding_path or ""
+        self.skip_input_dedup = skip_input_dedup
 
         self.track_id = resolve_track(onboarding_path)
         self.profile = get_track_profile(self.track_id)
@@ -487,9 +510,11 @@ class OrchestratorEngine:
 
             # 1.4 — Deduplication: same inputs within 24h → redirect; older match → note in context
             self._input_hash = self._compute_input_hash()
-            prior_match = db_find_latest_matching_completed_run(
-                self.company_id, self._input_hash, self.run_id,
-            )
+            prior_match = None
+            if not self.skip_input_dedup:
+                prior_match = db_find_latest_matching_completed_run(
+                    self.company_id, self._input_hash, self.run_id,
+                )
             if prior_match:
                 started = prior_match["started_at"]
                 if started is not None:
@@ -1027,6 +1052,12 @@ class OrchestratorEngine:
         if self.memory.warnings:
             summary += f" | Warnings: {len(self.memory.warnings)}"
 
+        structured = _collect_structured_outputs(self.prior_outputs)
+        from services.agents.output_evaluator import build_visualization_plan as _build_viz
+
+        visualization_plan = _build_viz(structured)
+        agent_results_payload = {**structured, "output_evaluator": visualization_plan}
+
         # Final report
         final_report = {
             "run_slug": self.run_slug,
@@ -1039,7 +1070,9 @@ class OrchestratorEngine:
             "warnings": self.memory.warnings,
             "fix_suggestions": self.memory.fix_suggestions,
             "timing": self.memory.timing_budget,
-            "agent_results": {
+            "agent_results": agent_results_payload,
+            "visualization_plan": visualization_plan,
+            "agent_summaries": {
                 aid: out.get("summary", "") for aid, out in self.prior_outputs.items()
             },
             "finalized_at": datetime.now(UTC).isoformat(),
@@ -1052,6 +1085,8 @@ class OrchestratorEngine:
             "agent_activity": agent_activity,
             "pipeline_log": pipeline_log[-100:],  # cap for DB size
             "run_dir": run_dir_relative(self.run_dir),
+            "agent_results": agent_results_payload,
+            "visualization_plan": visualization_plan,
         }
 
         # Update DB
@@ -1064,6 +1099,17 @@ class OrchestratorEngine:
             replay_payload=replay_payload,
             run_dir_path=run_dir_relative(self.run_dir),
         )
+
+        if final_status in ("completed", "completed_with_warnings"):
+            try:
+                db_capture_demo_replay(
+                    self.company_id,
+                    self.run_id,
+                    self.track_id.value,
+                    replay_payload,
+                )
+            except Exception:
+                logger.warning("demo_replay capture failed", exc_info=True)
 
         db_insert_run_log(
             self.run_id, "system", "orchestrator", "finalized",

@@ -1,0 +1,13 @@
+order_id,supplier_name,product_category,order_date,promised_delivery,actual_delivery,quantity_ordered,quantity_received,defect_count,cost
+1001,Apex Logistics,Electronics,2024-03-02,2024-03-09,2024-03-08,500,498,2,12400
+1002,Northwind Trading,Apparel,2024-03-05,2024-03-14,2024-03-16,1200,1195,6,8900
+1003,BlueRiver Supply,Food,2024-03-07,2024-03-12,2024-03-11,800,800,0,5600
+1004,Harbor Components,Industrial,2024-03-10,2024-03-22,2024-03-25,300,297,4,15200
+1005,Summit Freight,Electronics,2024-04-01,2024-04-08,2024-04-07,650,650,1,9800
+1006,Apex Logistics,Apparel,2024-04-04,2024-04-11,2024-04-10,900,902,0,7200
+1007,Northwind Trading,Food,2024-04-08,2024-04-13,2024-04-18,400,390,8,4100
+1008,BlueRiver Supply,Industrial,2024-05-01,2024-05-10,2024-05-09,220,220,0,18900
+1009,Harbor Components,Electronics,2025-10-12,2025-10-19,2025-10-20,550,548,3,11200
+1010,Summit Freight,Apparel,2025-11-02,2025-11-09,2025-11-08,700,700,0,6400
+1011,Apex Logistics,Food,2025-11-15,2025-11-20,2025-11-19,950,945,5,5100
+1012,Northwind Trading,Industrial,2025-12-01,2025-12-12,2025-12-11,180,180,0,22100

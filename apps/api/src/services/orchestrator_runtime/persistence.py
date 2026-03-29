@@ -169,6 +169,105 @@ def db_find_latest_matching_completed_run(
         db.close()
 
 
+def db_capture_demo_replay(
+    company_id: int,
+    run_id: int,
+    track: str,
+    replay_data: dict[str, Any],
+) -> None:
+    """Upsert latest successful run snapshot per company+track for admin replay."""
+    db = SessionLocal()
+    try:
+        db.execute(
+            text(
+                "INSERT INTO demo_replay (company_id, run_id, track, replay_data) "
+                "VALUES (:cid, :rid, :track, CAST(:data AS jsonb)) "
+                "ON CONFLICT (company_id, track) DO UPDATE SET "
+                "run_id = EXCLUDED.run_id, "
+                "replay_data = EXCLUDED.replay_data, "
+                "captured_at = NOW()"
+            ),
+            {
+                "cid": company_id,
+                "rid": run_id,
+                "track": track,
+                "data": json.dumps(replay_data),
+            },
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def db_list_demo_replays(company_id: int) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            text(
+                "SELECT dr.track, dr.captured_at, dr.run_id, pr.slug AS source_slug, "
+                "pr.summary AS run_summary, pr.status AS run_status "
+                "FROM demo_replay dr "
+                "JOIN pipeline_runs pr ON pr.id = dr.run_id "
+                "WHERE dr.company_id = :cid "
+                "ORDER BY dr.track ASC"
+            ),
+            {"cid": company_id},
+        ).fetchall()
+        for r in result:
+            rows.append(
+                {
+                    "track": r.track,
+                    "captured_at": r.captured_at.isoformat() if r.captured_at else None,
+                    "run_id": r.run_id,
+                    "source_slug": r.source_slug,
+                    "run_summary": r.run_summary,
+                    "run_status": r.run_status,
+                },
+            )
+    except Exception:
+        return []
+    finally:
+        db.close()
+    return rows
+
+
+def db_get_demo_replay(company_id: int, track: str) -> dict[str, Any] | None:
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                "SELECT dr.replay_data, dr.run_id, pr.slug AS source_slug "
+                "FROM demo_replay dr "
+                "JOIN pipeline_runs pr ON pr.id = dr.run_id "
+                "WHERE dr.company_id = :cid AND dr.track = :track"
+            ),
+            {"cid": company_id, "track": track},
+        ).fetchone()
+        if not row:
+            return None
+        data = row.replay_data
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                data = {}
+        elif data is None:
+            data = {}
+        return {
+            "replay_data": data,
+            "run_id": row.run_id,
+            "source_slug": row.source_slug,
+        }
+    except Exception:
+        return None
+    finally:
+        db.close()
+
+
 def db_update_run_status(
     run_id: int,
     status: str,

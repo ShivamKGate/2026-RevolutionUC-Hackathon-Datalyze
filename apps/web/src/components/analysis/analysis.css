@@ -258,3 +258,141 @@
   font-size: 1.25rem;
   color: var(--text, #f1f5f9);
 }
+
+.analysis-track-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.analysis-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .analysis-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.opt-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.opt-tree-toggle {
+  width: 1.5rem;
+  border: none;
+  background: var(--surface-2, #334155);
+  color: var(--text, #f1f5f9);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.opt-tree-toggle-spacer {
+  display: inline-block;
+  width: 1.5rem;
+}
+
+.opt-tree-label {
+  font-weight: 500;
+  min-width: 8rem;
+}
+
+.opt-tree-value {
+  color: var(--text-muted, #94a3b8);
+  margin-left: auto;
+}
+
+.opt-tree-delta.pos {
+  color: #4ade80;
+}
+.opt-tree-delta.neg {
+  color: #f87171;
+}
+
+.opt-profit-tree {
+  background: var(--surface-1, #1e293b);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.opt-rec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.opt-rec-table th,
+.opt-rec-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #334155);
+}
+
+.opt-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.opt-pill-high {
+  background: rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+}
+.opt-pill-medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+.opt-pill-low {
+  background: rgba(74, 222, 128, 0.15);
+  color: #86efac;
+}
+
+.opt-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--surface-1, #1e293b);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.opt-flow-col {
+  flex: 1;
+  min-width: 140px;
+}
+
+.opt-flow-col h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.opt-flow-arrow {
+  align-self: center;
+  color: var(--text-muted, #94a3b8);
+  font-size: 1.25rem;
+}
+
+.sc-network-svg {
+  width: 100%;
+  max-height: 220px;
+  background: var(--surface-1, #1e293b);
+  border-radius: 8px;
+}
+
+.sc-network-caption {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0.5rem 0 0;
+}

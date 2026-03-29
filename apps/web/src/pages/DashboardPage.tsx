@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -8,10 +8,38 @@ import {
   type PipelineRun,
 } from "../lib/api";
 
+const TRACK_BADGE: Record<string, string> = {
+  predictive: "#3b82f6",
+  automation: "#22c55e",
+  optimization: "#f97316",
+  supply_chain: "#a855f7",
+};
+
+function trackBadgeColor(track: string | null | undefined): string {
+  if (!track) return "#64748b";
+  return TRACK_BADGE[track] ?? "#64748b";
+}
+
+function confidenceFromRun(r: PipelineRun): number | null {
+  const rp = r.replay_payload;
+  if (!rp || typeof rp !== "object") return null;
+  const vp = rp.visualization_plan as
+    | { overall_confidence?: number }
+    | undefined;
+  if (vp && typeof vp.overall_confidence === "number")
+    return vp.overall_confidence;
+  const fr = rp.final_report as
+    | { visualization_plan?: { overall_confidence?: number } }
+    | undefined;
+  const oc = fr?.visualization_plan?.overall_confidence;
+  return typeof oc === "number" ? oc : null;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [runs, setRuns] = useState<PipelineRun[]>([]);
+  const [trackFilter, setTrackFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +59,29 @@ export default function DashboardPage() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const filteredRuns = useMemo(() => {
+    if (!trackFilter) return runs;
+    return runs.filter((r) => (r.track || "") === trackFilter);
+  }, [runs, trackFilter]);
+
+  const completed = runs.filter(
+    (r) => r.status === "completed" || r.status === "completed_with_warnings",
+  ).length;
+  const running = runs.filter(
+    (r) => r.status === "running" || r.status === "pending",
+  ).length;
+
+  const avgConfidence = useMemo(() => {
+    const done = runs.filter(
+      (r) => r.status === "completed" || r.status === "completed_with_warnings",
+    );
+    const vals = done
+      .map(confidenceFromRun)
+      .filter((x): x is number => x != null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [runs]);
 
   async function handleStartFlow() {
     setStarting(true);
@@ -69,19 +120,12 @@ export default function DashboardPage() {
     }
   }
 
-  const completed = runs.filter(
-    (r) => r.status === "completed" || r.status === "completed_with_warnings",
-  ).length;
-  const running = runs.filter(
-    (r) => r.status === "running" || r.status === "pending",
-  ).length;
-
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>Welcome back, {user?.name ?? "there"}!</h1>
       <div className="dashboard-grid">
         <div className="stat-card">
-          <h3>Analyses</h3>
+          <h3>Total analyses</h3>
           <div className="stat-value">{runs.length}</div>
         </div>
         <div className="stat-card">
@@ -98,6 +142,14 @@ export default function DashboardPage() {
             }}
           >
             {running > 0 ? `${running} running` : "Idle"}
+          </div>
+        </div>
+        <div className="stat-card">
+          <h3>Avg confidence</h3>
+          <div className="stat-value">
+            {avgConfidence != null
+              ? `${(avgConfidence * 100).toFixed(0)}%`
+              : "—"}
           </div>
         </div>
       </div>
@@ -122,6 +174,7 @@ export default function DashboardPage() {
           flexWrap: "wrap",
           gap: "0.75rem",
           marginBottom: "1.5rem",
+          alignItems: "center",
         }}
       >
         {runs.length === 0 ? (
@@ -148,7 +201,7 @@ export default function DashboardPage() {
           className="btn-secondary"
           style={{ display: "inline-flex", alignItems: "center" }}
         >
-          Upload data
+          New analysis (upload)
         </Link>
         <Link
           to="/pipeline"
@@ -157,6 +210,27 @@ export default function DashboardPage() {
         >
           Pipeline status
         </Link>
+        <label
+          style={{
+            marginLeft: "auto",
+            fontSize: "0.9rem",
+            color: "var(--text-muted)",
+          }}
+        >
+          Filter track:{" "}
+          <select
+            value={trackFilter}
+            onChange={(e) => setTrackFilter(e.target.value)}
+            className="btn-secondary"
+            style={{ padding: "0.35rem 0.5rem", marginLeft: "0.35rem" }}
+          >
+            <option value="">All</option>
+            <option value="predictive">Predictive</option>
+            <option value="automation">Automation</option>
+            <option value="optimization">Optimization</option>
+            <option value="supply_chain">Supply chain</option>
+          </select>
+        </label>
       </div>
 
       <h2 className="section-title">Your analyses</h2>
@@ -164,30 +238,86 @@ export default function DashboardPage() {
         <div className="spinner-page" style={{ minHeight: 120 }}>
           <div className="spinner" />
         </div>
-      ) : runs.length === 0 ? (
+      ) : filteredRuns.length === 0 ? (
         <div className="empty-state">
-          <p>No analyses yet. Use the button above to start.</p>
+          <p>
+            No analyses match this filter. Adjust the track filter or start a
+            new run.
+          </p>
         </div>
       ) : (
         <ul className="analysis-run-list">
-          {runs.map((r) => (
-            <li key={r.id} className="analysis-run-card">
-              <div>
-                <Link to={`/analysis/${r.slug}`} className="analysis-run-link">
-                  {r.slug}
+          {filteredRuns.map((r) => {
+            const conf = confidenceFromRun(r);
+            return (
+              <li key={r.id} className="analysis-run-card">
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Link
+                      to={`/analysis/${r.slug}`}
+                      className="analysis-run-link"
+                    >
+                      {r.slug}
+                    </Link>
+                    {r.track && (
+                      <span
+                        className="inline-code"
+                        style={{
+                          background: trackBadgeColor(r.track),
+                          color: "#0f172a",
+                          border: "none",
+                          fontSize: "0.7rem",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {r.track.replace("_", " ")}
+                      </span>
+                    )}
+                    <span
+                      className="analysis-run-meta"
+                      style={{
+                        color:
+                          r.status === "running" || r.status === "pending"
+                            ? "#fbbf24"
+                            : undefined,
+                      }}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
+                  <p className="analysis-run-meta">{r.started_at}</p>
+                  {r.summary && (
+                    <p className="analysis-run-summary">
+                      {r.summary.length > 140
+                        ? `${r.summary.slice(0, 140)}…`
+                        : r.summary}
+                    </p>
+                  )}
+                  {conf != null && (
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                        margin: "0.25rem 0 0",
+                      }}
+                    >
+                      Confidence {(conf * 100).toFixed(0)}%
+                    </p>
+                  )}
+                </div>
+                <Link to={`/analysis/${r.slug}`} className="btn-secondary">
+                  Open
                 </Link>
-                <p className="analysis-run-meta">
-                  {r.started_at} · {r.status}
-                </p>
-                {r.summary && (
-                  <p className="analysis-run-summary">{r.summary}</p>
-                )}
-              </div>
-              <Link to={`/analysis/${r.slug}`} className="btn-secondary">
-                Open
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

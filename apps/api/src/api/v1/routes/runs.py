@@ -115,19 +115,38 @@ def _row_to_out(row) -> PipelineRunOut:
     )
 
 
-def _validate_file_ids(db, company_id: int, file_ids: list[int]) -> None:
+def _validate_file_ids(
+    db,
+    company_id: int,
+    file_ids: list[int],
+    track: str | None = None,
+) -> None:
     if not file_ids:
         return
     uniq = sorted(set(int(x) for x in file_ids))
     if any(i <= 0 for i in uniq):
         raise HTTPException(status_code=400, detail="Invalid file id")
     in_clause = ",".join(str(i) for i in uniq)
-    n = db.execute(
-        text(f"SELECT COUNT(*) AS n FROM uploaded_files WHERE company_id=:cid AND id IN ({in_clause})"),
-        {"cid": company_id},
-    ).scalar()
+    if track:
+        n = db.execute(
+            text(
+                f"SELECT COUNT(*) AS n FROM uploaded_files WHERE company_id=:cid AND id IN ({in_clause}) "
+                "AND (analysis_track IS NULL OR analysis_track = :track)"
+            ),
+            {"cid": company_id, "track": track},
+        ).scalar()
+    else:
+        n = db.execute(
+            text(
+                f"SELECT COUNT(*) AS n FROM uploaded_files WHERE company_id=:cid AND id IN ({in_clause})",
+            ),
+            {"cid": company_id},
+        ).scalar()
     if int(n or 0) != len(uniq):
-        raise HTTPException(status_code=400, detail="One or more file IDs are invalid")
+        raise HTTPException(
+            status_code=400,
+            detail="One or more file IDs are invalid or not allowed for this track",
+        )
 
 
 def _fetch_source_file_meta(db, company_id: int, file_ids: list[int]) -> list[dict[str, Any]]:
@@ -166,6 +185,7 @@ def _run_orchestrator_in_background(
     source_files_meta: list[dict[str, Any]],
     onboarding_path: str | None,
     public_scrape_enabled: bool,
+    skip_input_dedup: bool = False,
 ) -> None:
     try:
         engine = OrchestratorEngine(
@@ -179,6 +199,7 @@ def _run_orchestrator_in_background(
             source_files_meta=source_files_meta,
             onboarding_path=onboarding_path,
             public_scrape_enabled=public_scrape_enabled,
+            skip_input_dedup=skip_input_dedup,
         )
         engine.execute()
     except Exception:
@@ -194,7 +215,7 @@ def start_run(request: Request, body: StartPipelineRunRequest):
     company_id, _ = _require_company(user)
     user_id = int(user["id"])
     user_name = str(user.get("name") or "user")
-    onboarding_path = user.get("onboarding_path")
+    onboarding_path = body.onboarding_path or user.get("onboarding_path")
     scrape = bool(user.get("public_scrape_enabled"))
 
     file_ids = [int(x) for x in body.uploaded_file_ids]
@@ -207,9 +228,9 @@ def start_run(request: Request, body: StartPipelineRunRequest):
 
     db = SessionLocal()
     try:
-        _validate_file_ids(db, company_id, file_ids)
-        source_files_meta = _fetch_source_file_meta(db, company_id, file_ids)
         track = resolve_track(onboarding_path).value
+        _validate_file_ids(db, company_id, file_ids, track=track if file_ids else None)
+        source_files_meta = _fetch_source_file_meta(db, company_id, file_ids)
 
         slug = secrets.token_urlsafe(12).replace("-", "_")[:32]
         now = datetime.now(UTC)
@@ -239,8 +260,10 @@ def start_run(request: Request, body: StartPipelineRunRequest):
                 "cfg": json.dumps(
                     {
                         "track": track,
+                        "onboarding_path": onboarding_path,
                         "public_scrape_enabled": scrape,
                         "source_file_count": len(file_ids),
+                        "force_new": bool(body.force_new),
                     },
                 ),
             },
@@ -268,6 +291,7 @@ def start_run(request: Request, body: StartPipelineRunRequest):
             source_files_meta,
             onboarding_path,
             scrape,
+            bool(body.force_new),
         ),
         name=f"run-{row.slug[:8]}",
         daemon=True,

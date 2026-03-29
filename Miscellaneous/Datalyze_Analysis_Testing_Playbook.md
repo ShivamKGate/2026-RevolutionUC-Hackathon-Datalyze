@@ -151,12 +151,12 @@ The `.gitignore` rule is: `Miscellaneous/data/sources/Google*` stays ignored, bu
 
 ### 6.1.3 Demo account credentials
 
-| Field | Value |
-|---|---|
-| **Email** | `demo@revuc.com` |
-| **Password** | `admin@123` |
-| **Company** | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
-| **Role** | `admin` |
+| Field        | Value                                         |
+| ------------ | --------------------------------------------- |
+| **Email**    | `demo@revuc.com`                              |
+| **Password** | `admin@123`                                   |
+| **Company**  | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
+| **Role**     | `admin`                                       |
 
 This account is seeded via `apps/api/src/db/seeds/001_seed.sql`. When testing demo flows, always use this account and this company.
 
@@ -343,8 +343,15 @@ Miscellaneous/tests/agent_prompt_versions.jsonl
 ```
 
 Each line is a JSON record:
+
 ```json
-{"timestamp": "2026-03-29T...", "agent_id": "trend_forecasting", "change": "Added chart-ready JSON schema with confidence bands", "version": 2, "author": "shivam"}
+{
+  "timestamp": "2026-03-29T...",
+  "agent_id": "trend_forecasting",
+  "change": "Added chart-ready JSON schema with confidence bands",
+  "version": 2,
+  "author": "shivam"
+}
 ```
 
 This enables comparing run-to-run quality. When testing, note the prompt version used in the campaign `report.md`.
@@ -402,12 +409,21 @@ Use these files when running predictive or automation track test campaigns on th
 
 ## 20. Demo account credentials for testing
 
-| Field       | Value            |
-|-------------|------------------|
-| Email       | `demo@revuc.com` |
-| Password    | `admin@123`      |
-| Company     | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
-| Role        | Admin            |
+| Field    | Value                                         |
+| -------- | --------------------------------------------- |
+| Email    | `demo@revuc.com`                              |
+| Password | `admin@123`                                   |
+| Company  | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
+| Role     | Admin                                         |
+
+---
+
+## 21. Optimization & supply chain data + admin replay
+
+- **Synthetic paths:** `Miscellaneous/data/sources/E2E_Analytics_Co/optimization/` and `.../supply_chain/` (CSV, JSON, TXT summaries — same E2E story as §19).
+- **Upload track tagging:** On Upload, pick a track before uploading; list filters to untagged + matching `analysis_track`. Starting a run validates file IDs against the resolved run track.
+- **Demo replay:** After a successful run, `demo_replay` stores the latest `replay_payload` per company+track. Admins open **Admin** in the sidebar → **Open analysis** on a row to view cached results (same charts as live when `replay_payload` is populated).
+- **Seed:** Apply `apps/api/src/db/seeds/001_seed.sql` after migrations if you need the demo user/company in a fresh DB (password `admin@123`).
 
 ---
 

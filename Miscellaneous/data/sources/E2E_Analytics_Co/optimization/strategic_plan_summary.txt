@@ -1,0 +1,8 @@
+E2E Analytics Co. — Strategic plan excerpt (synthetic, demo)
+Mission: End-to-end analytics for SMEs and nonprofits.
+Objectives (2025–2026):
+1) Expand gross margin 2pts via vendor consolidation
+2) Cut order-to-cash cycle 18%
+3) Launch self-serve reporting for two flagship segments
+Constraints: hiring freeze Q1; EU data residency for one client; legacy ERP until FY27.
+Quarterly review: optimization backlog prioritized by EBITDA impact; see CSV packs in repo.

@@ -8,10 +8,15 @@ class UploadedFileOut(BaseModel):
     visibility: str
     content_type: str | None
     created_at: str
+    analysis_track: str | None = None
 
 
 class StartPipelineRunRequest(BaseModel):
     uploaded_file_ids: list[int] = Field(default_factory=list)
+    """Optional onboarding path for this run only (e.g. Deep Analysis → predictive)."""
+    onboarding_path: str | None = None
+    """When true, skip 24h duplicate-input short-circuit."""
+    force_new: bool = False
 
 
 class PipelineRunOut(BaseModel):

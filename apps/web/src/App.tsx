@@ -13,6 +13,7 @@ import AgentsPage from "./pages/AgentsPage";
 import DeveloperPage from "./pages/DeveloperPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AnalysisDetailPage from "./pages/AnalysisDetailPage";
+import AdminPage from "./pages/AdminPage";
 import ProfilePage from "./pages/settings/ProfilePage";
 import CompanyPage from "./pages/settings/CompanyPage";
 import PreferencesPage from "./pages/settings/PreferencesPage";
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/pipeline" element={<PipelinePage />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/analysis/:slug" element={<AnalysisDetailPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/settings">
               <Route index element={<Navigate to="profile" replace />} />
               <Route element={<SettingsLayout />}>

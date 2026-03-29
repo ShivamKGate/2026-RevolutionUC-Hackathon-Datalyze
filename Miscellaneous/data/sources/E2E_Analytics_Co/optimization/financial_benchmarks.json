@@ -1,0 +1,35 @@
+{
+  "company": "E2E_Analytics_Co",
+  "as_of": "2025-12-31",
+  "peers": [
+    {
+      "name": "Peer A",
+      "gross_margin_pct": 42.1,
+      "op_margin_pct": 14.2,
+      "revenue_per_employee": 92000,
+      "cac": 2100
+    },
+    {
+      "name": "Peer B",
+      "gross_margin_pct": 38.5,
+      "op_margin_pct": 11.8,
+      "revenue_per_employee": 78000,
+      "cac": 2600
+    },
+    {
+      "name": "Peer C",
+      "gross_margin_pct": 44.0,
+      "op_margin_pct": 15.5,
+      "revenue_per_employee": 101000,
+      "cac": 1900
+    }
+  ],
+  "e2e_position": {
+    "gross_margin_pct": 40.2,
+    "op_margin_pct": 12.9,
+    "revenue_per_employee": 85000,
+    "cac": 2350,
+    "quarterly_trend": [11.2, 12.1, 12.6, 12.9]
+  },
+  "notes": "Synthetic benchmark pack for optimization track demos."
+}

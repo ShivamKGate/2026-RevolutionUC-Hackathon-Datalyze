@@ -21,7 +21,9 @@ Thumbs.db
 .idea/
 .vscode/
 
-Miscellaneous/data/sources
+Miscellaneous/data/sources/*
+!Miscellaneous/data/sources/E2E_Analytics_Co/
+!Miscellaneous/data/sources/E2E_Analytics_Co/**
 
 # Orchestrator live-test artifacts (timestamped smoke, replay validation); keep under version control only if you opt in
 Miscellaneous/tests/Orchestrator_tests/

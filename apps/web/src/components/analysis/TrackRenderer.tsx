@@ -2,6 +2,8 @@ import type { AgentResults, VisualizationPlan } from "./types";
 import { ExportButton } from "./shared/ExportButton";
 import { PredictiveTemplate } from "./predictive/PredictiveTemplate";
 import { AutomationTemplate } from "./automation/AutomationTemplate";
+import { OptimizationTemplate } from "./optimization/OptimizationTemplate";
+import { SupplyChainTemplate } from "./supply_chain/SupplyChainTemplate";
 import "./analysis.css";
 
 type Props = {
@@ -34,6 +36,10 @@ function TrackContent({
       return <PredictiveTemplate agentResults={agentResults} />;
     case "automation":
       return <AutomationTemplate agentResults={agentResults} />;
+    case "optimization":
+      return <OptimizationTemplate agentResults={agentResults} />;
+    case "supply_chain":
+      return <SupplyChainTemplate agentResults={agentResults} />;
     default:
       return (
         <div className="analysis-coming-soon">

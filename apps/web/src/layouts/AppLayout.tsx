@@ -10,10 +10,14 @@ export default function AppLayout() {
     <div className="app-shell">
       <nav className="navbar">
         <div className="navbar-brand">
-          <Link to="/" className="navbar-logo">Datalyze</Link>
+          <Link to="/" className="navbar-logo">
+            Datalyze
+          </Link>
         </div>
         <div className="nav-links">
-          <Link to="/dashboard" className="nav-btn nav-btn-ghost">Dashboard</Link>
+          <Link to="/dashboard" className="nav-btn nav-btn-ghost">
+            Dashboard
+          </Link>
           {user && (
             <div className="avatar-menu-wrap">
               <button
@@ -34,7 +38,10 @@ export default function AppLayout() {
                   </Link>
                   <button
                     className="avatar-dropdown-item avatar-dropdown-btn"
-                    onClick={() => { setAvatarOpen(false); void logout(); }}
+                    onClick={() => {
+                      setAvatarOpen(false);
+                      void logout();
+                    }}
                   >
                     Logout
                   </button>
@@ -46,21 +53,56 @@ export default function AppLayout() {
       </nav>
       <div className="page-container">
         <aside className="sidebar">
-          <NavLink to="/dashboard" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
             Dashboard
           </NavLink>
-          <NavLink to="/upload" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>
+          <NavLink
+            to="/upload"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
             Upload
           </NavLink>
-          <NavLink to="/pipeline" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>
+          <NavLink
+            to="/pipeline"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
             Pipeline
           </NavLink>
-          <NavLink to="/agents" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>
+          <NavLink
+            to="/agents"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
             Agents
           </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => "sidebar-link" + (isActive ? " active" : "")}>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
             Settings
           </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                "sidebar-link" + (isActive ? " active" : "")
+              }
+            >
+              Admin
+            </NavLink>
+          )}
         </aside>
         <main className="app-content">
           <Outlet />

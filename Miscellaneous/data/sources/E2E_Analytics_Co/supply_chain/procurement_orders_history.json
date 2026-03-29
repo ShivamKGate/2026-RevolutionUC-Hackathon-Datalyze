@@ -1,0 +1,29 @@
+{
+  "company": "E2E_Analytics_Co",
+  "orders": [
+    {
+      "id": "PO-24001",
+      "supplier": "Apex Logistics",
+      "items": [{ "sku": "ELX-100", "qty": 200, "unit_price": 42.5 }],
+      "order_date": "2024-01-08",
+      "promised_days": 12,
+      "quality_score": 0.94
+    },
+    {
+      "id": "PO-24088",
+      "supplier": "Harbor Components",
+      "items": [{ "sku": "IND-55", "qty": 50, "unit_price": 310 }],
+      "order_date": "2024-06-02",
+      "promised_days": 18,
+      "quality_score": 0.88
+    },
+    {
+      "id": "PO-25120",
+      "supplier": "BlueRiver Supply",
+      "items": [{ "sku": "FD-20", "qty": 400, "unit_price": 6.2 }],
+      "order_date": "2025-09-14",
+      "promised_days": 7,
+      "quality_score": 0.97
+    }
+  ]
+}

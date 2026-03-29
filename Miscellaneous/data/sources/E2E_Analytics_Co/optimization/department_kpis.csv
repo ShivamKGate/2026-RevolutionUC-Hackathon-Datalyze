@@ -1,0 +1,9 @@
+quarter,department,productivity_index,quality_score,employee_satisfaction,customer_satisfaction,goal_progress_pct
+2024-Q1,Sales,0.82,0.88,7.2,8.1,72
+2024-Q1,Operations,0.78,0.84,6.9,7.6,68
+2024-Q1,Finance,0.85,0.91,7.5,7.9,81
+2025-Q4,Sales,0.89,0.90,7.8,8.4,88
+2025-Q4,Operations,0.84,0.87,7.2,8.0,82
+2025-Q4,Finance,0.91,0.93,7.9,8.2,91
+2025-Q4,HR,0.80,0.86,7.4,7.7,79
+2025-Q4,Logistics,0.83,0.85,7.1,7.9,84

@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Request, UploadFile
 from sqlalchemy import text
 
 from api.v1.routes.auth import get_current_user
@@ -16,6 +16,43 @@ from services.company_paths import company_data_private_dir, relative_posix_path
 router = APIRouter()
 
 _ALLOWED_SUFFIXES = {".csv", ".xlsx", ".xls", ".json", ".pdf", ".txt", ".md"}
+
+_DEMO_EMAIL = "demo@revuc.com"
+_DEMO_COMPANY = "E2E_Analytics_Co"
+
+
+def _mirror_upload_for_demo_company(
+    dest_path: Path,
+    company_name: str,
+    user_email: str,
+    analysis_track: str | None,
+    safe_base: str,
+) -> None:
+    if user_email.strip().lower() != _DEMO_EMAIL or company_name.strip() != _DEMO_COMPANY:
+        return
+    sub = (analysis_track or "general").strip().lower().replace(" ", "_")
+    if sub not in (
+        "predictive",
+        "automation",
+        "optimization",
+        "supply_chain",
+        "general",
+    ):
+        sub = "general"
+    e2e_dir = (
+        settings.repo_root
+        / "Miscellaneous"
+        / "data"
+        / "sources"
+        / "E2E_Analytics_Co"
+        / sub
+    )
+    e2e_dir.mkdir(parents=True, exist_ok=True)
+    target = e2e_dir / safe_base
+    try:
+        shutil.copy2(dest_path, target)
+    except OSError:
+        pass
 
 
 def _require_company(user: dict) -> tuple[int, str]:
@@ -38,10 +75,15 @@ def _safe_delete_stored_file(relative_path: str) -> None:
 
 
 @router.post("/upload", response_model=UploadedFileOut)
-def upload_file(request: Request, file: UploadFile):
+def upload_file(
+    request: Request,
+    file: UploadFile,
+    analysis_track: str | None = Form(None),
+):
     user = get_current_user(request)
     company_id, company_name = _require_company(user)
     user_id = int(user["id"])
+    user_email = str(user.get("email") or "")
 
     raw_name = file.filename or "upload"
     suffix = Path(raw_name).suffix.lower()
@@ -65,15 +107,16 @@ def upload_file(request: Request, file: UploadFile):
     byte_size = dest_path.stat().st_size
     rel = relative_posix_path(dest_path)
     content_type = file.content_type
+    track_val = (analysis_track or "").strip() or None
 
     db = SessionLocal()
     try:
         row = db.execute(
             text(
                 "INSERT INTO uploaded_files (company_id, user_id, original_filename, stored_filename, "
-                "storage_relative_path, visibility, byte_size, content_type) "
-                "VALUES (:cid, :uid, :orig, :stored, :path, 'private', :size, :ct) "
-                "RETURNING id, original_filename, byte_size, visibility, content_type, "
+                "storage_relative_path, visibility, byte_size, content_type, analysis_track) "
+                "VALUES (:cid, :uid, :orig, :stored, :path, 'private', :size, :ct, :at) "
+                "RETURNING id, original_filename, byte_size, visibility, content_type, analysis_track, "
                 "to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at"
             ),
             {
@@ -84,6 +127,7 @@ def upload_file(request: Request, file: UploadFile):
                 "path": rel,
                 "size": byte_size,
                 "ct": content_type,
+                "at": track_val,
             },
         ).fetchone()
         db.commit()
@@ -94,6 +138,10 @@ def upload_file(request: Request, file: UploadFile):
     finally:
         db.close()
 
+    _mirror_upload_for_demo_company(
+        dest_path, company_name, user_email, track_val, safe_base,
+    )
+
     return UploadedFileOut(
         id=row.id,
         original_filename=row.original_filename,
@@ -101,23 +149,37 @@ def upload_file(request: Request, file: UploadFile):
         visibility=row.visibility,
         content_type=row.content_type,
         created_at=row.created_at,
+        analysis_track=getattr(row, "analysis_track", None),
     )
 
 
 @router.get("", response_model=list[UploadedFileOut])
-def list_files(request: Request):
+def list_files(request: Request, track: str | None = None):
     user = get_current_user(request)
     company_id, _ = _require_company(user)
     db = SessionLocal()
     try:
-        rows = db.execute(
-            text(
-                "SELECT id, original_filename, byte_size, visibility, content_type, "
-                "to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
-                "FROM uploaded_files WHERE company_id=:cid ORDER BY created_at DESC"
-            ),
-            {"cid": company_id},
-        ).fetchall()
+        t = (track or "").strip()
+        if t:
+            rows = db.execute(
+                text(
+                    "SELECT id, original_filename, byte_size, visibility, content_type, analysis_track, "
+                    "to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+                    "FROM uploaded_files WHERE company_id=:cid "
+                    "AND (analysis_track IS NULL OR analysis_track = :track) "
+                    "ORDER BY created_at DESC"
+                ),
+                {"cid": company_id, "track": t},
+            ).fetchall()
+        else:
+            rows = db.execute(
+                text(
+                    "SELECT id, original_filename, byte_size, visibility, content_type, analysis_track, "
+                    "to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+                    "FROM uploaded_files WHERE company_id=:cid ORDER BY created_at DESC"
+                ),
+                {"cid": company_id},
+            ).fetchall()
     finally:
         db.close()
     return [
@@ -128,6 +190,7 @@ def list_files(request: Request):
             visibility=r.visibility,
             content_type=r.content_type,
             created_at=r.created_at,
+            analysis_track=getattr(r, "analysis_track", None),
         )
         for r in rows
     ]

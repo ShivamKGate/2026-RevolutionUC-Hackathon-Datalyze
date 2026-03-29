@@ -175,4 +175,9 @@ export type AgentResults = {
   executive_summary?: ExecutiveSummaryOutput;
   output_evaluator?: VisualizationPlan;
   knowledge_graph_builder?: KnowledgeGraphOutput;
+  conflict_detection?: {
+    contradictions?: Array<Record<string, unknown>>;
+  };
+  swot_analysis?: Record<string, unknown>;
+  sentiment_analysis?: Record<string, unknown>;
 };
