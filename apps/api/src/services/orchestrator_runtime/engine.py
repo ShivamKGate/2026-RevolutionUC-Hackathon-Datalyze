@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import secrets
 import time
 import traceback
@@ -143,6 +144,96 @@ def _artifact_primary_payload(artifacts: list[Any]) -> dict[str, Any]:
         if isinstance(v, dict):
             return v
     return {}
+
+
+def _try_parse_executive_json(raw: str) -> dict[str, Any] | None:
+    """Parse executive-summary JSON from model output (may include fences or prose)."""
+    s = (raw or "").strip()
+    s = re.sub(r"^```(?:json)?\s*", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"\s*```\s*$", "", s)
+    try:
+        data = json.loads(s)
+    except json.JSONDecodeError:
+        m = re.search(r"\{[\s\S]*\}", s)
+        if not m:
+            return None
+        try:
+            data = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return None
+    return data if isinstance(data, dict) else None
+
+
+def _format_executive_dict_for_speech(data: dict[str, Any], max_chars: int = 2400) -> str:
+    """Flatten structured executive summary into spoken prose."""
+    parts: list[str] = []
+    if h := data.get("headline"):
+        parts.append(str(h).strip())
+    if s := data.get("situation_overview"):
+        parts.append(str(s).strip())
+    kf = data.get("key_findings")
+    if isinstance(kf, list) and kf:
+        parts.append(
+            "Key findings: " + ". ".join(str(x).strip() for x in kf[:10] if x),
+        )
+    rh = data.get("risk_highlights")
+    if isinstance(rh, list) and rh:
+        parts.append(
+            "Risk highlights: " + ". ".join(str(x).strip() for x in rh[:6] if x),
+        )
+    na = data.get("next_actions")
+    if isinstance(na, list) and na:
+        parts.append(
+            "Next actions: " + ". ".join(str(x).strip() for x in na[:8] if x),
+        )
+    cs = data.get("confidence_statement")
+    if isinstance(cs, dict):
+        oc = cs.get("overall_confidence")
+        basis = (cs.get("basis") or "").strip()
+        if oc is not None or basis:
+            conf_bit = f"Confidence: {oc}." if oc is not None else ""
+            parts.append(f"{conf_bit} {basis}".strip())
+    out = " ".join(p for p in parts if p)
+    return out[:max_chars] if len(out) > max_chars else out
+
+
+def _format_summary_text_for_tts(raw: str) -> str:
+    """Normalize markdown-fenced or JSON executive summary for speech synthesis."""
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    parsed = _try_parse_executive_json(raw)
+    if parsed:
+        spoken = _format_executive_dict_for_speech(parsed)
+        if spoken:
+            return spoken
+    cleaned = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```\s*$", "", cleaned)
+    return cleaned.strip()
+
+
+def _resolve_executive_summary_text(context: dict[str, Any]) -> str:
+    """Text for ElevenLabs: explicit field, then prior_outputs executive_summary envelope."""
+    direct = (context.get("executive_summary") or "").strip()
+    if direct:
+        return _format_summary_text_for_tts(direct)
+
+    prior = context.get("prior_outputs") or {}
+    env = prior.get("executive_summary")
+    if not isinstance(env, dict):
+        return ""
+
+    raw_summary = (env.get("summary") or "").strip()
+    if raw_summary:
+        spoken = _format_summary_text_for_tts(raw_summary)
+        if spoken:
+            return spoken
+
+    arts = env.get("artifacts") or []
+    structured = _artifact_primary_payload(arts) if arts else {}
+    if isinstance(structured, dict) and structured:
+        return _format_executive_dict_for_speech(structured)
+    return ""
 
 
 def _collect_structured_outputs(
@@ -355,33 +446,57 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
 
 
 def _run_elevenlabs_narration(context: dict[str, Any]) -> AgentEnvelope:
-    """Generate audio narration from executive summary."""
-    summary_text = context.get("executive_summary", "")
+    """Generate audio narration from executive summary (reads prior_outputs if needed)."""
+    summary_text = _resolve_executive_summary_text(context)
     if not summary_text:
         return AgentEnvelope.warning_envelope("No executive summary available for narration")
 
     if not settings.elevenlabs_api_key_configured:
         return AgentEnvelope.warning_envelope("ElevenLabs API key not configured")
 
+    intro = (
+        "Welcome to your Datalyze insight podcast — a short audio playbook for this analysis. "
+        "Here are the key takeaways. "
+    )
+    full_narration = intro + summary_text
+    tts_payload = full_narration[:2500]
+
     try:
         from services.external_agent_clients import elevenlabs_synthesize_mp3
 
-        audio_bytes = elevenlabs_synthesize_mp3(summary_text[:2500])
-        # Save audio to run artifacts
+        audio_bytes = elevenlabs_synthesize_mp3(tts_payload)
         run_dir = context.get("_run_dir")
         if run_dir:
-            audio_path = Path(run_dir) / "artifacts" / "narration.mp3"
+            base = Path(run_dir) / "artifacts"
+            audio_path = base / "narration.mp3"
             audio_path.write_bytes(audio_bytes)
+            rel = str(audio_path.relative_to(base))
             return AgentEnvelope(
                 status="ok",
-                summary="Audio narration generated",
+                summary="Audio narration generated from executive summary",
                 confidence=1.0,
-                artifacts=[{"type": "audio", "path": str(audio_path), "format": "mp3"}],
+                artifacts=[
+                    {
+                        "type": "audio",
+                        "path": rel,
+                        "format": "mp3",
+                        "narration_text": tts_payload[:1200],
+                        "status": "ok",
+                    },
+                ],
             )
         return AgentEnvelope(
             status="ok",
             summary="Audio narration generated (in memory)",
             confidence=1.0,
+            artifacts=[
+                {
+                    "type": "audio",
+                    "format": "mp3",
+                    "narration_text": tts_payload[:1200],
+                    "status": "ok",
+                },
+            ],
         )
     except Exception as exc:
         return AgentEnvelope.error_envelope(f"Narration error: {str(exc)[:500]}")
@@ -495,6 +610,19 @@ class OrchestratorEngine:
         self._input_hash: str = ""
         self._finalized_cancel: bool = False
 
+    def _run_log(
+        self,
+        stage: str,
+        agent: str,
+        action: str,
+        detail: str,
+        status: str,
+        meta: dict[str, Any] | None = None,
+    ) -> None:
+        """Persist pipeline log row. Per-line ElevenLabs TTS is disabled for MVP (podcast playbook only)."""
+        d = (detail or "")[:2000]
+        db_insert_run_log(self.run_id, stage, agent, action, d, status, meta)
+
     def _abort_if_cancelled(self) -> bool:
         """If user requested stop, finalize as cancelled and return True."""
         if self._finalized_cancel:
@@ -566,8 +694,8 @@ class OrchestratorEngine:
             replay_payload=replay_payload,
             run_dir_path=run_dir_relative(self.run_dir) if self.run_dir else None,
         )
-        db_insert_run_log(
-            self.run_id, "system", "orchestrator", "run_cancelled",
+        self._run_log(
+            "system", "orchestrator", "run_cancelled",
             "Run stopped by user (cooperative cancellation).", "warning",
         )
         logger.info("Run %s cancelled by user", self.run_slug)
@@ -585,8 +713,8 @@ class OrchestratorEngine:
                     status="cancelled",
                     summary="Analysis stopped by user before execution started.",
                 )
-                db_insert_run_log(
-                    self.run_id, "system", "orchestrator", "run_cancelled",
+                self._run_log(
+                    "system", "orchestrator", "run_cancelled",
                     "Cancelled before run directory was created.", "warning",
                 )
                 return
@@ -633,8 +761,8 @@ class OrchestratorEngine:
                             },
                             input_hash=self._input_hash,
                         )
-                        db_insert_run_log(
-                            self.run_id, "system", "orchestrator", "duplicate_detected",
+                        self._run_log(
+                            "system", "orchestrator", "duplicate_detected",
                             f"Duplicate of run {dup_slug}", "info",
                         )
                         return
@@ -654,8 +782,8 @@ class OrchestratorEngine:
                 input_hash=self._input_hash,
             )
 
-            db_insert_run_log(
-                self.run_id, "system", "orchestrator", "run_started",
+            self._run_log(
+                "system", "orchestrator", "run_started",
                 f"Track: {self.track_id.value}, Files: {len(self.source_file_ids)}",
                 "start",
             )
@@ -696,8 +824,8 @@ class OrchestratorEngine:
                 status="failed",
                 summary=f"Pipeline failed: {str(exc)[:500]}",
             )
-            db_insert_run_log(
-                self.run_id, "system", "orchestrator", "fatal_error",
+            self._run_log(
+                "system", "orchestrator", "fatal_error",
                 str(exc)[:1000], "error",
             )
 
@@ -769,8 +897,8 @@ class OrchestratorEngine:
         self.memory.add_event("stage_started", "orchestrator", stage_id.value)
         write_memory(self.run_dir, self.memory)
 
-        db_insert_run_log(
-            self.run_id, stage_id.value, "orchestrator", "stage_started",
+        self._run_log(
+            stage_id.value, "orchestrator", "stage_started",
             f"Starting stage: {stage_id.value}", "start",
         )
 
@@ -905,13 +1033,13 @@ class OrchestratorEngine:
 
             if not gate_result.passed:
                 self.memory.warnings.extend(gate_result.issues)
-                db_insert_run_log(
-                    self.run_id, stage_id.value, "orchestrator", "gate_failed",
+                self._run_log(
+                    stage_id.value, "orchestrator", "gate_failed",
                     "; ".join(gate_result.issues), "warning",
                 )
 
-        db_insert_run_log(
-            self.run_id, stage_id.value, "orchestrator", "stage_completed",
+        self._run_log(
+            stage_id.value, "orchestrator", "stage_completed",
             f"Stage {stage_id.value} done", "success",
         )
 
@@ -930,8 +1058,8 @@ class OrchestratorEngine:
             self.memory.pending.remove(agent_id)
         write_memory(self.run_dir, self.memory)
 
-        db_insert_run_log(
-            self.run_id, stage, agent_id, "dispatch",
+        self._run_log(
+            stage, agent_id, "dispatch",
             f"Dispatching {agent_id} (step {step})", "start",
         )
 
@@ -965,8 +1093,8 @@ class OrchestratorEngine:
                 self.memory.add_event("agent_retry", agent_id, retry.reason)
                 write_memory(self.run_dir, self.memory)
 
-                db_insert_run_log(
-                    self.run_id, stage, agent_id, "retry",
+                self._run_log(
+                    stage, agent_id, "retry",
                     f"Retry attempt {retry.attempt}: {retry.reason}", "warning",
                 )
 
@@ -1020,8 +1148,8 @@ class OrchestratorEngine:
             decision.outcome = "failed"
             self.memory.failed.append(agent_id)
             self.memory.add_event("agent_failed", agent_id, envelope.summary)
-            db_insert_run_log(
-                self.run_id, stage, agent_id, "failed",
+            self._run_log(
+                stage, agent_id, "failed",
                 envelope.summary[:500], "error",
             )
         else:
@@ -1030,8 +1158,8 @@ class OrchestratorEngine:
             self.memory.completed.append(agent_id)
             self.prior_outputs[agent_id] = envelope.to_dict()
             self.memory.add_event("agent_completed", agent_id, envelope.summary[:200])
-            db_insert_run_log(
-                self.run_id, stage, agent_id, "completed",
+            self._run_log(
+                stage, agent_id, "completed",
                 envelope.summary[:500], "success",
                 {"confidence": envelope.confidence},
             )
@@ -1065,6 +1193,11 @@ class OrchestratorEngine:
                 if agent_id in self.memory.pending:
                     self.memory.pending.remove(agent_id)
 
+                self._run_log(
+                    stage, agent_id, "dispatch",
+                    f"Dispatching {agent_id} (step {step})", "start",
+                )
+
                 ctx = dict(self.context)
                 ctx["prior_outputs"] = dict(self.prior_outputs)
                 future = executor.submit(_dispatch_agent, agent_id, ctx, self.run_dir)
@@ -1084,16 +1217,16 @@ class OrchestratorEngine:
                 if envelope.status == "error":
                     self.memory.failed.append(agent_id)
                     self.memory.add_event("agent_failed", agent_id, envelope.summary)
-                    db_insert_run_log(
-                        self.run_id, stage, agent_id, "failed",
+                    self._run_log(
+                        stage, agent_id, "failed",
                         envelope.summary[:500], "error",
                     )
                 else:
                     self.memory.completed.append(agent_id)
                     self.prior_outputs[agent_id] = envelope.to_dict()
                     self.memory.add_event("agent_completed", agent_id, envelope.summary[:200])
-                    db_insert_run_log(
-                        self.run_id, stage, agent_id, "completed",
+                    self._run_log(
+                        stage, agent_id, "completed",
                         envelope.summary[:500], "success",
                     )
 
@@ -1236,8 +1369,8 @@ class OrchestratorEngine:
             except Exception:
                 logger.warning("demo_replay capture failed", exc_info=True)
 
-        db_insert_run_log(
-            self.run_id, "system", "orchestrator", "finalized",
+        self._run_log(
+            "system", "orchestrator", "finalized",
             summary, "success",
         )
 

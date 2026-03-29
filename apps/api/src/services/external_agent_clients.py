@@ -107,7 +107,8 @@ def elevenlabs_synthesize_mp3(text: str, voice_id: str | None = None) -> bytes:
     if not settings.elevenlabs_api_key_configured:
         raise ValueError("ELEVENLABS_API_KEY is not set in apps/api/.env")
 
-    vid = (voice_id or DEFAULT_ELEVENLABS_VOICE_ID).strip()
+    env_voice = (settings.elevenlabs_voice_id or "").strip()
+    vid = (voice_id or env_voice or DEFAULT_ELEVENLABS_VOICE_ID).strip()
     url = ELEVENLABS_TTS_URL.format(voice_id=vid)
     headers = {
         "xi-api-key": settings.elevenlabs_api_key.strip(),

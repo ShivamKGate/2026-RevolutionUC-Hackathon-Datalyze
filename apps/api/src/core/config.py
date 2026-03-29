@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")
+    # Optional: custom voice (see ElevenLabs voice library). Empty = default Rachel voice in TTS client.
+    elevenlabs_voice_id: str = Field(default="")
+    # Short spoken cues when each pipeline agent starts (separate MP3s under narration_steps/).
+    elevenlabs_pipeline_narration: bool = Field(default=True)
     jwt_secret: str = Field(default="change-me-in-production-use-a-long-random-string")
     jwt_algorithm: str = Field(default="HS256")
     jwt_expire_hours: int = Field(default=48)

@@ -6,7 +6,7 @@ import {
   type PipelineRun,
   type PipelineRunLog,
 } from "../lib/api";
-import { TrackRenderer } from "../components/analysis";
+import { PodcastPlaybookPlayer, TrackRenderer } from "../components/analysis";
 import type {
   AgentResults,
   VisualizationPlan,
@@ -263,6 +263,8 @@ export default function AnalysisDetailPage() {
           </p>
         </div>
       )}
+
+      <PodcastPlaybookPlayer slug={run.slug} runStatus={run.status} />
 
       {run.summary && <div className="analysis-summary">{run.summary}</div>}
 

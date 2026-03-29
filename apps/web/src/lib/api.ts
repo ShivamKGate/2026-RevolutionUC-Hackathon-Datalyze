@@ -370,6 +370,41 @@ export async function listPipelineRuns(): Promise<PipelineRun[]> {
   return (await response.json()) as PipelineRun[];
 }
 
+export type NarrationClipMeta = {
+  seq: number;
+  action?: string;
+  text?: string;
+  audio_file?: string;
+  timestamp?: string;
+};
+
+export type NarrationManifest = {
+  clips: NarrationClipMeta[];
+  final_narration: boolean;
+};
+
+export async function getNarrationManifest(
+  slug: string,
+): Promise<NarrationManifest> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/narration/manifest`,
+    { credentials: "include" },
+  );
+  if (!response.ok) {
+    throw new Error(`Narration manifest failed (${response.status})`);
+  }
+  return (await response.json()) as NarrationManifest;
+}
+
+/** Same-origin URL for a realtime narration clip (use with `new Audio(url)`). */
+export function narrationRealtimeUrl(slug: string, seq: number): string {
+  return `/api/v1/runs/${encodeURIComponent(slug)}/narration/realtime/${seq}`;
+}
+
+export function narrationFinalUrl(slug: string): string {
+  return `/api/v1/runs/${encodeURIComponent(slug)}/narration/final`;
+}
+
 export async function getPipelineRun(slug: string): Promise<PipelineRun> {
   const response = await fetch(`/api/v1/runs/${encodeURIComponent(slug)}`, {
     credentials: "include",
