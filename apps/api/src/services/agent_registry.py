@@ -8,6 +8,7 @@ from typing import Any, Literal
 from crewai import Agent, LLM
 
 from core.config import settings
+from services.agents import AGENT_MODULES, get_agent_module
 
 ModelType = Literal[
     "heavy",
@@ -52,7 +53,9 @@ def _normalize_model(model: str) -> str:
     return model
 
 
-def _prime_openai_compat_env() -> None:
+def _prime_crewai_env() -> None:
+    """CrewAI reads OPENAI_* env vars internally for its LLM wire protocol. We
+    point them to the configured provider (Featherless / Ollama)."""
     os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
     os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 
@@ -380,7 +383,7 @@ class AgentRegistry:
         return "system-layer"
 
     def _get_llm(self, model_name: str) -> LLM:
-        _prime_openai_compat_env()
+        _prime_crewai_env()
         normalized = _normalize_model(model_name)
         if normalized not in self._llm_cache:
             self._llm_cache[normalized] = LLM(
@@ -397,6 +400,11 @@ class AgentRegistry:
             llm = self._get_llm(settings.heavy_alt_model)
         else:
             llm = self._get_llm(settings.light_model)
+
+        agent_module = get_agent_module(spec.id)
+        if agent_module is not None:
+            return agent_module.build_agent(llm)
+
         return Agent(
             role=spec.name,
             goal=spec.responsibilities,
