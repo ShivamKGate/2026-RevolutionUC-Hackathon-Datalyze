@@ -20,11 +20,13 @@ ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
 
-def openai_compat_chat_completion(
+def llm_chat_completion(
     model: str,
     user_message: str,
     system_instruction: str | None = None,
+    max_tokens: int = 800,
 ) -> str:
+    """Send a chat completion via the configured LLM provider (Featherless/Ollama)."""
     is_ollama = settings.llm_provider == "ollama"
     if not is_ollama and not settings.llm_api_key_configured:
         raise ValueError("LLM_API_KEY is not set in apps/api/.env")
@@ -42,7 +44,7 @@ def openai_compat_chat_completion(
         "model": model,
         "messages": messages,
         "temperature": 0.2,
-        "max_tokens": 80,
+        "max_tokens": max_tokens,
     }
 
     headers = {"Content-Type": "application/json"}
@@ -53,15 +55,18 @@ def openai_compat_chat_completion(
         resp = client.post(url, headers=headers, json=body)
         if resp.status_code >= 400:
             raise RuntimeError(
-                f"OpenAI-compat API error {resp.status_code}: {resp.text[:2000]}",
+                f"LLM API error {resp.status_code}: {resp.text[:2000]}",
             )
         data = resp.json()
 
     choices = data.get("choices") or []
     if not choices:
-        raise RuntimeError(f"OpenAI-compat returned no choices: {json.dumps(data)[:1500]}")
+        raise RuntimeError(f"LLM API returned no choices: {json.dumps(data)[:1500]}")
     content = ((choices[0].get("message") or {}).get("content") or "").strip()
     return content or "(empty model response)"
+
+
+openai_compat_chat_completion = llm_chat_completion
 
 
 def gemini_chat_completion(user_message: str, system_instruction: str | None = None) -> str:

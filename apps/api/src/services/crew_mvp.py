@@ -9,14 +9,15 @@ def _normalize_model(model: str) -> str:
     return model
 
 
-def _prime_openai_compat_env() -> None:
-    # CrewAI's OpenAI-compatible providers expect OPENAI_API_KEY at import/runtime.
+def _prime_crewai_env() -> None:
+    """CrewAI reads OPENAI_* env vars internally for its LLM wire protocol. We
+    point them to the configured provider (Featherless / Ollama)."""
     os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
     os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 
 
 def _build_llm(model_name: str) -> LLM:
-    _prime_openai_compat_env()
+    _prime_crewai_env()
     return LLM(
         model=_normalize_model(model_name),
         base_url=settings.llm_base_url,
