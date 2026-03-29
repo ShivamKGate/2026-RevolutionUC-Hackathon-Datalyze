@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     orch_enable_adaptive_policy: bool = Field(default=False)
     orch_enable_stage_gates: bool = Field(default=True)
     orch_max_run_seconds: int = Field(default=420)
+    # After Gemini classification, call HEAVY_MODEL (e.g. Kimi) to refine skips + shared brief
+    orch_heavy_brain_enabled: bool = Field(default=True)
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")

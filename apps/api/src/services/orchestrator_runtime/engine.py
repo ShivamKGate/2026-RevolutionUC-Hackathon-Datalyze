@@ -33,6 +33,11 @@ from services.orchestrator_runtime.contracts import (
     RunManifest,
     RunStatus,
     StageGateResult,
+    StageID,
+)
+from services.orchestrator_runtime.orchestrator_brain import (
+    merge_skip_agent_lists,
+    run_heavy_orchestration_brain,
 )
 from services.orchestrator_runtime.persistence import (
     append_decision,
@@ -657,12 +662,38 @@ def _build_task_prompt(
     retry_hint = context.get("_retry_hint", "")
     retry_section = f"\n\nIMPORTANT: {retry_hint}" if retry_hint else ""
 
+    brain = context.get("orchestrator_brain")
+    brain_section = ""
+    if isinstance(brain, dict):
+        brief = (brain.get("orchestrator_brief") or "").strip()
+        if brief:
+            brain_section = f"\n--- Orchestrator context (heavy model) ---\n{brief}\n"
+        ag = brain.get("per_agent_guidance") or {}
+        if isinstance(ag, dict) and spec.id in ag:
+            g = str(ag.get(spec.id, "")).strip()
+            if g:
+                brain_section += f"\n--- Guidance for this agent ---\n{g}\n"
+
+    cr = context.get("classifier_routing") or {}
+    routing_section = ""
+    if isinstance(cr, dict):
+        rec = cr.get("recommended_agents") or []
+        sk = cr.get("skip_agents") or []
+        if rec or sk:
+            routing_section = (
+                "\n--- Classifier routing ---\n"
+                f"Recommended emphasis: {rec}\n"
+                f"Skipped for this run: {sk}\n"
+            )
+
     return (
         f"You are the {spec.name} for the Datalyze platform.\n"
         f"Role: {spec.responsibilities}\n"
         f"Company: {company}\n"
         f"Analysis track: {track}\n"
         f"Input files: {file_count}\n"
+        f"{routing_section}"
+        f"{brain_section}"
         f"{prior_summary}\n\n"
         f"Your input: {spec.input_description}\n"
         f"Your expected output: {spec.output_description}\n\n"
@@ -937,6 +968,9 @@ class OrchestratorEngine:
 
                 self._execute_stage(stage_config)
 
+                if stage_config.stage_id == StageID.CLASSIFY:
+                    self._apply_heavy_orchestration_brain()
+
                 if self._abort_if_cancelled():
                     return
 
@@ -977,6 +1011,8 @@ class OrchestratorEngine:
             "onboarding_path": self.onboarding_path,
             "_run_dir": str(self.run_dir),
             "prior_outputs": self.prior_outputs,
+            "orchestrator_brain": {},
+            "classifier_routing": {},
         }
 
         # Build list of all agents across all stages
@@ -1005,6 +1041,7 @@ class OrchestratorEngine:
                 "heavy_alt_model": settings.heavy_alt_model,
                 "light_model": settings.light_model,
                 "llm_provider": settings.llm_provider,
+                "orch_heavy_brain_enabled": str(settings.orch_heavy_brain_enabled),
             },
         )
         write_manifest(self.run_dir, manifest)
@@ -1021,6 +1058,37 @@ class OrchestratorEngine:
             "public_scrape_enabled": self.public_scrape_enabled,
         })
         update_artifacts_index(self.run_dir, [])
+
+    def _apply_heavy_orchestration_brain(self) -> None:
+        """After Gemini classification, call ``HEAVY_MODEL`` (``settings.heavy_model`` / .env) only."""
+        if not settings.orch_heavy_brain_enabled:
+            return
+        if "pipeline_classifier" not in self.prior_outputs:
+            return
+        arts = self.prior_outputs.get("pipeline_classifier", {}).get("artifacts", [])
+        classifier_result = _artifact_primary_payload(arts)
+        if not classifier_result:
+            return
+        brain = run_heavy_orchestration_brain(
+            track=self.track_id.value,
+            company_name=self.company_name,
+            onboarding_path=self.onboarding_path,
+            source_files_meta=self.source_files_meta,
+            classifier_result=classifier_result,
+            focus_agents=list(self.profile.focus_agents),
+        )
+        self.context["orchestrator_brain"] = brain
+        detail = f"heavy_model={brain.get('heavy_model')}; skips={brain.get('skip_agents')}"
+        brief = (brain.get("orchestrator_brief") or "").strip()
+        if brief:
+            detail += f"; brief_chars={len(brief)}"
+        self.memory.add_event("orchestrator_brain", "orchestrator", detail[:500])
+        if self.run_dir:
+            write_memory(self.run_dir, self.memory)
+        self._run_log(
+            "classify", "orchestrator", "heavy_brain",
+            detail[:2000], "info",
+        )
 
     def _execute_stage(self, stage_config: Any) -> None:
         """Execute all agents in a stage respecting DAG and policies."""
@@ -1055,22 +1123,27 @@ class OrchestratorEngine:
                     self.memory.pending.remove(a)
                 self.memory.add_event("agent_skipped", a, "No files to process")
 
-        # 1.1a — Classifier-based agent skip list + context routing
+        # 1.1a — Classifier + heavy-brain merged skip list + context routing
         classifier_artifacts = self.prior_outputs.get("pipeline_classifier", {}).get("artifacts", [])
         classifier_result = _artifact_primary_payload(classifier_artifacts)
+        skip_list: list[str] = []
         if classifier_result:
+            brain_skips: list[str] = []
+            ob = self.context.get("orchestrator_brain")
+            if isinstance(ob, dict):
+                brain_skips = [x for x in (ob.get("skip_agents") or []) if isinstance(x, str)]
+            merged_skip = merge_skip_agent_lists(
+                [x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)],
+                brain_skips,
+            )
             self.context["classifier_routing"] = {
-                "skip_agents": [
-                    x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
-                ],
+                "skip_agents": merged_skip,
                 "recommended_agents": [
                     x for x in (classifier_result.get("recommended_agents") or []) if isinstance(x, str)
                 ],
             }
             self.context["prior_outputs"] = self.prior_outputs
-        skip_list: list[str] = [
-            x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
-        ]
+            skip_list = merged_skip
         if skip_list:
             for a in valid_agents:
                 if (a in skip_list
@@ -1199,12 +1272,20 @@ class OrchestratorEngine:
         )
 
         # Record decision
+        why = f"DAG ready, track={self.track_id.value}"
+        ob = self.context.get("orchestrator_brain")
+        if settings.orch_heavy_brain_enabled and isinstance(ob, dict):
+            guides = ob.get("per_agent_guidance") or {}
+            if isinstance(guides, dict) and agent_id in guides:
+                g = str(guides.get(agent_id, "")).strip()
+                if g:
+                    why = f"Heavy-orchestrated: {g[:280]}"
         decision = DecisionRecord(
             timestamp=datetime.now(UTC).isoformat(),
             step=step,
             stage=stage,
             agent_id=agent_id,
-            why_this_agent=f"DAG ready, track={self.track_id.value}",
+            why_this_agent=why,
             alternatives_considered=[],
             policy_mode="adaptive" if settings.orch_enable_adaptive_policy else "deterministic",
             confidence=0.0,
@@ -1518,6 +1599,7 @@ class OrchestratorEngine:
             "adaptive_policy_enabled": settings.orch_enable_adaptive_policy,
             "stage_gates_enabled": settings.orch_enable_stage_gates,
             "max_run_seconds": settings.orch_max_run_seconds,
+            "orch_heavy_brain_enabled": settings.orch_heavy_brain_enabled,
         }
 
     def _compute_input_hash(self) -> str:

@@ -80,10 +80,18 @@ def is_agent_ready(
     agent_id: str,
     completed_agents: list[str],
     agent_dependencies: dict[str, list[str]],
+    skipped_agents: list[str] | None = None,
 ) -> bool:
-    """Check if all dependencies for an agent are completed."""
+    """Check if all dependencies for an agent are satisfied.
+
+    A dependency counts as satisfied if it completed **or** was intentionally
+    skipped by the orchestrator (so downstream work is not blocked when an
+    optional upstream agent is omitted).
+    """
     deps = [d for d in agent_dependencies.get(agent_id, []) if d != "orchestrator"]
-    return all(d in completed_agents for d in deps)
+    skip_set = set(skipped_agents or [])
+    done = set(completed_agents) | skip_set
+    return all(d in done for d in deps)
 
 
 def pick_next_agents(
@@ -105,7 +113,10 @@ def pick_next_agents(
     done_set = set(completed) | set(failed) | set(skipped)
     candidates = [a for a in stage_agents if a not in done_set]
 
-    ready = [a for a in candidates if is_agent_ready(a, completed, agent_dependencies)]
+    ready = [
+        a for a in candidates
+        if is_agent_ready(a, completed, agent_dependencies, skipped)
+    ]
 
     if not ready:
         return []
