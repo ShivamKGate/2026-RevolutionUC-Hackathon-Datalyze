@@ -326,6 +326,13 @@ export type PipelineRunReplay = {
   replay_payload: Record<string, unknown>;
 };
 
+export type ClearRunsResponse = {
+  status: string;
+  deleted_runs: number;
+  deleted_run_dirs: number;
+  filesystem_errors: string[];
+};
+
 export async function listPipelineRuns(): Promise<PipelineRun[]> {
   const response = await fetch("/api/v1/runs", { credentials: "include" });
   if (!response.ok) throw new Error(`List runs failed (${response.status})`);
@@ -390,4 +397,16 @@ export async function getPipelineRunReplay(
   );
   if (!response.ok) throw new Error(`Run replay failed (${response.status})`);
   return (await response.json()) as PipelineRunReplay;
+}
+
+export async function clearAllPipelineRuns(): Promise<ClearRunsResponse> {
+  const response = await fetch("/api/v1/runs", {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Clear analyses failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as ClearRunsResponse;
 }

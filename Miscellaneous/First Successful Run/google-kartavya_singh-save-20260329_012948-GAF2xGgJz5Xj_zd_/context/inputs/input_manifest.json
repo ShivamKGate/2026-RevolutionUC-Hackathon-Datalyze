@@ -1,0 +1,16 @@
+{
+  "source_file_ids": [
+    2
+  ],
+  "source_files": [
+    {
+      "id": 2,
+      "original_filename": "Google_Dataset_Analytics_Sample.xlsx",
+      "storage_relative_path": "data/company/Google/private/e23f1faed838410890098ca480630d6d_Google_Dataset_Analytics_Sample.xlsx",
+      "byte_size": 76167,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "created_at": "2026-03-29T00:34:42Z"
+    }
+  ],
+  "public_scrape_enabled": true
+}

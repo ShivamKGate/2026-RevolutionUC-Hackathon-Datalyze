@@ -8,6 +8,7 @@ Local-first, multi-agent business intelligence platform scaffold for RevolutionU
 
 ## What This Repository Now Includes
 
+- **Integration baseline & changelog:** see [`Miscellaneous/Datalyze.md`](Miscellaneous/Datalyze.md) for post-merge wiring, first successful run metrics, and an expectations-vs-achieved accuracy sheet.
 - Full monorepo skeleton with backend, frontend, docs, infra, scripts, and tests.
 - Strong folder boundaries to support parallel development during hackathon pressure.
 - Directory-level `README.md` files describing what belongs in each area.
@@ -130,12 +131,12 @@ This proves the web app and API are connected and communicating.
 
 ## Suggested Next Steps (Build Order)
 
-1. Add onboarding route + schema contracts (frontend and API).
-2. Add upload endpoint + file metadata persistence.
-3. Add run pipeline bootstrap endpoint with mock orchestrator events.
-4. Add dashboard polling + SSE log stream.
-5. Add insight cards and knowledge-graph API shape.
-6. Integrate first local model call through Ollama adapter service.
+1. Harden **ElevenLabs** handoff (pass executive summary text into narration context).
+2. Improve **file routing fidelity** (classifier anchored to real upload metadata).
+3. Add **CI smoke** for orchestrator (dispatch + terminal status) on each PR.
+4. Expand **replay payload** toward full dashboard card parity (insights graph, etc.).
+5. Optional: **duplicate-run cache** by input signature (plan Phase 4).
+6. Optional: **SSE** live log stream for Analysis detail (polling works today).
 
 ## Hackathon Notes
 

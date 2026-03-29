@@ -1,0 +1,90 @@
+{
+  "status": "ok",
+  "summary": "knowledge_graph_builder completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "nodes": [
+          {
+            "id": "google",
+            "label": "Google",
+            "type": "company"
+          },
+          {
+            "id": "sales_by_region_table",
+            "label": "Sales by Region",
+            "type": "table"
+          },
+          {
+            "id": "2022_07_22",
+            "label": "2022-07-22",
+            "type": "date"
+          },
+          {
+            "id": "high_credibility_source",
+            "label": "High credibility source",
+            "type": "concept"
+          },
+          {
+            "id": "unknown_contents_pdf",
+            "label": "PDF with unknown contents",
+            "type": "document"
+          },
+          {
+            "id": "sales_data_by_region",
+            "label": "Sales data by region",
+            "type": "metric"
+          }
+        ],
+        "edges": [
+          {
+            "source": "google",
+            "target": "sales_by_region_table",
+            "relationship": "contains",
+            "weight": 1.0
+          },
+          {
+            "source": "sales_by_region_table",
+            "target": "2022_07_22",
+            "relationship": "retrieved_at",
+            "weight": 1.0
+          },
+          {
+            "source": "sales_by_region_table",
+            "target": "high_credibility_source",
+            "relationship": "from",
+            "weight": 1.0
+          },
+          {
+            "source": "sales_by_region_table",
+            "target": "sales_data_by_region",
+            "relationship": "contains_data_about",
+            "weight": 1.0
+          },
+          {
+            "source": "google",
+            "target": "unknown_contents_pdf",
+            "relationship": "contains",
+            "weight": 0.7
+          },
+          {
+            "source": "unknown_contents_pdf",
+            "target": "2022_07_22",
+            "relationship": "retrieved_at",
+            "weight": 1.0
+          },
+          {
+            "source": "unknown_contents_pdf",
+            "target": "high_credibility_source",
+            "relationship": "from",
+            "weight": 1.0
+          }
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

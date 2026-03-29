@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "summary": "{\"artifacts\": [{\"title\": \"Table found on page 1, title: \\'Sales by Region\\'\", \"source_url\": \"https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0\", \"content_summary\": \"Table with sales data by region\", \"retrieved_at\": \"2022-07-22T16:43:35Z\", \"credibility\": \"high\"}, {\"title\": \"PDF contents: ...\", \"source_url\": \"https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0\", \"content_summary\": \"PDF with unknown contents\", \"retrieved_at\": \"2022-07-22T16:43:3",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.5,
+  "errors": []
+}

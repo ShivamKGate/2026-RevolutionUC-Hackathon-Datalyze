@@ -1,0 +1,55 @@
+{
+  "status": "ok",
+  "summary": "aggregator completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "corpus": [
+          {
+            "item_id": "table:1",
+            "content_summary": "Table found on page 1, title: 'Sales by Region'",
+            "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+            "relevance_score": 75
+          },
+          {
+            "item_id": "page:1",
+            "content_summary": "Table with sales data by region",
+            "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+            "relevance_score": 50
+          },
+          {
+            "item_id": "sheet1_data",
+            "content_summary": "Sheet with 5 rows and 3 columns: [Sales, Region, Amount]",
+            "source": "https://docs.google.com/spreadsheets/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+            "relevance_score": 80
+          },
+          {
+            "item_id": "sheet2_data",
+            "content_summary": "Sheet with 3 rows and 2 columns: [Product, Price]",
+            "source": "https://docs.google.com/spreadsheets/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+            "relevance_score": 40
+          },
+          {
+            "item_id": "pdf_contents",
+            "content_summary": "PDF contents: Sales data",
+            "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+            "relevance_score": 20
+          }
+        ],
+        "usefulness_scores": {
+          "high": 2,
+          "medium": 2,
+          "low": 1
+        },
+        "storyline_hypotheses": [
+          "Hypothesis 1: The sales data across regions in Google's internal documents indicates that the North and South regions are key contributors to revenue.",
+          "Hypothesis 2: Product pricing strategies are closely monitored and adjusted to maximize profit margins."
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

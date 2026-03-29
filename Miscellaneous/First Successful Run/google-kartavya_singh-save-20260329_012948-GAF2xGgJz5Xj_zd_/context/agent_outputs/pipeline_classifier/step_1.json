@@ -1,0 +1,15 @@
+{
+  "status": "ok",
+  "summary": "Track classified (rule-based fallback): predictive",
+  "artifacts": [
+    {
+      "type": "classification",
+      "result": {
+        "track": "predictive"
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.7,
+  "errors": []
+}

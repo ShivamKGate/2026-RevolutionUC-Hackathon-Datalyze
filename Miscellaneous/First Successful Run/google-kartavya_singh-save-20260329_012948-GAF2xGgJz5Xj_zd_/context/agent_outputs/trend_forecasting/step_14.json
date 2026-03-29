@@ -1,0 +1,46 @@
+{
+  "status": "ok",
+  "summary": "trend_forecasting completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "forecasts": [
+          {
+            "metric": "Sales in USD",
+            "current_value": 3000,
+            "forecast_value": 4200,
+            "period": "Quarter",
+            "direction": "up",
+            "confidence": 0.9
+          },
+          {
+            "metric": "Quarterly Revenue",
+            "current_value": 12000,
+            "forecast_value": 15600,
+            "period": "Year",
+            "direction": "up",
+            "confidence": 0.85
+          }
+        ],
+        "confidence_bands": [
+          {
+            "metric": "Sales in USD",
+            "lower": 3500,
+            "upper": 5000,
+            "period": "Quarter"
+          },
+          {
+            "metric": "Quarterly Revenue",
+            "lower": 13000,
+            "upper": 18000,
+            "period": "Year"
+          }
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

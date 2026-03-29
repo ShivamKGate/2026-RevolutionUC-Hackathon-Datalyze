@@ -1,0 +1,85 @@
+{
+  "status": "ok",
+  "summary": "csv_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "rows_summary": {
+          "total_rows": 5,
+          "sample_rows": [
+            [
+              1.0,
+              4.0,
+              7.0
+            ],
+            [
+              2.0,
+              5.0,
+              8.0
+            ],
+            [
+              3.0,
+              6.0,
+              9.0
+            ],
+            [
+              1.5,
+              4.5,
+              7.5
+            ],
+            [
+              2.5,
+              5.5,
+              8.5
+            ]
+          ]
+        },
+        "inferred_schema": [
+          {
+            "column": "Age",
+            "type": "numeric",
+            "nullable": false
+          },
+          {
+            "column": "Income",
+            "type": "numeric",
+            "nullable": false
+          },
+          {
+            "column": "Region",
+            "type": "string",
+            "nullable": false
+          }
+        ],
+        "stats": [
+          {
+            "column": "Age",
+            "min": 1.0,
+            "max": 3.0,
+            "mean": 2.8,
+            "null_count": 0
+          },
+          {
+            "column": "Income",
+            "min": 4.0,
+            "max": 6.0,
+            "mean": 5.8,
+            "null_count": 0
+          },
+          {
+            "column": "Region",
+            "min": "North",
+            "max": "South",
+            "mean": null,
+            "null_count": 1
+          }
+        ],
+        "errors": []
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

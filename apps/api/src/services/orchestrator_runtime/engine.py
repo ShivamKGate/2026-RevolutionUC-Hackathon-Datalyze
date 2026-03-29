@@ -67,7 +67,11 @@ logger = logging.getLogger("orchestrator")
 def _build_dependency_map() -> dict[str, list[str]]:
     """Extract agent dependency graph from registry specs."""
     registry = get_registry()
-    return {spec.id: list(spec.dependencies) for spec in registry.specs}
+    # "orchestrator" is the controller, not a dispatchable dependency node.
+    return {
+        spec.id: [dep for dep in spec.dependencies if dep != "orchestrator"]
+        for spec in registry.specs
+    }
 
 
 def _dispatch_agent(
@@ -83,6 +87,8 @@ def _dispatch_agent(
     template factory instead.
     """
     registry = get_registry()
+    if not registry.nodes:
+        registry.initialize()
     node = registry.nodes.get(agent_id)
 
     if node is None:

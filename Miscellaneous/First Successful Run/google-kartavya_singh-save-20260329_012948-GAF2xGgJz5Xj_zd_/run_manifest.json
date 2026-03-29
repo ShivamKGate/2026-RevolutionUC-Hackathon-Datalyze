@@ -1,0 +1,22 @@
+{
+  "run_slug": "GAF2xGgJz5Xj_zd_",
+  "track": "predictive",
+  "company_id": 3,
+  "company_name": "Google",
+  "user_id": 1,
+  "source_file_ids": [
+    2
+  ],
+  "public_scrape_enabled": true,
+  "parallel_enabled": false,
+  "adaptive_policy_enabled": false,
+  "stage_gates_enabled": true,
+  "max_run_seconds": 900,
+  "created_at": "2026-03-29T01:29:48.299517+00:00",
+  "model_config": {
+    "heavy_model": "qwen2.5:14b",
+    "heavy_alt_model": "qwen2.5:14b",
+    "light_model": "llama3.2:3b",
+    "llm_provider": "ollama"
+  }
+}

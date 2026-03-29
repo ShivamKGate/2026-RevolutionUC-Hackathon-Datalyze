@@ -27,6 +27,13 @@ Miscellaneous/data/sources
 Miscellaneous/tests/Orchestrator_tests/
 Miscellaneous/tests/specialized_ai-testing
 
+# Datalyze testing playbook — per-campaign scratch (see Miscellaneous/Datalyze_Analysis_Testing_Playbook.md)
+# Ignore everything under playbook-runs/; re-include dirs so report.md can be committed per campaign slug.
+Miscellaneous/tests/playbook-runs/**
+!Miscellaneous/tests/playbook-runs/
+!Miscellaneous/tests/playbook-runs/**/
+!Miscellaneous/tests/playbook-runs/**/report.md
+
 # Local private uploads per company (public scrape artifacts under data/company/*/public/ may be committed)
 data/company/**/private/
 data/pipeline_runs/

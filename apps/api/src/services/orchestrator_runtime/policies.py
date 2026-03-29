@@ -78,7 +78,7 @@ def is_agent_ready(
     agent_dependencies: dict[str, list[str]],
 ) -> bool:
     """Check if all dependencies for an agent are completed."""
-    deps = agent_dependencies.get(agent_id, [])
+    deps = [d for d in agent_dependencies.get(agent_id, []) if d != "orchestrator"]
     return all(d in completed_agents for d in deps)
 
 

@@ -1,0 +1,35 @@
+{
+  "status": "ok",
+  "summary": "conflict_detection completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "analysis": {
+          "output": [
+            {
+              "id": "table_conflict",
+              "description": "Inconsistent data",
+              "side_a": "Table found on page 1, title: 'Sales by Region'",
+              "side_b": "PDF contents: ...",
+              "severity": "medium",
+              "confidence": 0.8
+            }
+          ],
+          "supporting_references": [
+            {
+              "contradiction_id": "table_conflict",
+              "source_items": [
+                "table:1",
+                "page:1"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

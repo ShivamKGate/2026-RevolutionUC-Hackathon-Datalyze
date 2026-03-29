@@ -1,0 +1,37 @@
+{
+  "status": "ok",
+  "summary": "data_cleaning completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "cleaned_chunks": [
+          {
+            "chunk_id": "Table found on page 1, title: 'Sales by Region'",
+            "content": "Table found on page 1, title: 'Sales by Region'",
+            "cleaning_applied": [
+              "date_norm",
+              "encoding_fix",
+              "whitespace_cleanup"
+            ]
+          }
+        ],
+        "dedup_flags": [
+          {
+            "original_id": "Table found on page 1, title: 'Sales by Region'",
+            "duplicate_of": "None",
+            "similarity": 0.0
+          }
+        ],
+        "normalization_applied": [
+          "date_format",
+          "encoding_fix",
+          "whitespace_cleanup"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

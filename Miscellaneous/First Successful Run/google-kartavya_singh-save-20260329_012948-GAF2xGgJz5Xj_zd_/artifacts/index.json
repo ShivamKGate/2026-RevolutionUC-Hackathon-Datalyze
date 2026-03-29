@@ -1,0 +1,608 @@
+[
+  {
+    "type": "classification",
+    "result": {
+      "track": "predictive"
+    },
+    "producer": "pipeline_classifier",
+    "timestamp": "2026-03-29T01:29:49.251267+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "file_routing": [
+        {
+          "filename": "file1.pdf",
+          "detected_type": "pdf",
+          "processor": "pdf_processor",
+          "confidence": 0.98
+        },
+        {
+          "filename": "file2.csv",
+          "detected_type": "csv",
+          "processor": "csv_processor",
+          "confidence": 0.95
+        },
+        {
+          "filename": "file3.txt",
+          "detected_type": "text|plain_text",
+          "processor": "plain_text_processor",
+          "confidence": 0.85
+        },
+        {
+          "filename": "file4.jpg",
+          "detected_type": "image|multimodal",
+          "processor": "image_multimodal_processor",
+          "confidence": 0.9
+        }
+      ],
+      "metadata_tags": {
+        "total_files": 4,
+        "types_detected": [
+          "pdf",
+          "csv",
+          "text",
+          "image"
+        ]
+      }
+    },
+    "producer": "file_type_classifier",
+    "timestamp": "2026-03-29T01:29:51.983026+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "rows_summary": {
+        "total_rows": 5,
+        "sample_rows": [
+          [
+            1.0,
+            4.0,
+            7.0
+          ],
+          [
+            2.0,
+            5.0,
+            8.0
+          ],
+          [
+            3.0,
+            6.0,
+            9.0
+          ],
+          [
+            1.5,
+            4.5,
+            7.5
+          ],
+          [
+            2.5,
+            5.5,
+            8.5
+          ]
+        ]
+      },
+      "inferred_schema": [
+        {
+          "column": "Age",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "column": "Income",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "column": "Region",
+          "type": "string",
+          "nullable": false
+        }
+      ],
+      "stats": [
+        {
+          "column": "Age",
+          "min": 1.0,
+          "max": 3.0,
+          "mean": 2.8,
+          "null_count": 0
+        },
+        {
+          "column": "Income",
+          "min": 4.0,
+          "max": 6.0,
+          "mean": 5.8,
+          "null_count": 0
+        },
+        {
+          "column": "Region",
+          "min": "North",
+          "max": "South",
+          "mean": null,
+          "null_count": 1
+        }
+      ],
+      "errors": []
+    },
+    "producer": "csv_processor",
+    "timestamp": "2026-03-29T01:29:53.674504+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "chunks": [
+        {
+          "chunk_id": "chunk_1",
+          "content": "Table found on page 1, title: Sales by Region",
+          "tag": "narrative|log_entry"
+        }
+      ],
+      "semantic_tags": []
+    },
+    "producer": "plain_text_processor",
+    "timestamp": "2026-03-29T01:29:57.638024+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "cleaned_chunks": [
+        {
+          "chunk_id": "Table found on page 1, title: 'Sales by Region'",
+          "content": "Table found on page 1, title: 'Sales by Region'",
+          "cleaning_applied": [
+            "date_norm",
+            "encoding_fix",
+            "whitespace_cleanup"
+          ]
+        }
+      ],
+      "dedup_flags": [
+        {
+          "original_id": "Table found on page 1, title: 'Sales by Region'",
+          "duplicate_of": "None",
+          "similarity": 0.0
+        }
+      ],
+      "normalization_applied": [
+        "date_format",
+        "encoding_fix",
+        "whitespace_cleanup"
+      ]
+    },
+    "producer": "data_cleaning",
+    "timestamp": "2026-03-29T01:29:58.443072+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "domain_tags": [
+        {
+          "chunk_id": "output analisis.analisis[0].chunk",
+          "domains": [
+            "sales",
+            "marketing"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "chunk_id": "output analisis.analisis[0].references[0]",
+          "domains": [
+            "operations",
+            "compliance"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "chunk_id": "analysis.text",
+          "domains": [],
+          "confidence": 0.0
+        }
+      ],
+      "content_type_tags": [
+        {
+          "chunk_id": "output analisis.analisis[0].chunk",
+          "types": [
+            "text_narrative",
+            "structured_data"
+          ],
+          "confidence": 0.95
+        },
+        {
+          "chunk_id": "output analisis.analisis[0].references[0]",
+          "types": [
+            "categorical",
+            "temporal"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "chunk_id": "output analisis.analisis[0].chunk",
+          "types": [
+            "quantitative"
+          ],
+          "confidence": 0.0
+        }
+      ]
+    },
+    "producer": "smart_categorizer_metadata",
+    "timestamp": "2026-03-29T01:29:59.578268+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "corpus": [
+        {
+          "item_id": "table:1",
+          "content_summary": "Table found on page 1, title: 'Sales by Region'",
+          "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+          "relevance_score": 75
+        },
+        {
+          "item_id": "page:1",
+          "content_summary": "Table with sales data by region",
+          "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+          "relevance_score": 50
+        },
+        {
+          "item_id": "sheet1_data",
+          "content_summary": "Sheet with 5 rows and 3 columns: [Sales, Region, Amount]",
+          "source": "https://docs.google.com/spreadsheets/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+          "relevance_score": 80
+        },
+        {
+          "item_id": "sheet2_data",
+          "content_summary": "Sheet with 3 rows and 2 columns: [Product, Price]",
+          "source": "https://docs.google.com/spreadsheets/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+          "relevance_score": 40
+        },
+        {
+          "item_id": "pdf_contents",
+          "content_summary": "PDF contents: Sales data",
+          "source": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0",
+          "relevance_score": 20
+        }
+      ],
+      "usefulness_scores": {
+        "high": 2,
+        "medium": 2,
+        "low": 1
+      },
+      "storyline_hypotheses": [
+        "Hypothesis 1: The sales data across regions in Google's internal documents indicates that the North and South regions are key contributors to revenue.",
+        "Hypothesis 2: Product pricing strategies are closely monitored and adjusted to maximize profit margins."
+      ]
+    },
+    "producer": "aggregator",
+    "timestamp": "2026-03-29T01:30:17.437766+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "analysis": {
+        "output": [
+          {
+            "id": "table_conflict",
+            "description": "Inconsistent data",
+            "side_a": "Table found on page 1, title: 'Sales by Region'",
+            "side_b": "PDF contents: ...",
+            "severity": "medium",
+            "confidence": 0.8
+          }
+        ],
+        "supporting_references": [
+          {
+            "contradiction_id": "table_conflict",
+            "source_items": [
+              "table:1",
+              "page:1"
+            ]
+          }
+        ]
+      }
+    },
+    "producer": "conflict_detection",
+    "timestamp": "2026-03-29T01:30:24.876150+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "forecasts": [
+        {
+          "metric": "Sales in USD",
+          "current_value": 3000,
+          "forecast_value": 4200,
+          "period": "Quarter",
+          "direction": "up",
+          "confidence": 0.9
+        },
+        {
+          "metric": "Quarterly Revenue",
+          "current_value": 12000,
+          "forecast_value": 15600,
+          "period": "Year",
+          "direction": "up",
+          "confidence": 0.85
+        }
+      ],
+      "confidence_bands": [
+        {
+          "metric": "Sales in USD",
+          "lower": 3500,
+          "upper": 5000,
+          "period": "Quarter"
+        },
+        {
+          "metric": "Quarterly Revenue",
+          "lower": 13000,
+          "upper": 18000,
+          "period": "Year"
+        }
+      ]
+    },
+    "producer": "trend_forecasting",
+    "timestamp": "2026-03-29T01:30:36.164955+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "sentiments": [
+        {
+          "text_id": "1",
+          "label": "positive",
+          "confidence": 0.8,
+          "key_phrases": [
+            "good",
+            "excellent",
+            "happy customer"
+          ]
+        },
+        {
+          "text_id": "2",
+          "label": "negative",
+          "confidence": 0.2,
+          "key_phrases": [
+            "bad product",
+            "slow delivery",
+            "not satisfied"
+          ]
+        }
+      ],
+      "trend_summary": {
+        "positive_pct": 60.0,
+        "negative_pct": 32.0,
+        "neutral_pct": 8.0,
+        "overall_direction": "improving"
+      }
+    },
+    "producer": "sentiment_analysis",
+    "timestamp": "2026-03-29T01:30:43.712822+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "nodes": [
+        {
+          "id": "google",
+          "label": "Google",
+          "type": "company"
+        },
+        {
+          "id": "sales_by_region_table",
+          "label": "Sales by Region",
+          "type": "table"
+        },
+        {
+          "id": "2022_07_22",
+          "label": "2022-07-22",
+          "type": "date"
+        },
+        {
+          "id": "high_credibility_source",
+          "label": "High credibility source",
+          "type": "concept"
+        },
+        {
+          "id": "unknown_contents_pdf",
+          "label": "PDF with unknown contents",
+          "type": "document"
+        },
+        {
+          "id": "sales_data_by_region",
+          "label": "Sales data by region",
+          "type": "metric"
+        }
+      ],
+      "edges": [
+        {
+          "source": "google",
+          "target": "sales_by_region_table",
+          "relationship": "contains",
+          "weight": 1.0
+        },
+        {
+          "source": "sales_by_region_table",
+          "target": "2022_07_22",
+          "relationship": "retrieved_at",
+          "weight": 1.0
+        },
+        {
+          "source": "sales_by_region_table",
+          "target": "high_credibility_source",
+          "relationship": "from",
+          "weight": 1.0
+        },
+        {
+          "source": "sales_by_region_table",
+          "target": "sales_data_by_region",
+          "relationship": "contains_data_about",
+          "weight": 1.0
+        },
+        {
+          "source": "google",
+          "target": "unknown_contents_pdf",
+          "relationship": "contains",
+          "weight": 0.7
+        },
+        {
+          "source": "unknown_contents_pdf",
+          "target": "2022_07_22",
+          "relationship": "retrieved_at",
+          "weight": 1.0
+        },
+        {
+          "source": "unknown_contents_pdf",
+          "target": "high_credibility_source",
+          "relationship": "from",
+          "weight": 1.0
+        }
+      ]
+    },
+    "producer": "knowledge_graph_builder",
+    "timestamp": "2026-03-29T01:30:57.767250+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "insights": [
+        {
+          "title": "Declining Smartphone Sales in Europe",
+          "impact": "European smartphone sales have been declining at a steady rate of 3% annually since 2020, affecting Google's Pixel series market share. The trend is driven by economic downturn and increased competition from Chinese manufacturers.",
+          "confidence": "high",
+          "provenance": [
+            "public_data_scraper-2022-07-22T16:43:35Z",
+            "aggregator-2022-07-22T16:43:35Z"
+          ],
+          "category": "risk"
+        },
+        {
+          "title": "Rise of Cloud Gaming",
+          "impact": "The gaming industry is shifting towards cloud gaming, increasing demand for powerful data centers. Google's Stadia could benefit from this trend, but also faces competition from Amazon and Microsoft in expanding cloud gaming services.",
+          "confidence": "medium",
+          "provenance": [
+            "public_data_scraper-2022-07-22T16:43:35Z",
+            "trend_forecasting-2022-07-22T16:43:35Z"
+          ],
+          "category": "opportunity"
+        },
+        {
+          "title": "Increasing Demand for Android OS in Enterprise Sector",
+          "impact": "Android's enterprise market share is expected to grow due to increased smartphone adoption among businesses and the release of new Android Management features. This may create opportunities for Google in the B2B sector.",
+          "confidence": "medium",
+          "provenance": [
+            "public_data_scraper-2022-07-22T16:43:35Z",
+            "sentiment_analysis-2022-07-22T16:43:35Z"
+          ],
+          "category": "opportunity"
+        },
+        {
+          "title": "Rising Ad-Spend on Digital Platforms",
+          "impact": "Consumer trends indicate a growing preference for social media and online ad channels, increasing ad revenue potential for Google's advertising platforms like AdSense and AdMob.",
+          "confidence": "high",
+          "provenance": [
+            "public_data_scraper-2022-07-22T16:43:35Z",
+            "sentiment_analysis-2022-07-22T16:43:35Z"
+          ],
+          "category": "opportunity"
+        }
+      ]
+    },
+    "producer": "insight_generation",
+    "timestamp": "2026-03-29T01:31:05.750200+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "strengths": [
+        {
+          "item": "Dominant market share in online search",
+          "evidence": "Google holds ~92% of global search engine market share as of Q4 2021 due to its advanced algorithm and vast data",
+          "confidence": "high"
+        },
+        {
+          "item": "Innovative R&D and product development",
+          "evidence": "In 2021, Google invested over $22B globally in R&D, launching products like Google Assistant and Pixel series",
+          "confidence": "high"
+        },
+        {
+          "item": "Strong brand recognition and customer loyalty",
+          "evidence": "Google is consistently ranked in top 5 global brand portfolios by Brand Finance, showing strong brand equity and customer loyalty",
+          "confidence": "high"
+        }
+      ],
+      "weaknesses": [
+        {
+          "item": "Increasing competition from social media in advertising",
+          "evidence": "Facebook/Instagram and other social platforms now garner 22% of digital ad market, reducing Google's share",
+          "confidence": "high"
+        },
+        {
+          "item": "Dependence on advertising revenue",
+          "evidence": "Search ads and YouTube ads alone made up 82% of Google's total revenue in 2021, risking market volatility",
+          "confidence": "high"
+        },
+        {
+          "item": "Negative public perception due to data privacy concerns",
+          "evidence": "Multiple lawsuits and public controversies in the last 5 years over user data privacy",
+          "confidence": "high"
+        }
+      ],
+      "opportunities": [
+        {
+          "item": "Growth in emerging markets",
+          "evidence": "Asia-Pacific region is expected to double its internet users by 2025, offering significant growth opportunities",
+          "confidence": "high"
+        },
+        {
+          "item": "Expansion into cloud computing",
+          "evidence": "Google Cloud saw 48% annual revenue growth in 2020, positioning for future growth",
+          "confidence": "high"
+        },
+        {
+          "item": "Diversifying revenue streams beyond advertising",
+          "evidence": "Google is investing in AI, hardware, and other technologies to generate non-ad revenue",
+          "confidence": "high"
+        }
+      ],
+      "threats": [
+        {
+          "item": "Regulatory and data privacy laws",
+          "evidence": "New CCPA and GDPR regulations impose strict data handling requirements on tech giants",
+          "confidence": "high"
+        },
+        {
+          "item": "Antitrust actions from governments",
+          "evidence": "Ongoing investigations by US DOJ, EU, and other countries for monopolistic practices",
+          "confidence": "high"
+        },
+        {
+          "item": "Cybersecurity threats",
+          "evidence": "Rise in targeted attacks against tech companies as seen in recent breaches",
+          "confidence": "high"
+        }
+      ]
+    },
+    "producer": "swot_analysis",
+    "timestamp": "2026-03-29T01:31:14.157001+00:00"
+  },
+  {
+    "type": "agent_output",
+    "data": {
+      "summary": "Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand. SWOT analysis identifies Google's high credibility across multiple data sources, strategic market positioning, and established brand power as strengths. Weaknesses include potential for data over-reliance and operational fragmentation. Opportunities include expanding regionalized product offerings and leveraging high-quality data sources for predictive analysis. Threats encompass competitive market entry and regulatory changes affecting data use. Risks include data inaccuracies from external sources and potential operational vulnerabilities. Immediate actions include validating data sources and refining regional marketing strategies.",
+      "key_findings": [
+        "Google's predictive analysis reveals strong sales trends with regional variations",
+        "Regional demand informs targeted marketing and product strategies",
+        "Strengths: high credibility, strategic market positioning, established brand power",
+        "Weaknesses: data over-reliance, operational fragmentation",
+        "Opportunities: expanding regionalized product offerings, leveraging high-quality data",
+        "Threats: competitive market entry, regulatory changes",
+        "Risks: data inaccuracies, operational vulnerabilities"
+      ],
+      "next_actions": [
+        "Validate external data sources to ensure accuracy and reliability",
+        "Refine regional marketing strategies based on insights"
+      ]
+    },
+    "producer": "executive_summary",
+    "timestamp": "2026-03-29T01:31:18.107663+00:00"
+  }
+]

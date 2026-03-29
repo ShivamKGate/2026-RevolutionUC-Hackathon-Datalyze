@@ -1,0 +1,42 @@
+{
+  "status": "ok",
+  "summary": "sentiment_analysis completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "sentiments": [
+          {
+            "text_id": "1",
+            "label": "positive",
+            "confidence": 0.8,
+            "key_phrases": [
+              "good",
+              "excellent",
+              "happy customer"
+            ]
+          },
+          {
+            "text_id": "2",
+            "label": "negative",
+            "confidence": 0.2,
+            "key_phrases": [
+              "bad product",
+              "slow delivery",
+              "not satisfied"
+            ]
+          }
+        ],
+        "trend_summary": {
+          "positive_pct": 60.0,
+          "negative_pct": 32.0,
+          "neutral_pct": 8.0,
+          "overall_direction": "improving"
+        }
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

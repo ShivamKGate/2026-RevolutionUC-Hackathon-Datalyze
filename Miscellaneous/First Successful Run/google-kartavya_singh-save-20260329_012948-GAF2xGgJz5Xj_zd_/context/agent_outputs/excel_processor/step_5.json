@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "summary": "{\"analysis\": {\"output\": [{\"sheet_name\": \"Sheet1\", \"rows\": 5, \"columns\": 3, \"headers\": [\"Sales\", \"Region\", \"Amount\"], \"sample_data\": [[100, \"North\", 500], [200, \"South\", 1000], [50, \"East\", 250], [75, \"West\", 375], [100, \"North\", 500]], \"named_ranges\": [\"Sales\"], \"formula_ranges\": [\"=SUM(B2:B5)\"]}, {\"sheet_name\": \"Sheet2\", \"rows\": 3, \"columns\": 2, \"headers\": [\"Product\", \"Price\"], \"sample_data\": [[1, 10], [2, 20], [3, 30]], \"named_ranges\": [], \"formula_ranges\": []}], \"workbook_metadata\": {\"total_s",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.5,
+  "errors": []
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  clearAllPipelineRuns,
   getDbStatus,
   getAgentBootStatus,
   getHealth,
@@ -23,6 +24,7 @@ export default function DeveloperPage() {
   const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [clearMessage, setClearMessage] = useState<string | null>(null);
 
   async function runHealthCheck() {
     setLoading("health");
@@ -100,6 +102,29 @@ export default function DeveloperPage() {
     }
   }
 
+  async function clearAnalyses() {
+    const confirmed = window.confirm(
+      "Delete all analysis history for your company? This removes run records and stored run artifacts.",
+    );
+    if (!confirmed) return;
+    setLoading("clear-runs");
+    setError(null);
+    setClearMessage(null);
+    try {
+      const result = await clearAllPipelineRuns();
+      const fsWarning = result.filesystem_errors.length
+        ? ` Filesystem warnings: ${result.filesystem_errors.length}.`
+        : "";
+      setClearMessage(
+        `Deleted ${result.deleted_runs} analyses and ${result.deleted_run_dirs} run folders.${fsWarning}`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   return (
     <main className="page">
       <section className="panel">
@@ -122,6 +147,9 @@ export default function DeveloperPage() {
           <button onClick={runDbCheck} disabled={loading !== null}>
             {loading === "db" ? "Checking..." : "Test DB Connection"}
           </button>
+          <button onClick={clearAnalyses} disabled={loading !== null}>
+            {loading === "clear-runs" ? "Clearing..." : "Clear All Analyses"}
+          </button>
         </div>
 
         {error && (
@@ -134,6 +162,12 @@ export default function DeveloperPage() {
           <div className="status success">
             <strong>API:</strong> {health.service} ({health.status}) at{" "}
             {health.timestamp}
+          </div>
+        )}
+
+        {clearMessage && (
+          <div className="status success">
+            <strong>Analysis history:</strong> {clearMessage}
           </div>
         )}
 

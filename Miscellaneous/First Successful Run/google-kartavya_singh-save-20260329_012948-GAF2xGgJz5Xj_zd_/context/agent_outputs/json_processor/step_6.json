@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "summary": "{\n  \"records\": [\n    {\n      \"path\": \"output an\u00e1lisis.an\u00e1lisis[0].chunk\",\n      \"value\": \"Table found on page 1, title: \\'Sales by Region\\'\",\n      \"type\": \"string\"\n    },\n    {\n      \"path\": \"output an\u00e1lisis.an\u00e1lisis[0].references[0]\",\n      \"value\": \"table:1\",\n      \"type\": \"string\"\n    },\n    {\n      \"path\": \"output an\u00e1lisis.an\u00e1lisis[0].references[1]\",\n      \"value\": \"page:1\",\n      \"type\": \"string\"\n    },\n    {\n      \"path\": \"analysis.text\",\n      \"value\": \"PDF contents: ...\",\n      \"type\": ",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.5,
+  "errors": []
+}

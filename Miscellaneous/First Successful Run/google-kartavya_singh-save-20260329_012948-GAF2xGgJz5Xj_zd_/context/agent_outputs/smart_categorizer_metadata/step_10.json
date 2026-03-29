@@ -1,0 +1,62 @@
+{
+  "status": "ok",
+  "summary": "smart_categorizer_metadata completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "domain_tags": [
+          {
+            "chunk_id": "output analisis.analisis[0].chunk",
+            "domains": [
+              "sales",
+              "marketing"
+            ],
+            "confidence": 0.8
+          },
+          {
+            "chunk_id": "output analisis.analisis[0].references[0]",
+            "domains": [
+              "operations",
+              "compliance"
+            ],
+            "confidence": 0.9
+          },
+          {
+            "chunk_id": "analysis.text",
+            "domains": [],
+            "confidence": 0.0
+          }
+        ],
+        "content_type_tags": [
+          {
+            "chunk_id": "output analisis.analisis[0].chunk",
+            "types": [
+              "text_narrative",
+              "structured_data"
+            ],
+            "confidence": 0.95
+          },
+          {
+            "chunk_id": "output analisis.analisis[0].references[0]",
+            "types": [
+              "categorical",
+              "temporal"
+            ],
+            "confidence": 0.85
+          },
+          {
+            "chunk_id": "output analisis.analisis[0].chunk",
+            "types": [
+              "quantitative"
+            ],
+            "confidence": 0.0
+          }
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

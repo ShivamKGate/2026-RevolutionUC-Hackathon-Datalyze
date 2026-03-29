@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import secrets
+import shutil
 import threading
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -59,6 +61,22 @@ def _coerce_json_obj(val: Any) -> dict:
         except json.JSONDecodeError:
             return {}
     return {}
+
+
+def _resolve_run_dir(rel_or_abs_path: str | None) -> Path | None:
+    if not rel_or_abs_path:
+        return None
+    from core.config import settings
+
+    raw = Path(rel_or_abs_path)
+    candidate = raw if raw.is_absolute() else settings.repo_root / raw
+    try:
+        resolved = candidate.resolve()
+        resolved.relative_to(settings.repo_root.resolve())
+    except Exception:
+        logger.warning("Skipping unsafe run_dir_path during clear: %s", rel_or_abs_path)
+        return None
+    return resolved
 
 
 def _select_run_columns() -> str:
@@ -358,3 +376,66 @@ def get_run(request: Request, slug: str):
     if row is None:
         raise HTTPException(status_code=404, detail="Run not found")
     return _row_to_out(row)
+
+
+@router.delete("")
+def clear_runs(request: Request):
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    db = SessionLocal()
+    run_dirs: list[Path] = []
+    deleted_count = 0
+    try:
+        active_count = int(
+            db.execute(
+                text(
+                    "SELECT COUNT(*) FROM pipeline_runs "
+                    "WHERE company_id=:cid AND status IN ('pending', 'running')"
+                ),
+                {"cid": company_id},
+            ).scalar()
+            or 0
+        )
+        if active_count > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Cannot clear analyses while runs are active. "
+                    "Wait for current runs to finish, then clear history."
+                ),
+            )
+
+        rows = db.execute(
+            text("SELECT id, run_dir_path FROM pipeline_runs WHERE company_id=:cid"),
+            {"cid": company_id},
+        ).fetchall()
+        deleted_count = len(rows)
+        run_dirs = [p for p in (_resolve_run_dir(r.run_dir_path) for r in rows) if p is not None]
+        db.execute(
+            text("DELETE FROM pipeline_runs WHERE company_id=:cid"),
+            {"cid": company_id},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    fs_deleted = 0
+    fs_errors: list[str] = []
+    for run_dir in run_dirs:
+        if not run_dir.exists():
+            continue
+        try:
+            shutil.rmtree(run_dir)
+            fs_deleted += 1
+        except Exception as exc:
+            fs_errors.append(f"{run_dir.as_posix()}: {str(exc)[:240]}")
+
+    return {
+        "status": "ok",
+        "deleted_runs": deleted_count,
+        "deleted_run_dirs": fs_deleted,
+        "filesystem_errors": fs_errors,
+    }

@@ -1,0 +1,49 @@
+{
+  "status": "ok",
+  "summary": "file_type_classifier completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "file_routing": [
+          {
+            "filename": "file1.pdf",
+            "detected_type": "pdf",
+            "processor": "pdf_processor",
+            "confidence": 0.98
+          },
+          {
+            "filename": "file2.csv",
+            "detected_type": "csv",
+            "processor": "csv_processor",
+            "confidence": 0.95
+          },
+          {
+            "filename": "file3.txt",
+            "detected_type": "text|plain_text",
+            "processor": "plain_text_processor",
+            "confidence": 0.85
+          },
+          {
+            "filename": "file4.jpg",
+            "detected_type": "image|multimodal",
+            "processor": "image_multimodal_processor",
+            "confidence": 0.9
+          }
+        ],
+        "metadata_tags": {
+          "total_files": 4,
+          "types_detected": [
+            "pdf",
+            "csv",
+            "text",
+            "image"
+          ]
+        }
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

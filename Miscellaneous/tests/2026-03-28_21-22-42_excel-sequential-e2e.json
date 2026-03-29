@@ -1,0 +1,657 @@
+{
+  "timestamp": "2026-03-28_21-22-42",
+  "user_email": "e2e_2026-03-28_21-22-42@example.com",
+  "fixture_path": "d:/Desktop/All Projects/2026-RevolutionUC-Hackathon-Datalyze/Miscellaneous/data/sources/Google_Dataset_Analytics_Sample.xlsx",
+  "upload_id": 6,
+  "upload_name": "Google_Dataset_Analytics_Sample.xlsx",
+  "run_slug": "bDRKt930Cz0DWf1_",
+  "run_status": "completed",
+  "run_track": "predictive",
+  "run_summary": "Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 239.9s",
+  "run_config": {
+    "track": "predictive",
+    "max_run_seconds": 900,
+    "parallel_enabled": false,
+    "stage_gates_enabled": true,
+    "adaptive_policy_enabled": false
+  },
+  "run_dir_path": "data/pipeline_runs/predictive/e2e_analytics_co-e2e_user-save-20260329_012242-bDRKt930Cz0DWf1_",
+  "stage_started_count": 7,
+  "dispatch_count": 20,
+  "completed_action_count": 20,
+  "logs_count": 56,
+  "agents_completed_count": 20,
+  "insights_agent_completed": true,
+  "executive_summary_completed": true,
+  "final_report_status": "completed",
+  "final_report_summary": "Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 239.9s",
+  "final_report_agent_results": {
+    "pipeline_classifier": "Track classified (rule-based fallback): predictive",
+    "file_type_classifier": "{\"errors\": [], \"metadata_tags\": {\"total_files\": \"1\", \"types_detected\": []}, \"file_routing\": [{\"filename\": \"file1.pdf\", \"detected_type\": \"pdf\", \"processor\": \"pdf_processor\", \"confidence\": 0.9}, {\"filename\": \"file2\", \"detected_type\": \"text\", \"processor\": \"plain_text_processor\", \"confidence\": 1.0}]}}",
+    "pdf_processor": "{\"results\": {\"chunks\": [{\"chunk_id\": \"c1\", \"page\": 1, \"content\": \"Page 1 content...\", \"type\": \"text\"}], \"page_map\": {\"total_pages\": 1, \"chunks_per_page\": {\"1\": 1}}, \"tables\": [{\"table_id\": \"t1\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}, {\"table_id\": \"t2\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}], \"charts\": [{\"chart_id\": \"c1\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}, {\"chart_id\": \"c2\", \"sheet_count\": 0, \"cell",
+    "csv_processor": "csv_processor completed",
+    "excel_processor": "{\n  \"output\": {\n    \"sheets\": [\n      {\n        \"sheet_name\": \"Sheet1\",\n        \"rows\": 10,\n        \"columns\": 5,\n        \"headers\": [\"Date\", \"Product\", \"Sales\", \"Region\", \"Revenue\"],\n        \"sample_data\": [\n          [\"2022-01-01\", \"Product A\", \"$100\", \"North\", \"$100,000\"],\n          [\"2022-01-02\", \"Product B\", \"$200\", \"South\", \"$200,000\"],\n          ...\n        ],\n        \"named_ranges\": {\n          \"Total Revenue\": {\n            \"value\": \"$500,000\",\n            \"formula\": true\n          }\n  ",
+    "json_processor": "json_processor completed",
+    "plain_text_processor": "{\"chunks\": [{\"chunk_id\": \"0\", \"content\": \"This is a sample text content.\", \"tag\": \"narrative|log_entry|code_block\"}, {\"chunk_id\": \"1\", \"content\": \"Key-value pairs in a format like key: value\\n\\n\", \"tag\": \"narrative|log_entry|code_block\"}], \"semantic_tags\": [\"narrative\", \"list\"]}}",
+    "image_multimodal_processor": "image_multimodal_processor: vision processing deferred (no image inputs in context)",
+    "data_cleaning": "{\"cleaned_chunks\": [{\"chunk_id\": \"chunk_id_4\", \"content\": \"[[2022-01-01, Product A, \\$100, North, \\$100,000], [2022-01-02, Product B, \\$200, South, \\$200,000]]\", \"cleaning_applied\": [\"date_norm\", \"whitespace_cleanup\"]},{\"chunk_id\": \"chunk_id_5\", \"content\": \"{\\\"Date\\\": [2022-01-01, 2022-01-02], \\\"Product\\\": [\\\"Product A\\\", \\\"Product B\\\"], \\\"Sales\\\": [100, 200], \\\"Region\\\": [\\\"North\\\", \\\"South\\\"], \\\"Revenue\\\": [100,000, 200,000]}\", \"cleaning_applied\": [\"encoding_fix\", \"json_norm\"]},{\"chunk_id\": \"c",
+    "smart_categorizer_metadata": "smart_categorizer_metadata completed",
+    "public_data_scraper": "public_data_scraper completed",
+    "aggregator": "aggregator completed",
+    "conflict_detection": "conflict_detection completed",
+    "trend_forecasting": "trend_forecasting completed",
+    "sentiment_analysis": "sentiment_analysis completed",
+    "knowledge_graph_builder": "knowledge_graph_builder completed",
+    "insight_generation": "insight_generation completed",
+    "swot_analysis": "swot_analysis completed",
+    "executive_summary": "E2E Analytics Co's predictive analysis indicates strong regional performance trends for Product A in the North and Product B in the South. Forecasts predict steady growth for both products, with Product B showing higher growth potential. SWOT analysis highlights robust product differentiation and strong market positioning, but also points to challenges such as limited geographic expansion and potential regulatory changes. Key risks identified are market volatility and competitive threats. Immedi",
+    "elevenlabs_narration": "No executive summary available for narration"
+  },
+  "replay_keys": [
+    "run",
+    "logs",
+    "replay_payload"
+  ],
+  "log_excerpt": [
+    {
+      "id": 462,
+      "timestamp": "2026-03-28T21:22:42.478171-04:00",
+      "stage": "system",
+      "agent": "orchestrator",
+      "action": "run_started",
+      "detail": "Track: predictive, Files: 1",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 463,
+      "timestamp": "2026-03-28T21:22:42.478676-04:00",
+      "stage": "classify",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: classify",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 464,
+      "timestamp": "2026-03-28T21:22:42.48068-04:00",
+      "stage": "classify",
+      "agent": "pipeline_classifier",
+      "action": "dispatch",
+      "detail": "Dispatching pipeline_classifier (step 1)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 465,
+      "timestamp": "2026-03-28T21:22:42.795162-04:00",
+      "stage": "classify",
+      "agent": "pipeline_classifier",
+      "action": "completed",
+      "detail": "Track classified (rule-based fallback): predictive",
+      "status": "success",
+      "meta": {
+        "confidence": 0.7
+      }
+    },
+    {
+      "id": 466,
+      "timestamp": "2026-03-28T21:22:42.800756-04:00",
+      "stage": "classify",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage classify done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 467,
+      "timestamp": "2026-03-28T21:22:42.803262-04:00",
+      "stage": "ingest",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: ingest",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 468,
+      "timestamp": "2026-03-28T21:22:42.804794-04:00",
+      "stage": "ingest",
+      "agent": "file_type_classifier",
+      "action": "dispatch",
+      "detail": "Dispatching file_type_classifier (step 2)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 473,
+      "timestamp": "2026-03-28T21:23:14.056893-04:00",
+      "stage": "ingest",
+      "agent": "file_type_classifier",
+      "action": "completed",
+      "detail": "{\"errors\": [], \"metadata_tags\": {\"total_files\": \"1\", \"types_detected\": []}, \"file_routing\": [{\"filename\": \"file1.pdf\", \"detected_type\": \"pdf\", \"processor\": \"pdf_processor\", \"confidence\": 0.9}, {\"filename\": \"file2\", \"detected_type\": \"text\", \"processor\": \"plain_text_processor\", \"confidence\": 1.0}]}}",
+      "status": "success",
+      "meta": {
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": 474,
+      "timestamp": "2026-03-28T21:23:14.059512-04:00",
+      "stage": "ingest",
+      "agent": "pdf_processor",
+      "action": "dispatch",
+      "detail": "Dispatching pdf_processor (step 3)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 477,
+      "timestamp": "2026-03-28T21:23:16.578338-04:00",
+      "stage": "ingest",
+      "agent": "pdf_processor",
+      "action": "completed",
+      "detail": "{\"results\": {\"chunks\": [{\"chunk_id\": \"c1\", \"page\": 1, \"content\": \"Page 1 content...\", \"type\": \"text\"}], \"page_map\": {\"total_pages\": 1, \"chunks_per_page\": {\"1\": 1}}, \"tables\": [{\"table_id\": \"t1\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}, {\"table_id\": \"t2\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}], \"charts\": [{\"chart_id\": \"c1\", \"sheet_count\": 0, \"cell_count\": 0, \"row_count\": 0, \"column_count\": 0}, {\"chart_id\": \"c2\", \"sheet_count\": 0, \"cell",
+      "status": "success",
+      "meta": {
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": 478,
+      "timestamp": "2026-03-28T21:23:16.581474-04:00",
+      "stage": "ingest",
+      "agent": "csv_processor",
+      "action": "dispatch",
+      "detail": "Dispatching csv_processor (step 4)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 481,
+      "timestamp": "2026-03-28T21:23:34.918136-04:00",
+      "stage": "ingest",
+      "agent": "csv_processor",
+      "action": "completed",
+      "detail": "csv_processor completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 482,
+      "timestamp": "2026-03-28T21:23:34.928838-04:00",
+      "stage": "ingest",
+      "agent": "excel_processor",
+      "action": "dispatch",
+      "detail": "Dispatching excel_processor (step 5)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 485,
+      "timestamp": "2026-03-28T21:23:38.501268-04:00",
+      "stage": "ingest",
+      "agent": "excel_processor",
+      "action": "completed",
+      "detail": "{\n  \"output\": {\n    \"sheets\": [\n      {\n        \"sheet_name\": \"Sheet1\",\n        \"rows\": 10,\n        \"columns\": 5,\n        \"headers\": [\"Date\", \"Product\", \"Sales\", \"Region\", \"Revenue\"],\n        \"sample_data\": [\n          [\"2022-01-01\", \"Product A\", \"$100\", \"North\", \"$100,000\"],\n          [\"2022-01-02\", \"Product B\", \"$200\", \"South\", \"$200,000\"],\n          ...\n        ],\n        \"named_ranges\": {\n          \"Total Revenue\": {\n            \"value\": \"$500,000\",\n            \"formula\": true\n          }\n  ",
+      "status": "success",
+      "meta": {
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": 486,
+      "timestamp": "2026-03-28T21:23:38.504902-04:00",
+      "stage": "ingest",
+      "agent": "json_processor",
+      "action": "dispatch",
+      "detail": "Dispatching json_processor (step 6)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 491,
+      "timestamp": "2026-03-28T21:24:08.070913-04:00",
+      "stage": "ingest",
+      "agent": "json_processor",
+      "action": "completed",
+      "detail": "json_processor completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 492,
+      "timestamp": "2026-03-28T21:24:08.082298-04:00",
+      "stage": "ingest",
+      "agent": "plain_text_processor",
+      "action": "dispatch",
+      "detail": "Dispatching plain_text_processor (step 7)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 495,
+      "timestamp": "2026-03-28T21:24:27.524474-04:00",
+      "stage": "ingest",
+      "agent": "plain_text_processor",
+      "action": "completed",
+      "detail": "{\"chunks\": [{\"chunk_id\": \"0\", \"content\": \"This is a sample text content.\", \"tag\": \"narrative|log_entry|code_block\"}, {\"chunk_id\": \"1\", \"content\": \"Key-value pairs in a format like key: value\\n\\n\", \"tag\": \"narrative|log_entry|code_block\"}], \"semantic_tags\": [\"narrative\", \"list\"]}}",
+      "status": "success",
+      "meta": {
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": 496,
+      "timestamp": "2026-03-28T21:24:27.52701-04:00",
+      "stage": "ingest",
+      "agent": "image_multimodal_processor",
+      "action": "dispatch",
+      "detail": "Dispatching image_multimodal_processor (step 8)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 497,
+      "timestamp": "2026-03-28T21:24:27.52801-04:00",
+      "stage": "ingest",
+      "agent": "image_multimodal_processor",
+      "action": "completed",
+      "detail": "image_multimodal_processor: vision processing deferred (no image inputs in context)",
+      "status": "success",
+      "meta": {
+        "confidence": 0.3
+      }
+    },
+    {
+      "id": 498,
+      "timestamp": "2026-03-28T21:24:27.530331-04:00",
+      "stage": "ingest",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage ingest done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 499,
+      "timestamp": "2026-03-28T21:24:27.531902-04:00",
+      "stage": "process",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: process",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 500,
+      "timestamp": "2026-03-28T21:24:27.53345-04:00",
+      "stage": "process",
+      "agent": "data_cleaning",
+      "action": "dispatch",
+      "detail": "Dispatching data_cleaning (step 9)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 505,
+      "timestamp": "2026-03-28T21:24:48.160717-04:00",
+      "stage": "process",
+      "agent": "data_cleaning",
+      "action": "completed",
+      "detail": "{\"cleaned_chunks\": [{\"chunk_id\": \"chunk_id_4\", \"content\": \"[[2022-01-01, Product A, \\$100, North, \\$100,000], [2022-01-02, Product B, \\$200, South, \\$200,000]]\", \"cleaning_applied\": [\"date_norm\", \"whitespace_cleanup\"]},{\"chunk_id\": \"chunk_id_5\", \"content\": \"{\\\"Date\\\": [2022-01-01, 2022-01-02], \\\"Product\\\": [\\\"Product A\\\", \\\"Product B\\\"], \\\"Sales\\\": [100, 200], \\\"Region\\\": [\\\"North\\\", \\\"South\\\"], \\\"Revenue\\\": [100,000, 200,000]}\", \"cleaning_applied\": [\"encoding_fix\", \"json_norm\"]},{\"chunk_id\": \"c",
+      "status": "success",
+      "meta": {
+        "confidence": 0.5
+      }
+    },
+    {
+      "id": 506,
+      "timestamp": "2026-03-28T21:24:48.163822-04:00",
+      "stage": "process",
+      "agent": "smart_categorizer_metadata",
+      "action": "dispatch",
+      "detail": "Dispatching smart_categorizer_metadata (step 10)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 512,
+      "timestamp": "2026-03-28T21:25:13.662481-04:00",
+      "stage": "process",
+      "agent": "smart_categorizer_metadata",
+      "action": "completed",
+      "detail": "smart_categorizer_metadata completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 513,
+      "timestamp": "2026-03-28T21:25:13.672015-04:00",
+      "stage": "process",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage process done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 514,
+      "timestamp": "2026-03-28T21:25:13.673133-04:00",
+      "stage": "aggregate",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: aggregate",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 515,
+      "timestamp": "2026-03-28T21:25:13.675184-04:00",
+      "stage": "aggregate",
+      "agent": "public_data_scraper",
+      "action": "dispatch",
+      "detail": "Dispatching public_data_scraper (step 11)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 516,
+      "timestamp": "2026-03-28T21:25:15.790139-04:00",
+      "stage": "aggregate",
+      "agent": "public_data_scraper",
+      "action": "completed",
+      "detail": "public_data_scraper completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 517,
+      "timestamp": "2026-03-28T21:25:15.79966-04:00",
+      "stage": "aggregate",
+      "agent": "aggregator",
+      "action": "dispatch",
+      "detail": "Dispatching aggregator (step 12)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 518,
+      "timestamp": "2026-03-28T21:25:31.389352-04:00",
+      "stage": "aggregate",
+      "agent": "aggregator",
+      "action": "completed",
+      "detail": "aggregator completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 519,
+      "timestamp": "2026-03-28T21:25:31.401018-04:00",
+      "stage": "aggregate",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage aggregate done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 520,
+      "timestamp": "2026-03-28T21:25:31.403018-04:00",
+      "stage": "analyze",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: analyze",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 521,
+      "timestamp": "2026-03-28T21:25:31.404025-04:00",
+      "stage": "analyze",
+      "agent": "conflict_detection",
+      "action": "dispatch",
+      "detail": "Dispatching conflict_detection (step 13)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 522,
+      "timestamp": "2026-03-28T21:25:39.307909-04:00",
+      "stage": "analyze",
+      "agent": "conflict_detection",
+      "action": "completed",
+      "detail": "conflict_detection completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 523,
+      "timestamp": "2026-03-28T21:25:39.32426-04:00",
+      "stage": "analyze",
+      "agent": "trend_forecasting",
+      "action": "dispatch",
+      "detail": "Dispatching trend_forecasting (step 14)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 524,
+      "timestamp": "2026-03-28T21:25:50.316875-04:00",
+      "stage": "analyze",
+      "agent": "trend_forecasting",
+      "action": "completed",
+      "detail": "trend_forecasting completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 525,
+      "timestamp": "2026-03-28T21:25:50.329107-04:00",
+      "stage": "analyze",
+      "agent": "sentiment_analysis",
+      "action": "dispatch",
+      "detail": "Dispatching sentiment_analysis (step 15)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 526,
+      "timestamp": "2026-03-28T21:25:58.846409-04:00",
+      "stage": "analyze",
+      "agent": "sentiment_analysis",
+      "action": "completed",
+      "detail": "sentiment_analysis completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 527,
+      "timestamp": "2026-03-28T21:25:58.857406-04:00",
+      "stage": "analyze",
+      "agent": "knowledge_graph_builder",
+      "action": "dispatch",
+      "detail": "Dispatching knowledge_graph_builder (step 16)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 528,
+      "timestamp": "2026-03-28T21:26:22.4808-04:00",
+      "stage": "analyze",
+      "agent": "knowledge_graph_builder",
+      "action": "completed",
+      "detail": "knowledge_graph_builder completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 529,
+      "timestamp": "2026-03-28T21:26:22.492822-04:00",
+      "stage": "analyze",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage analyze done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 530,
+      "timestamp": "2026-03-28T21:26:22.494898-04:00",
+      "stage": "synthesize",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: synthesize",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 531,
+      "timestamp": "2026-03-28T21:26:22.495556-04:00",
+      "stage": "synthesize",
+      "agent": "insight_generation",
+      "action": "dispatch",
+      "detail": "Dispatching insight_generation (step 17)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 532,
+      "timestamp": "2026-03-28T21:26:30.067563-04:00",
+      "stage": "synthesize",
+      "agent": "insight_generation",
+      "action": "completed",
+      "detail": "insight_generation completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 533,
+      "timestamp": "2026-03-28T21:26:30.078662-04:00",
+      "stage": "synthesize",
+      "agent": "swot_analysis",
+      "action": "dispatch",
+      "detail": "Dispatching swot_analysis (step 18)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 534,
+      "timestamp": "2026-03-28T21:26:37.664996-04:00",
+      "stage": "synthesize",
+      "agent": "swot_analysis",
+      "action": "completed",
+      "detail": "swot_analysis completed",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 535,
+      "timestamp": "2026-03-28T21:26:37.67654-04:00",
+      "stage": "synthesize",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage synthesize done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 536,
+      "timestamp": "2026-03-28T21:26:37.67754-04:00",
+      "stage": "finalize",
+      "agent": "orchestrator",
+      "action": "stage_started",
+      "detail": "Starting stage: finalize",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 537,
+      "timestamp": "2026-03-28T21:26:37.68054-04:00",
+      "stage": "finalize",
+      "agent": "executive_summary",
+      "action": "dispatch",
+      "detail": "Dispatching executive_summary (step 19)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 538,
+      "timestamp": "2026-03-28T21:26:42.351674-04:00",
+      "stage": "finalize",
+      "agent": "executive_summary",
+      "action": "completed",
+      "detail": "E2E Analytics Co's predictive analysis indicates strong regional performance trends for Product A in the North and Product B in the South. Forecasts predict steady growth for both products, with Product B showing higher growth potential. SWOT analysis highlights robust product differentiation and strong market positioning, but also points to challenges such as limited geographic expansion and potential regulatory changes. Key risks identified are market volatility and competitive threats. Immedi",
+      "status": "success",
+      "meta": {
+        "confidence": 0.6
+      }
+    },
+    {
+      "id": 539,
+      "timestamp": "2026-03-28T21:26:42.363269-04:00",
+      "stage": "finalize",
+      "agent": "elevenlabs_narration",
+      "action": "dispatch",
+      "detail": "Dispatching elevenlabs_narration (step 20)",
+      "status": "start",
+      "meta": {}
+    },
+    {
+      "id": 540,
+      "timestamp": "2026-03-28T21:26:42.363773-04:00",
+      "stage": "finalize",
+      "agent": "elevenlabs_narration",
+      "action": "completed",
+      "detail": "No executive summary available for narration",
+      "status": "success",
+      "meta": {
+        "confidence": 0.3
+      }
+    },
+    {
+      "id": 541,
+      "timestamp": "2026-03-28T21:26:42.36628-04:00",
+      "stage": "finalize",
+      "agent": "orchestrator",
+      "action": "stage_completed",
+      "detail": "Stage finalize done",
+      "status": "success",
+      "meta": {}
+    },
+    {
+      "id": 542,
+      "timestamp": "2026-03-28T21:26:42.370479-04:00",
+      "stage": "system",
+      "agent": "orchestrator",
+      "action": "finalized",
+      "detail": "Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 239.9s",
+      "status": "success",
+      "meta": {}
+    }
+  ]
+}

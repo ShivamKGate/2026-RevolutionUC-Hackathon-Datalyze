@@ -1,0 +1,332 @@
+{
+  "state": "completed",
+  "current_stage": "finalize",
+  "current_agent": "elevenlabs_narration",
+  "step_count": 20,
+  "events": [
+    {
+      "timestamp": "2026-03-29T01:29:48.311184+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "classify"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:48.341409+00:00",
+      "type": "agent_started",
+      "agent": "pipeline_classifier",
+      "detail": "Step 1"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:49.249266+00:00",
+      "type": "agent_completed",
+      "agent": "pipeline_classifier",
+      "detail": "Track classified (rule-based fallback): predictive"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:49.262797+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "ingest"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:49.264914+00:00",
+      "type": "agent_started",
+      "agent": "file_type_classifier",
+      "detail": "Step 2"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:51.982027+00:00",
+      "type": "agent_completed",
+      "agent": "file_type_classifier",
+      "detail": "file_type_classifier completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:51.991053+00:00",
+      "type": "agent_started",
+      "agent": "pdf_processor",
+      "detail": "Step 3"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:52.409321+00:00",
+      "type": "agent_completed",
+      "agent": "pdf_processor",
+      "detail": "{\"analysis\": {\"output\": [{\"chunk\": \"Table found on page 1, title: 'Sales by Region'\", \"references\": [\"table:1\", \"page:1\"]}, \"text\": \"PDF contents: ...\", \"table_chart_refs\": [\"table:1\", \"chart:1\"]}]}}"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:52.411835+00:00",
+      "type": "agent_started",
+      "agent": "csv_processor",
+      "detail": "Step 4"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:53.673710+00:00",
+      "type": "agent_completed",
+      "agent": "csv_processor",
+      "detail": "csv_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:53.683066+00:00",
+      "type": "agent_started",
+      "agent": "excel_processor",
+      "detail": "Step 5"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:54.673732+00:00",
+      "type": "agent_completed",
+      "agent": "excel_processor",
+      "detail": "{\"analysis\": {\"output\": [{\"sheet_name\": \"Sheet1\", \"rows\": 5, \"columns\": 3, \"headers\": [\"Sales\", \"Region\", \"Amount\"], \"sample_data\": [[100, \"North\", 500], [200, \"South\", 1000], [50, \"East\", 250], [75, "
+    },
+    {
+      "timestamp": "2026-03-29T01:29:54.676023+00:00",
+      "type": "agent_started",
+      "agent": "json_processor",
+      "detail": "Step 6"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.278146+00:00",
+      "type": "agent_completed",
+      "agent": "json_processor",
+      "detail": "{\n  \"records\": [\n    {\n      \"path\": \"output an\u00e1lisis.an\u00e1lisis[0].chunk\",\n      \"value\": \"Table found on page 1, title: \\'Sales by Region\\'\",\n      \"type\": \"string\"\n    },\n    {\n      \"path\": \"output "
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.280146+00:00",
+      "type": "agent_started",
+      "agent": "plain_text_processor",
+      "detail": "Step 7"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.637024+00:00",
+      "type": "agent_completed",
+      "agent": "plain_text_processor",
+      "detail": "plain_text_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.645337+00:00",
+      "type": "agent_started",
+      "agent": "image_multimodal_processor",
+      "detail": "Step 8"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.646337+00:00",
+      "type": "agent_completed",
+      "agent": "image_multimodal_processor",
+      "detail": "image_multimodal_processor: vision processing deferred (no image inputs in context)"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.651337+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "process"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:57.652842+00:00",
+      "type": "agent_started",
+      "agent": "data_cleaning",
+      "detail": "Step 9"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:58.441569+00:00",
+      "type": "agent_completed",
+      "agent": "data_cleaning",
+      "detail": "data_cleaning completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:58.452100+00:00",
+      "type": "agent_started",
+      "agent": "smart_categorizer_metadata",
+      "detail": "Step 10"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:59.577269+00:00",
+      "type": "agent_completed",
+      "agent": "smart_categorizer_metadata",
+      "detail": "smart_categorizer_metadata completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:59.588603+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "aggregate"
+    },
+    {
+      "timestamp": "2026-03-29T01:29:59.590256+00:00",
+      "type": "agent_started",
+      "agent": "public_data_scraper",
+      "detail": "Step 11"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:01.551506+00:00",
+      "type": "agent_completed",
+      "agent": "public_data_scraper",
+      "detail": "{\"artifacts\": [{\"title\": \"Table found on page 1, title: \\'Sales by Region\\'\", \"source_url\": \"https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0\", \"content_summary\": \"Table w"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:01.555305+00:00",
+      "type": "agent_started",
+      "agent": "aggregator",
+      "detail": "Step 12"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:17.437766+00:00",
+      "type": "agent_completed",
+      "agent": "aggregator",
+      "detail": "aggregator completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:17.448310+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "analyze"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:17.449312+00:00",
+      "type": "agent_started",
+      "agent": "conflict_detection",
+      "detail": "Step 13"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:24.875151+00:00",
+      "type": "agent_completed",
+      "agent": "conflict_detection",
+      "detail": "conflict_detection completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:24.886210+00:00",
+      "type": "agent_started",
+      "agent": "trend_forecasting",
+      "detail": "Step 14"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:36.163947+00:00",
+      "type": "agent_completed",
+      "agent": "trend_forecasting",
+      "detail": "trend_forecasting completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:36.174991+00:00",
+      "type": "agent_started",
+      "agent": "sentiment_analysis",
+      "detail": "Step 15"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:43.711317+00:00",
+      "type": "agent_completed",
+      "agent": "sentiment_analysis",
+      "detail": "sentiment_analysis completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:43.722849+00:00",
+      "type": "agent_started",
+      "agent": "knowledge_graph_builder",
+      "detail": "Step 16"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:57.766247+00:00",
+      "type": "agent_completed",
+      "agent": "knowledge_graph_builder",
+      "detail": "knowledge_graph_builder completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:57.778334+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "synthesize"
+    },
+    {
+      "timestamp": "2026-03-29T01:30:57.779335+00:00",
+      "type": "agent_started",
+      "agent": "insight_generation",
+      "detail": "Step 17"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:05.750200+00:00",
+      "type": "agent_completed",
+      "agent": "insight_generation",
+      "detail": "insight_generation completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:05.760394+00:00",
+      "type": "agent_started",
+      "agent": "swot_analysis",
+      "detail": "Step 18"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:14.155996+00:00",
+      "type": "agent_completed",
+      "agent": "swot_analysis",
+      "detail": "swot_analysis completed"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:14.168050+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "finalize"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:14.169049+00:00",
+      "type": "agent_started",
+      "agent": "executive_summary",
+      "detail": "Step 19"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:18.106663+00:00",
+      "type": "agent_completed",
+      "agent": "executive_summary",
+      "detail": "Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:18.116677+00:00",
+      "type": "agent_started",
+      "agent": "elevenlabs_narration",
+      "detail": "Step 20"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:18.117678+00:00",
+      "type": "agent_completed",
+      "agent": "elevenlabs_narration",
+      "detail": "No executive summary available for narration"
+    },
+    {
+      "timestamp": "2026-03-29T01:31:18.120677+00:00",
+      "type": "run_completed",
+      "agent": "orchestrator",
+      "detail": "completed"
+    }
+  ],
+  "completed": [
+    "pipeline_classifier",
+    "file_type_classifier",
+    "pdf_processor",
+    "csv_processor",
+    "excel_processor",
+    "json_processor",
+    "plain_text_processor",
+    "image_multimodal_processor",
+    "data_cleaning",
+    "smart_categorizer_metadata",
+    "public_data_scraper",
+    "aggregator",
+    "conflict_detection",
+    "trend_forecasting",
+    "sentiment_analysis",
+    "knowledge_graph_builder",
+    "insight_generation",
+    "swot_analysis",
+    "executive_summary",
+    "elevenlabs_narration"
+  ],
+  "pending": [],
+  "failed": [],
+  "skipped": [],
+  "retries": {},
+  "next_candidates": [],
+  "timing_budget": {
+    "elapsed_seconds": 89.8,
+    "max_seconds": 900,
+    "remaining_seconds": 810.2,
+    "budget_exceeded": false
+  },
+  "warnings": [],
+  "fix_suggestions": [],
+  "done": true
+}

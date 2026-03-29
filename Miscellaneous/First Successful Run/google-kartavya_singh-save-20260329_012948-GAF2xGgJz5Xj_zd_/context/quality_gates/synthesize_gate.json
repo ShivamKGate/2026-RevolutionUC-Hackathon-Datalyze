@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "stage": "synthesize",
+  "checks": [
+    {
+      "check": "insight_generation_completed",
+      "passed": true
+    },
+    {
+      "check": "swot_analysis_completed",
+      "passed": true
+    },
+    {
+      "check": "insight_generation_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "insight_generation_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "swot_analysis_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "swot_analysis_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

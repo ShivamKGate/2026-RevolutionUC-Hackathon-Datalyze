@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "summary": "Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand. SWOT analysis identifies Google's high credibility across multiple data sources, strategic market positioning, and established brand power as strengths. Weaknesses include potential for data over-reliance and operational fragmentation. Opportunities include expanding regionalized product offerings",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "summary": "Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand. SWOT analysis identifies Google's high credibility across multiple data sources, strategic market positioning, and established brand power as strengths. Weaknesses include potential for data over-reliance and operational fragmentation. Opportunities include expanding regionalized product offerings and leveraging high-quality data sources for predictive analysis. Threats encompass competitive market entry and regulatory changes affecting data use. Risks include data inaccuracies from external sources and potential operational vulnerabilities. Immediate actions include validating data sources and refining regional marketing strategies.",
+        "key_findings": [
+          "Google's predictive analysis reveals strong sales trends with regional variations",
+          "Regional demand informs targeted marketing and product strategies",
+          "Strengths: high credibility, strategic market positioning, established brand power",
+          "Weaknesses: data over-reliance, operational fragmentation",
+          "Opportunities: expanding regionalized product offerings, leveraging high-quality data",
+          "Threats: competitive market entry, regulatory changes",
+          "Risks: data inaccuracies, operational vulnerabilities"
+        ],
+        "next_actions": [
+          "Validate external data sources to ensure accuracy and reliability",
+          "Refine regional marketing strategies based on insights"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

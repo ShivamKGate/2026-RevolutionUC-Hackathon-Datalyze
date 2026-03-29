@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "summary": "{\"analysis\": {\"output\": [{\"chunk\": \"Table found on page 1, title: 'Sales by Region'\", \"references\": [\"table:1\", \"page:1\"]}, \"text\": \"PDF contents: ...\", \"table_chart_refs\": [\"table:1\", \"chart:1\"]}]}}",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.5,
+  "errors": []
+}

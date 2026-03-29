@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "stage": "ingest",
+  "checks": [
+    {
+      "check": "file_type_classifier_completed",
+      "passed": true
+    },
+    {
+      "check": "pdf_processor_completed",
+      "passed": true
+    },
+    {
+      "check": "csv_processor_completed",
+      "passed": true
+    },
+    {
+      "check": "excel_processor_completed",
+      "passed": true
+    },
+    {
+      "check": "json_processor_completed",
+      "passed": true
+    },
+    {
+      "check": "plain_text_processor_completed",
+      "passed": true
+    },
+    {
+      "check": "file_type_classifier_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "file_type_classifier_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "pdf_processor_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "pdf_processor_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "csv_processor_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "csv_processor_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "excel_processor_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "excel_processor_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "json_processor_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "json_processor_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "plain_text_processor_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "plain_text_processor_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

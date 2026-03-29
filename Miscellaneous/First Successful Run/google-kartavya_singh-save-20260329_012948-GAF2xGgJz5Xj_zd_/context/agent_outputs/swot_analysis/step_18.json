@@ -1,0 +1,82 @@
+{
+  "status": "ok",
+  "summary": "swot_analysis completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "strengths": [
+          {
+            "item": "Dominant market share in online search",
+            "evidence": "Google holds ~92% of global search engine market share as of Q4 2021 due to its advanced algorithm and vast data",
+            "confidence": "high"
+          },
+          {
+            "item": "Innovative R&D and product development",
+            "evidence": "In 2021, Google invested over $22B globally in R&D, launching products like Google Assistant and Pixel series",
+            "confidence": "high"
+          },
+          {
+            "item": "Strong brand recognition and customer loyalty",
+            "evidence": "Google is consistently ranked in top 5 global brand portfolios by Brand Finance, showing strong brand equity and customer loyalty",
+            "confidence": "high"
+          }
+        ],
+        "weaknesses": [
+          {
+            "item": "Increasing competition from social media in advertising",
+            "evidence": "Facebook/Instagram and other social platforms now garner 22% of digital ad market, reducing Google's share",
+            "confidence": "high"
+          },
+          {
+            "item": "Dependence on advertising revenue",
+            "evidence": "Search ads and YouTube ads alone made up 82% of Google's total revenue in 2021, risking market volatility",
+            "confidence": "high"
+          },
+          {
+            "item": "Negative public perception due to data privacy concerns",
+            "evidence": "Multiple lawsuits and public controversies in the last 5 years over user data privacy",
+            "confidence": "high"
+          }
+        ],
+        "opportunities": [
+          {
+            "item": "Growth in emerging markets",
+            "evidence": "Asia-Pacific region is expected to double its internet users by 2025, offering significant growth opportunities",
+            "confidence": "high"
+          },
+          {
+            "item": "Expansion into cloud computing",
+            "evidence": "Google Cloud saw 48% annual revenue growth in 2020, positioning for future growth",
+            "confidence": "high"
+          },
+          {
+            "item": "Diversifying revenue streams beyond advertising",
+            "evidence": "Google is investing in AI, hardware, and other technologies to generate non-ad revenue",
+            "confidence": "high"
+          }
+        ],
+        "threats": [
+          {
+            "item": "Regulatory and data privacy laws",
+            "evidence": "New CCPA and GDPR regulations impose strict data handling requirements on tech giants",
+            "confidence": "high"
+          },
+          {
+            "item": "Antitrust actions from governments",
+            "evidence": "Ongoing investigations by US DOJ, EU, and other countries for monopolistic practices",
+            "confidence": "high"
+          },
+          {
+            "item": "Cybersecurity threats",
+            "evidence": "Rise in targeted attacks against tech companies as seen in recent breaches",
+            "confidence": "high"
+          }
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

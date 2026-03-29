@@ -1,0 +1,22 @@
+{
+  "status": "ok",
+  "summary": "plain_text_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "chunks": [
+          {
+            "chunk_id": "chunk_1",
+            "content": "Table found on page 1, title: Sales by Region",
+            "tag": "narrative|log_entry"
+          }
+        ],
+        "semantic_tags": []
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

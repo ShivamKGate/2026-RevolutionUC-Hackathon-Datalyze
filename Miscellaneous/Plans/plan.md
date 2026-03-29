@@ -32,15 +32,15 @@ Everything is built to be local-first, budget-aware, and practical in a hackatho
 
 ### Frontend
 
-We built the UI in Next.js (App Router) with TypeScript and Tailwind CSS to move fast without losing component consistency. Shadcn/ui and Radix UI patterns are used for reusable primitives such as cards, drawers, toggles, dialogs, and status indicators. The frontend is structured around the core user journey: onboarding, pipeline progress, insight review, and export.
+We ship the UI as **React + TypeScript + Vite** with Tailwind-style global styling and a feature-oriented `src/` layout. The app proxies `/api/v1/*` to the FastAPI backend during development. Core journeys implemented for the hackathon demo include **auth**, **company settings** (default analysis track + public scrape toggle), **file upload**, **dashboard / analysis list**, **start analysis**, and **analysis detail** with live polling of run status and pipeline logs. A **Developer** settings page exposes health checks, agent boot status, DB sanity, and **clear all analyses** for local iteration.
 
 ### Backend & Data Layer
 
-The web backend uses Next.js API routes (TypeScript) for session control, uploads, status polling, SSE streaming, export triggers, and dashboard queries. A Python service layer (FastAPI or Flask) handles agent-heavy tasks and LLM-facing workflows. PostgreSQL is the primary store for files, chunks, run metadata, insights, logs, and graph entities, while `pgvector` supports semantic retrieval over processed content.
+The API is **FastAPI** (`apps/api`) with versioned routes under `api/v1`. **PostgreSQL** stores users, companies, uploaded file metadata, pipeline runs, and **`pipeline_run_logs`** / **`pipeline_run_artifacts`** for replay. `npm run dev` runs `scripts/setup-schema.mjs`, which applies SQL migrations through **`004_orchestrator_runtime.sql`** so orchestrator columns and log tables always exist on fresh clones. File uploads land under a company-scoped storage path; each run can reference uploaded file IDs and persist a **filesystem-first** artifact tree under `data/pipeline_runs/`.
 
 ### AI Agent Architecture
 
-The system is designed as a 21-agent architecture with clear separation of concerns. A heavy orchestrator controls execution order, error handling, retries, and branch logic. Lightweight agents handle repetitive format-specific and hygiene operations, while heavy agents handle synthesis-heavy work such as insight generation, forecasting, and strategic summary production. Optional modules (Presage and Solana) remain non-blocking so MVP reliability stays high.
+The system implements a **multi-agent registry** (specialized per-agent modules + shared contracts) and a **Python orchestrator runtime** that replaces placeholder runs: it walks **track profile stages**, respects a **DAG** of agent dependencies, dispatches **CrewAI**-backed agents (and external/system agents where applicable), normalizes outputs to a shared **adapter envelope**, and writes **memory**, **decision ledger**, and **final report** artifacts. Parallelism and adaptive policy are **config flags**; the first full successful baseline used **sequential** execution with **stage gates** enabled.
 
 ### LLM Infrastructure (Ollama)
 
@@ -68,7 +68,11 @@ Gemini is integrated in a high-leverage role as the pipeline classifier and visi
 
 ### Development Environment & Tooling
 
-The project is developed in Cursor with Claude assistance, versioned with Git/GitHub, and tested across Windows/Linux environments. The local runtime model is intentionally simple: run `ollama serve` in one terminal and the Next.js app in another.
+The project is developed in Cursor with Claude assistance, versioned with Git/GitHub, and tested across Windows/Linux environments. The default local workflow is **`npm run dev`** at the repo root (starts Vite + FastAPI together). For local LLM inference, run **`ollama serve`** in a second terminal when using Ollama-backed providers.
+
+### Integration baseline (post-merge)
+
+A consolidated narrative of **current integration changes**, **end-to-end flow**, **first successful run metrics**, and an **expectations vs achieved** accuracy sheet lives in **`Miscellaneous/Datalyze.md`**. Use it as the handoff document before upload or demo.
 
 ## Challenges We Ran Into
 
@@ -165,7 +169,8 @@ Separating core, optional, and stretch modules preserved momentum and reduced ri
 
 ## Built With
 
-- Next.js
+- React
+- Vite
 - TypeScript
 - Tailwind CSS
 - D3.js
@@ -175,7 +180,7 @@ Separating core, optional, and stretch modules preserved momentum and reduced ri
 - Radix UI
 - Python
 - FastAPI
-- Flask
+- CrewAI
 - PostgreSQL
 - pgvector
 - Ollama

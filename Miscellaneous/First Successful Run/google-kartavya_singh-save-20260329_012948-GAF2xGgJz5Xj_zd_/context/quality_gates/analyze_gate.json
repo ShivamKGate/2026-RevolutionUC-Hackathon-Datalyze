@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "stage": "analyze",
+  "checks": [
+    {
+      "check": "conflict_detection_completed",
+      "passed": true
+    },
+    {
+      "check": "trend_forecasting_completed",
+      "passed": true
+    },
+    {
+      "check": "sentiment_analysis_completed",
+      "passed": true
+    },
+    {
+      "check": "knowledge_graph_builder_completed",
+      "passed": true
+    },
+    {
+      "check": "conflict_detection_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "conflict_detection_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "trend_forecasting_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "trend_forecasting_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "sentiment_analysis_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "sentiment_analysis_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "knowledge_graph_builder_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "knowledge_graph_builder_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

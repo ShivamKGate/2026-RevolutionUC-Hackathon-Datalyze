@@ -1,0 +1,151 @@
+Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 89.8s
+Runtime config
+{
+  "track": "predictive",
+  "max_run_seconds": 900,
+  "parallel_enabled": false,
+  "stage_gates_enabled": true,
+  "adaptive_policy_enabled": false
+}
+Pipeline log
+[2026-03-28T21:29:48.304672-04:00] [system] [orchestrator] run_started: Track: predictive, Files: 1
+[2026-03-28T21:29:48.312185-04:00] [classify] [orchestrator] stage_started: Starting stage: classify
+[2026-03-28T21:29:48.342912-04:00] [classify] [pipeline_classifier] dispatch: Dispatching pipeline_classifier (step 1)
+[2026-03-28T21:29:49.249266-04:00] [classify] [pipeline_classifier] completed: Track classified (rule-based fallback): predictive
+[2026-03-28T21:29:49.260797-04:00] [classify] [orchestrator] stage_completed: Stage classify done
+[2026-03-28T21:29:49.263910-04:00] [ingest] [orchestrator] stage_started: Starting stage: ingest
+[2026-03-28T21:29:49.264914-04:00] [ingest] [file_type_classifier] dispatch: Dispatching file_type_classifier (step 2)
+[2026-03-28T21:29:51.982027-04:00] [ingest] [file_type_classifier] completed: file_type_classifier completed
+[2026-03-28T21:29:51.991053-04:00] [ingest] [pdf_processor] dispatch: Dispatching pdf_processor (step 3)
+[2026-03-28T21:29:52.409321-04:00] [ingest] [pdf_processor] completed: {"analysis": {"output": [{"chunk": "Table found on page 1, title: 'Sales by Region'", "references": ["table:1", "page:1"]}, "text": "PDF contents: ...", "table_chart_refs": ["table:1", "chart:1"]}]}}
+[2026-03-28T21:29:52.412835-04:00] [ingest] [csv_processor] dispatch: Dispatching csv_processor (step 4)
+[2026-03-28T21:29:53.673710-04:00] [ingest] [csv_processor] completed: csv_processor completed
+[2026-03-28T21:29:53.683066-04:00] [ingest] [excel_processor] dispatch: Dispatching excel_processor (step 5)
+[2026-03-28T21:29:54.673732-04:00] [ingest] [excel_processor] completed: {"analysis": {"output": [{"sheet_name": "Sheet1", "rows": 5, "columns": 3, "headers": ["Sales", "Region", "Amount"], "sample_data": [[100, "North", 500], [200, "South", 1000], [50, "East", 250], [75, "West", 375], [100, "North", 500]], "named_ranges": ["Sales"], "formula_ranges": ["=SUM(B2:B5)"]}, {"sheet_name": "Sheet2", "rows": 3, "columns": 2, "headers": ["Product", "Price"], "sample_data": [[1, 10], [2, 20], [3, 30]], "named_ranges": [], "formula_ranges": []}], "workbook_metadata": {"total_s
+[2026-03-28T21:29:54.676023-04:00] [ingest] [json_processor] dispatch: Dispatching json_processor (step 6)
+[2026-03-28T21:29:57.278146-04:00] [ingest] [json_processor] completed: {
+  "records": [
+    {
+      "path": "output análisis.análisis[0].chunk",
+      "value": "Table found on page 1, title: \'Sales by Region\'",
+      "type": "string"
+    },
+    {
+      "path": "output análisis.análisis[0].references[0]",
+      "value": "table:1",
+      "type": "string"
+    },
+    {
+      "path": "output análisis.análisis[0].references[1]",
+      "value": "page:1",
+      "type": "string"
+    },
+    {
+      "path": "analysis.text",
+      "value": "PDF contents: ...",
+      "type": 
+[2026-03-28T21:29:57.281145-04:00] [ingest] [plain_text_processor] dispatch: Dispatching plain_text_processor (step 7)
+[2026-03-28T21:29:57.637024-04:00] [ingest] [plain_text_processor] completed: plain_text_processor completed
+[2026-03-28T21:29:57.646337-04:00] [ingest] [image_multimodal_processor] dispatch: Dispatching image_multimodal_processor (step 8)
+[2026-03-28T21:29:57.647337-04:00] [ingest] [image_multimodal_processor] completed: image_multimodal_processor: vision processing deferred (no image inputs in context)
+[2026-03-28T21:29:57.649337-04:00] [ingest] [orchestrator] stage_completed: Stage ingest done
+[2026-03-28T21:29:57.651337-04:00] [process] [orchestrator] stage_started: Starting stage: process
+[2026-03-28T21:29:57.653846-04:00] [process] [data_cleaning] dispatch: Dispatching data_cleaning (step 9)
+[2026-03-28T21:29:58.441569-04:00] [process] [data_cleaning] completed: data_cleaning completed
+[2026-03-28T21:29:58.453104-04:00] [process] [smart_categorizer_metadata] dispatch: Dispatching smart_categorizer_metadata (step 10)
+[2026-03-28T21:29:59.577269-04:00] [process] [smart_categorizer_metadata] completed: smart_categorizer_metadata completed
+[2026-03-28T21:29:59.588084-04:00] [process] [orchestrator] stage_completed: Stage process done
+[2026-03-28T21:29:59.589145-04:00] [aggregate] [orchestrator] stage_started: Starting stage: aggregate
+[2026-03-28T21:29:59.590768-04:00] [aggregate] [public_data_scraper] dispatch: Dispatching public_data_scraper (step 11)
+[2026-03-28T21:30:01.551506-04:00] [aggregate] [public_data_scraper] completed: {"artifacts": [{"title": "Table found on page 1, title: \'Sales by Region\'", "source_url": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0", "content_summary": "Table with sales data by region", "retrieved_at": "2022-07-22T16:43:35Z", "credibility": "high"}, {"title": "PDF contents: ...", "source_url": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0", "content_summary": "PDF with unknown contents", "retrieved_at": "2022-07-22T16:43:3
+[2026-03-28T21:30:01.555305-04:00] [aggregate] [aggregator] dispatch: Dispatching aggregator (step 12)
+[2026-03-28T21:30:17.437766-04:00] [aggregate] [aggregator] completed: aggregator completed
+[2026-03-28T21:30:17.447311-04:00] [aggregate] [orchestrator] stage_completed: Stage aggregate done
+[2026-03-28T21:30:17.448310-04:00] [analyze] [orchestrator] stage_started: Starting stage: analyze
+[2026-03-28T21:30:17.450311-04:00] [analyze] [conflict_detection] dispatch: Dispatching conflict_detection (step 13)
+[2026-03-28T21:30:24.875151-04:00] [analyze] [conflict_detection] completed: conflict_detection completed
+[2026-03-28T21:30:24.887210-04:00] [analyze] [trend_forecasting] dispatch: Dispatching trend_forecasting (step 14)
+[2026-03-28T21:30:36.163947-04:00] [analyze] [trend_forecasting] completed: trend_forecasting completed
+[2026-03-28T21:30:36.174991-04:00] [analyze] [sentiment_analysis] dispatch: Dispatching sentiment_analysis (step 15)
+[2026-03-28T21:30:43.711317-04:00] [analyze] [sentiment_analysis] completed: sentiment_analysis completed
+[2026-03-28T21:30:43.722849-04:00] [analyze] [knowledge_graph_builder] dispatch: Dispatching knowledge_graph_builder (step 16)
+[2026-03-28T21:30:57.766247-04:00] [analyze] [knowledge_graph_builder] completed: knowledge_graph_builder completed
+[2026-03-28T21:30:57.777335-04:00] [analyze] [orchestrator] stage_completed: Stage analyze done
+[2026-03-28T21:30:57.778334-04:00] [synthesize] [orchestrator] stage_started: Starting stage: synthesize
+[2026-03-28T21:30:57.780335-04:00] [synthesize] [insight_generation] dispatch: Dispatching insight_generation (step 17)
+[2026-03-28T21:31:05.750200-04:00] [synthesize] [insight_generation] completed: insight_generation completed
+[2026-03-28T21:31:05.761393-04:00] [synthesize] [swot_analysis] dispatch: Dispatching swot_analysis (step 18)
+[2026-03-28T21:31:14.155996-04:00] [synthesize] [swot_analysis] completed: swot_analysis completed
+[2026-03-28T21:31:14.167045-04:00] [synthesize] [orchestrator] stage_completed: Stage synthesize done
+[2026-03-28T21:31:14.168050-04:00] [finalize] [orchestrator] stage_started: Starting stage: finalize
+[2026-03-28T21:31:14.170149-04:00] [finalize] [executive_summary] dispatch: Dispatching executive_summary (step 19)
+[2026-03-28T21:31:18.106663-04:00] [finalize] [executive_summary] completed: Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand. SWOT analysis identifies Google's high credibility across multiple data sources, strategic market positioning, and established brand power as strengths. Weaknesses include potential for data over-reliance and operational fragmentation. Opportunities include expanding regionalized product offerings
+[2026-03-28T21:31:18.116677-04:00] [finalize] [elevenlabs_narration] dispatch: Dispatching elevenlabs_narration (step 20)
+[2026-03-28T21:31:18.117678-04:00] [finalize] [elevenlabs_narration] completed: No executive summary available for narration
+[2026-03-28T21:31:18.119676-04:00] [finalize] [orchestrator] stage_completed: Stage finalize done
+[2026-03-28T21:31:18.128703-04:00] [system] [orchestrator] finalized: Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 89.8s
+
+
+
+Agent activity
+Pipeline Classifiercompleted
+Track classified (rule-based fallback): predictive
+
+File Type Classifiercompleted
+file_type_classifier completed
+
+Pdf Processorcompleted
+{"analysis": {"output": [{"chunk": "Table found on page 1, title: 'Sales by Region'", "references": ["table:1", "page:1"]}, "text": "PDF contents: ...", "table_chart_refs": ["table:1", "chart:1"]}]}}
+
+Csv Processorcompleted
+csv_processor completed
+
+Excel Processorcompleted
+{"analysis": {"output": [{"sheet_name": "Sheet1", "rows": 5, "columns": 3, "headers": ["Sales", "Region", "Amount"], "sample_data": [[100, "North", 500], [200, "South", 1000], [50, "East", 250], [75, "West", 375], [100, "North", 500]], "named_ranges": ["Sales"], "formula_ranges": ["=SUM(B2:B5)"]}, {"sheet_name": "Sheet2", "rows": 3, "columns": 2, "headers": ["Product", "Price"], "sample_data": [[1, 10], [2, 20], [3, 30]], "named_ranges": [], "formula_ranges": []}], "workbook_metadata": {"total_s
+
+Json Processorcompleted
+{ "records": [ { "path": "output análisis.análisis[0].chunk", "value": "Table found on page 1, title: \'Sales by Region\'", "type": "string" }, { "path": "output análisis.análisis[0].references[0]", "value": "table:1", "type": "string" }, { "path": "output análisis.análisis[0].references[1]", "value": "page:1", "type": "string" }, { "path": "analysis.text", "value": "PDF contents: ...", "type":
+
+Plain Text Processorcompleted
+plain_text_processor completed
+
+Image Multimodal Processorcompleted
+image_multimodal_processor: vision processing deferred (no image inputs in context)
+
+Data Cleaningcompleted
+data_cleaning completed
+
+Smart Categorizer Metadatacompleted
+smart_categorizer_metadata completed
+
+Public Data Scrapercompleted
+{"artifacts": [{"title": "Table found on page 1, title: \'Sales by Region\'", "source_url": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0", "content_summary": "Table with sales data by region", "retrieved_at": "2022-07-22T16:43:35Z", "credibility": "high"}, {"title": "PDF contents: ...", "source_url": "https://docs.google.com/gsheet/d/1BxG4u9q2U7RtFkXk6wS0AeKJHdAqT4J1/edit#gid=0", "content_summary": "PDF with unknown contents", "retrieved_at": "2022-07-22T16:43:3
+
+Aggregatorcompleted
+aggregator completed
+
+Conflict Detectioncompleted
+conflict_detection completed
+
+Trend Forecastingcompleted
+trend_forecasting completed
+
+Sentiment Analysiscompleted
+sentiment_analysis completed
+
+Knowledge Graph Buildercompleted
+knowledge_graph_builder completed
+
+Insight Generationcompleted
+insight_generation completed
+
+Swot Analysiscompleted
+swot_analysis completed
+
+Executive Summarycompleted
+Google's predictive analysis reveals strong sales trends with regional variations. Key insights highlight opportunities for targeted marketing strategies and product offerings based on regional demand. SWOT analysis identifies Google's high credibility across multiple data sources, strategic market positioning, and established brand power as strengths. Weaknesses include potential for data over-reliance and operational fragmentation. Opportunities include expanding regionalized product offerings
+
+Elevenlabs Narrationcompleted
+No executive summary available for narration
+
+Run artifacts: data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_012948-GAF2xGgJz5Xj_zd_
