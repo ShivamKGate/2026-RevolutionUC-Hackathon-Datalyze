@@ -256,7 +256,7 @@ AGENT_CONTRACTS: dict[str, AgentContract] = {
             "overall_confidence",
             "confidence_breakdown",
         ],
-        optional_keys=[],
+        optional_keys=["chart_priority"],
         strictness="guarded",
         token_budget=600,
         scope_boundary="visualization plan synthesis from agent outputs (deterministic utility)",

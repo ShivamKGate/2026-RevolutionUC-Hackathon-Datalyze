@@ -2,12 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
+  deletePipelineRun,
   listPipelineRuns,
   listUploadedFiles,
   startPipelineRun,
   stopActiveRuns,
+  stopPipelineRun,
   type PipelineRun,
 } from "../lib/api";
+import {
+  onboardingPathToAnalysisTrackId,
+  trackIdToStartOnboarding,
+} from "../lib/trackOnboarding";
 
 const TRACK_BADGE: Record<string, string> = {
   predictive: "#3b82f6",
@@ -19,6 +25,10 @@ const TRACK_BADGE: Record<string, string> = {
 function trackBadgeColor(track: string | null | undefined): string {
   if (!track) return "#64748b";
   return TRACK_BADGE[track] ?? "#64748b";
+}
+
+function isActiveRunStatus(status: string): boolean {
+  return status === "running" || status === "pending";
 }
 
 function confidenceFromRun(r: PipelineRun): number | null {
@@ -44,6 +54,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [slugDeleting, setSlugDeleting] = useState<string | null>(null);
+  const [slugStopping, setSlugStopping] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -102,6 +114,39 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDeleteRun(slug: string) {
+    if (
+      !window.confirm(
+        "Remove this analysis from your list? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    setSlugDeleting(slug);
+    setError(null);
+    try {
+      await deletePipelineRun(slug);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete analysis");
+    } finally {
+      setSlugDeleting(null);
+    }
+  }
+
+  async function handleStopRun(slug: string) {
+    setSlugStopping(slug);
+    setError(null);
+    try {
+      await stopPipelineRun(slug);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not stop analysis");
+    } finally {
+      setSlugStopping(null);
+    }
+  }
+
   async function handleStopActiveAnalyses() {
     setStopping(true);
     setError(null);
@@ -121,14 +166,18 @@ export default function DashboardPage() {
     setStarting(true);
     setError(null);
     try {
-      const files = await listUploadedFiles();
+      const trackId = onboardingPathToAnalysisTrackId(user?.onboarding_path);
+      const files = await listUploadedFiles(trackId);
       const ids = files.map((f) => f.id);
       if (!ids.length && !user?.public_scrape_enabled) {
         navigate("/upload");
         return;
       }
       const payload = !ids.length && user?.public_scrape_enabled ? [] : ids;
-      const run = await startPipelineRun({ uploaded_file_ids: payload });
+      const run = await startPipelineRun({
+        uploaded_file_ids: payload,
+        onboarding_path: trackIdToStartOnboarding(trackId),
+      });
       navigate(`/analysis/${run.slug}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not start analysis");
@@ -279,6 +328,8 @@ export default function DashboardPage() {
         <ul className="analysis-run-list">
           {filteredRuns.map((r) => {
             const conf = confidenceFromRun(r);
+            const active = isActiveRunStatus(r.status);
+            const cancelled = r.status === "cancelled";
             return (
               <li key={r.id} className="analysis-run-card">
                 <div>
@@ -290,12 +341,27 @@ export default function DashboardPage() {
                       flexWrap: "wrap",
                     }}
                   >
-                    <Link
-                      to={`/analysis/${r.slug}`}
-                      className="analysis-run-link"
-                    >
-                      {r.slug}
-                    </Link>
+                    {cancelled ? (
+                      <span
+                        className="analysis-run-link"
+                        style={{
+                          textDecoration: "line-through",
+                          opacity: 0.65,
+                          cursor: "not-allowed",
+                          pointerEvents: "none",
+                        }}
+                        title="This analysis was cancelled"
+                      >
+                        {r.slug}
+                      </span>
+                    ) : (
+                      <Link
+                        to={`/analysis/${r.slug}`}
+                        className="analysis-run-link"
+                      >
+                        {r.slug}
+                      </Link>
+                    )}
                     {r.track && (
                       <span
                         className="inline-code"
@@ -342,9 +408,51 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
-                <Link to={`/analysis/${r.slug}`} className="btn-secondary">
-                  Open
-                </Link>
+                <div className="analysis-run-card-actions">
+                  {cancelled ? (
+                    <span
+                      className="analysis-run-open-disabled"
+                      aria-disabled="true"
+                      title="Open is not available for cancelled analyses"
+                    >
+                      Open
+                    </span>
+                  ) : (
+                    <Link to={`/analysis/${r.slug}`} className="btn-secondary">
+                      Open
+                    </Link>
+                  )}
+                  {active && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={slugStopping === r.slug}
+                      title="Immediately terminates this run’s worker, then marks it cancelled."
+                      onClick={() => void handleStopRun(r.slug)}
+                      style={{
+                        borderColor: "rgba(248, 113, 113, 0.55)",
+                        color: "#fca5a5",
+                      }}
+                    >
+                      {slugStopping === r.slug ? "Stopping…" : "Force stop"}
+                    </button>
+                  )}
+                  {!active && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={slugDeleting === r.slug}
+                      title="Remove this analysis from your list"
+                      onClick={() => void handleDeleteRun(r.slug)}
+                      style={{
+                        borderColor: "rgba(248, 113, 113, 0.55)",
+                        color: "#fca5a5",
+                      }}
+                    >
+                      {slugDeleting === r.slug ? "Removing…" : "Delete"}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}

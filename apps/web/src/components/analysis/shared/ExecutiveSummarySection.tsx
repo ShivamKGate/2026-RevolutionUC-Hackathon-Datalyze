@@ -1,3 +1,4 @@
+import { unknownToDisplayText } from "../../../lib/renderSafe";
 import type { ExecutiveSummaryOutput } from "../types";
 
 type Props = {
@@ -9,15 +10,17 @@ export function ExecutiveSummarySection({ data }: Props) {
 
   return (
     <section className="executive-summary">
-      <h2>{data.headline}</h2>
-      <p className="executive-summary-overview">{data.situation_overview}</p>
+      <h2>{unknownToDisplayText(data.headline as unknown)}</h2>
+      <p className="executive-summary-overview">
+        {unknownToDisplayText(data.situation_overview as unknown)}
+      </p>
 
       {data.key_findings?.length > 0 && (
         <>
           <p className="executive-summary-list-title">Key Findings</p>
           <ul>
             {data.key_findings.map((f, i) => (
-              <li key={i}>{f}</li>
+              <li key={i}>{unknownToDisplayText(f as unknown)}</li>
             ))}
           </ul>
         </>
@@ -28,7 +31,7 @@ export function ExecutiveSummarySection({ data }: Props) {
           <p className="executive-summary-list-title">Risk Highlights</p>
           <ul>
             {data.risk_highlights.map((r, i) => (
-              <li key={i}>{r}</li>
+              <li key={i}>{unknownToDisplayText(r as unknown)}</li>
             ))}
           </ul>
         </>
@@ -39,17 +42,20 @@ export function ExecutiveSummarySection({ data }: Props) {
           <p className="executive-summary-list-title">Next Actions</p>
           <ul>
             {data.next_actions.map((a, i) => (
-              <li key={i}>{a}</li>
+              <li key={i}>{unknownToDisplayText(a as unknown)}</li>
             ))}
           </ul>
         </>
       )}
 
-      {data.confidence_statement && (
-        <span className="executive-summary-confidence">
-          {data.confidence_statement}
-        </span>
-      )}
+      {(() => {
+        const conf = unknownToDisplayText(
+          data.confidence_statement as unknown,
+        ).trim();
+        return conf ? (
+          <span className="executive-summary-confidence">{conf}</span>
+        ) : null;
+      })()}
     </section>
   );
 }

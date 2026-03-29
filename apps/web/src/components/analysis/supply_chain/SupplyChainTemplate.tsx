@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   BarChart,
   HeatmapChart,
@@ -7,11 +7,13 @@ import {
   TimeSeriesChart,
   type ScatterPoint,
 } from "../../charts";
-import type { AgentResults } from "../types";
+import type { AgentResults, VisualizationPlan } from "../types";
+import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
-import { ConfidencePanel } from "../shared/ConfidencePanel";
+import { ConfidenceStrip } from "../shared/ConfidenceStrip";
 import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
+import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import type { RecommendationCardProps } from "../../charts";
 import "../analysis.css";
 
@@ -122,12 +124,22 @@ function buildRecs(results: AgentResults): RecommendationCardProps[] {
   return [];
 }
 
+type Props = {
+  agentResults: AgentResults;
+  visualizationPlan?: VisualizationPlan;
+  collapseStoragePrefix?: string;
+  hideConfidenceStrip?: boolean;
+};
+
 export function SupplyChainTemplate({
   agentResults,
-}: {
-  agentResults: AgentResults;
-}) {
+  visualizationPlan,
+  collapseStoragePrefix = "",
+  hideConfidenceStrip = false,
+}: Props) {
   const evaluator = agentResults.output_evaluator;
+  const p = collapseStoragePrefix;
+
   const kpis =
     evaluator?.kpi_cards?.map((k) => ({
       title: k.metric,
@@ -145,9 +157,9 @@ export function SupplyChainTemplate({
   const series = useMemo(() => {
     const fc = tf?.forecasts?.[0];
     if (fc?.historical?.length) {
-      return fc.historical.slice(-18).map((p) => ({
-        date: p.date,
-        value: p.value,
+      return fc.historical.slice(-18).map((pt) => ({
+        date: pt.date,
+        value: pt.value,
       }));
     }
     const y = new Date().getFullYear();
@@ -159,66 +171,146 @@ export function SupplyChainTemplate({
 
   const heat = useMemo(() => buildHeatmap(), []);
 
+  const chartBlocks = useMemo(() => {
+    const blocks: { id: string; summary: ReactNode; node: ReactNode }[] = [
+      {
+        id: "sc_lead_time",
+        summary: `${series.length} periods in lead-time series`,
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">Lead time distribution</h3>
+            <TimeSeriesChart series={series} title="" />
+          </section>
+        ),
+      },
+      {
+        id: "sc_inventory_bar",
+        summary: "Inventory posture by category",
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">
+              Inventory health by category
+            </h3>
+            <BarChart
+              categories={[
+                "Healthy",
+                "Overstock",
+                "Stockout risk",
+                "Dead stock",
+              ]}
+              values={[54, 18, 12, 6]}
+              title=""
+            />
+          </section>
+        ),
+      },
+      {
+        id: "sc_network",
+        summary: "5-node flow — watch amber DC",
+        node: <NetworkFlowMap />,
+      },
+      {
+        id: "sc_supplier_scatter",
+        summary: "Supplier on-time vs defect rate",
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">Supplier reliability</h3>
+            <ScatterPlot
+              points={buildScatter()}
+              xLabel="On-time %"
+              yLabel="Defect rate %"
+              title=""
+            />
+          </section>
+        ),
+      },
+      {
+        id: "sc_demand_heatmap",
+        summary: `${heat.rows.length}×${heat.cols.length} demand grid`,
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">Demand vs fulfillment</h3>
+            <HeatmapChart
+              rows={heat.rows}
+              cols={heat.cols}
+              values={heat.values}
+              title=""
+              colorScale="RdYlGn"
+            />
+          </section>
+        ),
+      },
+      {
+        id: "sc_pareto",
+        summary: "Order delay root causes (Pareto)",
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">Order delay root causes</h3>
+            <ParetoChart
+              categories={[
+                "Carrier",
+                "Customs",
+                "Forecast error",
+                "Supplier late",
+                "Other",
+              ]}
+              values={[42, 28, 14, 10, 6]}
+              title=""
+            />
+          </section>
+        ),
+      },
+    ];
+    return sortByChartPriority(blocks, visualizationPlan?.chart_priority);
+  }, [
+    heat.cols.length,
+    heat.rows,
+    heat.values,
+    series.length,
+    visualizationPlan?.chart_priority,
+  ]);
+
+  const titles: Record<string, string> = {
+    sc_lead_time: "Lead time",
+    sc_inventory_bar: "Inventory health",
+    sc_network: "Network flow",
+    sc_supplier_scatter: "Supplier reliability",
+    sc_demand_heatmap: "Demand heatmap",
+    sc_pareto: "Delay Pareto",
+  };
+
   return (
     <div className="analysis-track-inner">
       <KPIRow items={kpis} />
-      <div className="analysis-two-col">
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">Lead time distribution</h3>
-          <TimeSeriesChart series={series} title="" />
-        </section>
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">
-            Inventory health by category
-          </h3>
-          <BarChart
-            categories={["Healthy", "Overstock", "Stockout risk", "Dead stock"]}
-            values={[54, 18, 12, 6]}
-            title=""
+
+      <div
+        className={
+          hideConfidenceStrip
+            ? "analysis-top-row analysis-top-row--no-confidence"
+            : "analysis-top-row"
+        }
+      >
+        <RecommendationsPanel recommendations={buildRecs(agentResults)} />
+        {!hideConfidenceStrip && (
+          <ConfidenceStrip
+            score={evaluator?.overall_confidence}
+            breakdown={evaluator?.confidence_breakdown}
           />
-        </section>
+        )}
       </div>
-      <NetworkFlowMap />
-      <div className="analysis-two-col">
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">Supplier reliability</h3>
-          <ScatterPlot
-            points={buildScatter()}
-            xLabel="On-time %"
-            yLabel="Defect rate %"
-            title=""
-          />
-        </section>
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">Demand vs fulfillment</h3>
-          <HeatmapChart
-            rows={heat.rows}
-            cols={heat.cols}
-            values={heat.values}
-            title=""
-            colorScale="RdYlGn"
-          />
-        </section>
-      </div>
-      <section className="analysis-section">
-        <h3 className="analysis-section-title">Order delay root causes</h3>
-        <ParetoChart
-          categories={[
-            "Carrier",
-            "Customs",
-            "Forecast error",
-            "Supplier late",
-            "Other",
-          ]}
-          values={[42, 28, 14, 10, 6]}
-          title=""
-        />
-      </section>
-      <RecommendationsPanel recommendations={buildRecs(agentResults)} />
-      <ConfidencePanel
-        score={evaluator?.overall_confidence}
-        breakdown={evaluator?.confidence_breakdown}
-      />
+
+      {chartBlocks.map((b) => (
+        <CollapsibleAnalysisSection
+          key={b.id}
+          title={titles[b.id] ?? b.id}
+          defaultOpen={false}
+          summary={b.summary}
+          storageKey={p ? `${p}:chart:${b.id}` : undefined}
+        >
+          {b.node}
+        </CollapsibleAnalysisSection>
+      ))}
+
       <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );

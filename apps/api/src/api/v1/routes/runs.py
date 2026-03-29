@@ -447,6 +447,106 @@ def get_run(request: Request, slug: str):
     return _row_to_out(row)
 
 
+@router.post("/{slug}/stop")
+def stop_single_run(request: Request, slug: str):
+    """Force-stop one pending/running analysis (same semantics as stop-active, scoped to slug)."""
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                "SELECT id, status FROM pipeline_runs "
+                "WHERE slug=:slug AND company_id=:cid"
+            ),
+            {"slug": slug, "cid": company_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if str(row.status) not in ("pending", "running"):
+        raise HTTPException(
+            status_code=400,
+            detail="Run is not active (only pending or running can be stopped).",
+        )
+
+    _terminate_run_process(slug)
+    request_cancel_run(slug)
+
+    db = SessionLocal()
+    try:
+        db.execute(
+            text(
+                "UPDATE pipeline_runs SET status='cancelled', ended_at=NOW(), "
+                "summary='Analysis stopped by user.' "
+                "WHERE company_id=:cid AND slug=:slug AND status IN ('pending', 'running')"
+            ),
+            {"cid": company_id, "slug": slug},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    return {"status": "ok", "slug": slug}
+
+
+@router.delete("/{slug}")
+def delete_single_run(request: Request, slug: str):
+    """Remove one finished run from history and delete its artifact directory."""
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    db = SessionLocal()
+    row = None
+    try:
+        row = db.execute(
+            text(
+                "SELECT id, status, run_dir_path FROM pipeline_runs "
+                "WHERE slug=:slug AND company_id=:cid"
+            ),
+            {"slug": slug, "cid": company_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if str(row.status) in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete an active run. Stop it first.",
+        )
+
+    run_dir = _resolve_run_dir(row.run_dir_path)
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("DELETE FROM pipeline_runs WHERE id=:id AND company_id=:cid"),
+            {"id": int(row.id), "cid": company_id},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    fs_errors: list[str] = []
+    if run_dir is not None and run_dir.exists():
+        try:
+            shutil.rmtree(run_dir)
+        except Exception as exc:
+            fs_errors.append(f"{run_dir.as_posix()}: {str(exc)[:240]}")
+
+    return {
+        "status": "ok",
+        "slug": slug,
+        "filesystem_errors": fs_errors,
+    }
+
+
 @router.delete("")
 def clear_runs(request: Request):
     user = get_current_user(request)

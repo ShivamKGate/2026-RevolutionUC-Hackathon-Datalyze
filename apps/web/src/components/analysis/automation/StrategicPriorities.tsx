@@ -13,13 +13,17 @@ function formatCurrency(n: number): string {
 export function StrategicPriorities({ processes }: Props) {
   if (!processes || processes.length === 0) return null;
 
-  const sorted = [...processes].sort(
-    (a, b) => b.impact_score - a.impact_score,
-  );
+  const sorted = [...processes].sort((a, b) => b.impact_score - a.impact_score);
 
   return (
     <section className="analysis-section">
       <h3 className="analysis-section-title">Strategic Priorities</h3>
+      <p className="strategic-priorities-scope-note">
+        <strong>Note:</strong> These priorities apply to <em>this run only</em>
+        —they highlight opportunities that are new or distinct in this analysis
+        compared with prior runs. They are not a repeat of recommendations from
+        earlier analyses; each run is evaluated on its own inputs and context.
+      </p>
       <div className="strategic-priorities">
         {sorted.map((p) => (
           <div key={p.name} className="strategic-card">
@@ -41,8 +45,10 @@ export function StrategicPriorities({ processes }: Props) {
               <strong>{p.roi_months} months</strong>
             </div>
             <p className="strategic-card-savings">
-              Save {formatCurrency(p.cost_current - p.cost_automated)}/cycle &middot;{" "}
-              {(p.current_time_hours - p.automated_time_hours).toFixed(1)}h freed
+              Save {formatCurrency(p.cost_current - p.cost_automated)}/cycle
+              &middot;{" "}
+              {(p.current_time_hours - p.automated_time_hours).toFixed(1)}h
+              freed
             </p>
           </div>
         ))}

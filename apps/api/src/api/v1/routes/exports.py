@@ -11,6 +11,7 @@ from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import text
 
 from api.v1.routes.auth import get_current_user
+from core.config import settings
 from db.session import SessionLocal
 from services.export_html import generate_html_report
 from services.export_pdf import generate_pdf_report
@@ -99,7 +100,14 @@ async def export_run_pdf(request: Request, slug: str):
 
     run_dir = _resolve_run_dir(row.run_dir_path)
     if run_dir is None or not run_dir.is_dir():
-        raise HTTPException(status_code=404, detail="Run output directory not found")
+        stub = settings.repo_root / "data" / ".export_fallback_stub"
+        stub.mkdir(parents=True, exist_ok=True)
+        logger.warning(
+            "PDF export: run_dir missing for slug=%s path=%r — using DB/replay only",
+            slug,
+            row.run_dir_path,
+        )
+        run_dir = stub
 
     run_data = {
         "id": row.id,
@@ -158,7 +166,14 @@ async def export_run_html(request: Request, slug: str):
 
     run_dir = _resolve_run_dir(row.run_dir_path)
     if run_dir is None or not run_dir.is_dir():
-        raise HTTPException(status_code=404, detail="Run output directory not found")
+        stub = settings.repo_root / "data" / ".export_fallback_stub"
+        stub.mkdir(parents=True, exist_ok=True)
+        logger.warning(
+            "HTML export: run_dir missing for slug=%s path=%r — using DB/replay only",
+            slug,
+            row.run_dir_path,
+        )
+        run_dir = stub
 
     replay_payload = _coerce_json_obj(row.replay_payload)
     if not replay_payload:

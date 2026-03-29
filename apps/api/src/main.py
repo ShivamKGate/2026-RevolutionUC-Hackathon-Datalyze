@@ -8,6 +8,7 @@ from sqlalchemy import text
 from api.v1.router import api_router
 from core.config import settings
 from db.session import engine
+from services.startup_bootstrap import run_startup_bootstrap
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,11 @@ async def lifespan(app: FastAPI):
         logger.info("Database connection: OK  (%s)", db_host)
     except Exception as exc:
         logger.error("Database connection FAILED: %s", exc)
+    else:
+        try:
+            run_startup_bootstrap()
+        except Exception:
+            logger.exception("Startup bootstrap error")
     yield
 from services.agent_registry import boot_registry
 

@@ -775,7 +775,22 @@ ul {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.agent-activity-status--ok {
   color: #4ade80;
+}
+
+.agent-activity-status--failed {
+  color: #f87171;
+}
+
+.agent-activity-status--muted {
+  color: #94a3b8;
+}
+
+.agent-activity-status--running {
+  color: #fbbf24;
 }
 
 .agent-activity-msg {
@@ -824,6 +839,39 @@ ul {
 .analysis-run-summary {
   margin: 0.4rem 0 0;
   font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.analysis-run-card-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.analysis-run-card-actions .btn-secondary,
+.analysis-run-card-actions .analysis-run-open-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.analysis-run-open-disabled {
+  border: 1px solid var(--border);
+  opacity: 0.55;
+  text-decoration: line-through;
+  cursor: not-allowed;
+  user-select: none;
   color: var(--text-muted);
 }
 

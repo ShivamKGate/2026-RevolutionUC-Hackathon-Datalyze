@@ -72,6 +72,33 @@ If Python 3.12 is missing, the script prints install hints (e.g. `winget install
 - Backend API: [http://localhost:8000](http://localhost:8000)
 - API docs (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
 
+### Demo logins
+
+All accounts use the **viewer** role (same as normal self-serve registration) and share password **`Demo@123`**.
+
+| Email                         | Purpose                  |
+| ----------------------------- | ------------------------ |
+| `demo@revuc.com`              | General demo             |
+| `demo.automation@revuc.com`   | Automation track demos   |
+| `demo.optimization@revuc.com` | Optimization track demos |
+| `demo.predictive@revuc.com`   | Predictive track demos   |
+| `demo.supplychain@revuc.com`  | Supply chain track demos |
+
+Password: Demo@123
+
+Use it to test for yourself, you would have to setup the database on postgres yourself, actually I will add instructions or automation for this at a later time, if I remember.
+
+**Seeding (idempotent):** with Postgres configured in `apps/api/.env`, run:
+
+```bash
+cd apps/api
+.\.venv\Scripts\python.exe scripts/seed_demo_users.py
+```
+
+Users are attached to a shared company **`Datalyze Demo Org`**. The script upserts by email (password hash refreshed each run).
+
+**Note:** `apps/api/src/db/seeds/001_seed.sql` may still define `demo@revuc.com` as **admin** for older E2E flows. After you run `seed_demo_users.py`, that row becomes **viewer** with password `Demo@123`. Keep a separate admin if you still need elevated E2E.
+
 ## Current Connectivity Contract
 
 - Frontend button in `apps/web/src/App.tsx` calls:

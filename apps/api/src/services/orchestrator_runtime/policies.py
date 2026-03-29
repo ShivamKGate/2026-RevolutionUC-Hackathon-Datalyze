@@ -21,6 +21,24 @@ from services.orchestrator_runtime.contracts import (
 )
 
 
+def _is_provider_rate_or_concurrency_limit(envelope: AgentEnvelope) -> bool:
+    if envelope.status != "error":
+        return False
+    s = (envelope.summary or "").lower()
+    return any(
+        needle in s
+        for needle in (
+            "ratelimit",
+            "rate limit",
+            "rate_limit",
+            "concurrency limit",
+            "429",
+            "too many requests",
+            "over limit",
+        )
+    )
+
+
 @dataclass
 class RetryDecision:
     should_retry: bool
@@ -42,11 +60,24 @@ def evaluate_retry(
     if envelope.status != "error":
         return RetryDecision(should_retry=False, reason="not an error", attempt=current_retries)
 
-    if current_retries >= max_r:
+    rl = _is_provider_rate_or_concurrency_limit(envelope)
+    effective_max = max_r + (5 if rl else 0)
+
+    if current_retries >= effective_max:
         return RetryDecision(
             should_retry=False,
-            reason=f"max retries ({max_r}) exhausted",
+            reason=f"max retries ({effective_max}) exhausted",
             attempt=current_retries,
+        )
+
+    if rl:
+        delay = min(12.0 * (2 ** current_retries), 120.0)
+        return RetryDecision(
+            should_retry=True,
+            reason=f"rate/concurrency limit — backoff {delay:.0f}s "
+            f"(attempt {current_retries + 1}/{effective_max})",
+            attempt=current_retries + 1,
+            delay_seconds=delay,
         )
 
     # Exponential backoff: 2^attempt seconds, capped at 30s

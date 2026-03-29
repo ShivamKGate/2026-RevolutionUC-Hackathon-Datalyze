@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   BarChart,
   GanttChart,
@@ -6,11 +6,13 @@ import {
   type GanttTask,
   type TornadoFactor,
 } from "../../charts";
-import type { AgentResults } from "../types";
+import type { AgentResults, VisualizationPlan } from "../types";
+import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
-import { ConfidencePanel } from "../shared/ConfidencePanel";
+import { ConfidenceStrip } from "../shared/ConfidenceStrip";
 import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
+import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import type { RecommendationCardProps } from "../../charts";
 import "../analysis.css";
 
@@ -189,11 +191,19 @@ function buildRecs(results: AgentResults): RecommendationCardProps[] {
   return [];
 }
 
+type Props = {
+  agentResults: AgentResults;
+  visualizationPlan?: VisualizationPlan;
+  collapseStoragePrefix?: string;
+  hideConfidenceStrip?: boolean;
+};
+
 export function OptimizationTemplate({
   agentResults,
-}: {
-  agentResults: AgentResults;
-}) {
+  visualizationPlan,
+  collapseStoragePrefix = "",
+  hideConfidenceStrip = false,
+}: Props) {
   const tree = useMemo(() => buildProfitTree(agentResults), [agentResults]);
   const constraints = useMemo(
     () => buildConstraintBars(agentResults),
@@ -202,6 +212,7 @@ export function OptimizationTemplate({
   const tornado = useMemo(() => buildTornado(agentResults), [agentResults]);
   const gantt = useMemo(() => buildGantt(), []);
   const evaluator = agentResults.output_evaluator;
+  const p = collapseStoragePrefix;
 
   const kpis =
     evaluator?.kpi_cards?.map((k) => ({
@@ -216,25 +227,108 @@ export function OptimizationTemplate({
             : ("flat" as const),
     })) ?? [];
 
+  const recs = buildRecs(agentResults);
+  const tableRows = recs.length
+    ? recs
+    : [
+        {
+          action: "Run deeper data ingest for department-level costs",
+          priority: "high" as const,
+          impact: "",
+          confidence: 0.62,
+          source_agent: "system",
+        },
+      ];
+
+  const chartBlocks = useMemo(() => {
+    const blocks: { id: string; summary: ReactNode; node: ReactNode }[] = [
+      {
+        id: "opt_profit_tree",
+        summary: "Net performance breakdown",
+        node: <ProfitTreeSection root={tree} />,
+      },
+      {
+        id: "opt_constraint_bar",
+        summary: `${constraints.categories.length} constraint levers`,
+        node: (
+          <div className="analysis-two-col">
+            <section className="analysis-section">
+              <h3 className="analysis-section-title">
+                Constraint impact (EBITDA)
+              </h3>
+              <BarChart
+                categories={constraints.categories}
+                values={constraints.values}
+                title=""
+                horizontal
+              />
+            </section>
+            <section className="analysis-section">
+              <h3 className="analysis-section-title">Sensitivity tornado</h3>
+              <TornadoChart factors={tornado} title="" />
+            </section>
+          </div>
+        ),
+      },
+      {
+        id: "opt_gantt",
+        summary: `${gantt.length} roadmap milestones`,
+        node: (
+          <section className="analysis-section">
+            <h3 className="analysis-section-title">Optimization roadmap</h3>
+            <GanttChart tasks={gantt} title="" />
+          </section>
+        ),
+      },
+    ];
+    return sortByChartPriority(blocks, visualizationPlan?.chart_priority);
+  }, [
+    constraints.categories,
+    constraints.values,
+    gantt,
+    tornado,
+    tree,
+    visualizationPlan?.chart_priority,
+  ]);
+
+  const titles: Record<string, string> = {
+    opt_profit_tree: "Profit & cost tree",
+    opt_constraint_bar: "Constraints & sensitivity",
+    opt_gantt: "Roadmap (Gantt)",
+  };
+
   return (
     <div className="analysis-track-inner">
       <KPIRow items={kpis} />
-      <ProfitTreeSection root={tree} />
-      <div className="analysis-two-col">
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">Constraint impact (EBITDA)</h3>
-          <BarChart
-            categories={constraints.categories}
-            values={constraints.values}
-            title=""
-            horizontal
+
+      <div
+        className={
+          hideConfidenceStrip
+            ? "analysis-top-row analysis-top-row--no-confidence"
+            : "analysis-top-row"
+        }
+      >
+        <RecommendationsPanel recommendations={recs} />
+        {!hideConfidenceStrip && (
+          <ConfidenceStrip
+            score={evaluator?.overall_confidence}
+            breakdown={evaluator?.confidence_breakdown}
           />
-        </section>
-        <section className="analysis-section">
-          <h3 className="analysis-section-title">Sensitivity tornado</h3>
-          <TornadoChart factors={tornado} title="" />
-        </section>
+        )}
       </div>
+
+      {chartBlocks.map((b) => (
+        <CollapsibleAnalysisSection
+          key={b.id}
+          title={titles[b.id] ?? b.id}
+          defaultOpen={false}
+          summary={b.summary}
+          storageKey={p ? `${p}:chart:${b.id}` : undefined}
+        >
+          {b.node}
+        </CollapsibleAnalysisSection>
+      ))}
+
       <section className="analysis-section">
         <h3 className="analysis-section-title">Prioritized recommendations</h3>
         <table className="opt-rec-table">
@@ -246,18 +340,7 @@ export function OptimizationTemplate({
             </tr>
           </thead>
           <tbody>
-            {(buildRecs(agentResults).length
-              ? buildRecs(agentResults)
-              : [
-                  {
-                    action: "Run deeper data ingest for department-level costs",
-                    priority: "high",
-                    impact: "",
-                    confidence: 0.62,
-                    source_agent: "system",
-                  },
-                ]
-            ).map((r, i) => (
+            {tableRows.map((r, i) => (
               <tr key={i}>
                 <td>{r.action}</td>
                 <td>
@@ -271,6 +354,7 @@ export function OptimizationTemplate({
           </tbody>
         </table>
       </section>
+
       <section className="analysis-section">
         <h3 className="analysis-section-title">Goal → action alignment</h3>
         <div className="opt-flow">
@@ -302,15 +386,7 @@ export function OptimizationTemplate({
           </div>
         </div>
       </section>
-      <section className="analysis-section">
-        <h3 className="analysis-section-title">Optimization roadmap</h3>
-        <GanttChart tasks={gantt} title="" />
-      </section>
-      <RecommendationsPanel recommendations={buildRecs(agentResults)} />
-      <ConfidencePanel
-        score={evaluator?.overall_confidence}
-        breakdown={evaluator?.confidence_breakdown}
-      />
+
       <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );

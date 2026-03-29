@@ -8,11 +8,16 @@ type Props = {
   onSwitchToSignup: () => void;
 };
 
-export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props) {
+export default function LoginModal({
+  isOpen,
+  onClose,
+  onSwitchToSignup,
+}: Props) {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +28,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props)
     setLoading(true);
     setError(null);
     try {
-      const user = await login(email, password);
+      const user = await login(email, password, rememberMe);
       onClose();
       navigate(user.setup_complete ? "/dashboard" : "/setup");
     } catch (err) {
@@ -38,17 +43,28 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props)
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Log In</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
+          <button className="modal-close" onClick={onClose}>
+            &times;
+          </button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {error && (
-              <div className="status error" style={{ margin: 0, padding: "0.6rem 0.75rem", borderRadius: 6 }}>
+              <div
+                className="status error"
+                style={{
+                  margin: 0,
+                  padding: "0.6rem 0.75rem",
+                  borderRadius: 6,
+                }}
+              >
                 {error}
               </div>
             )}
             <div className="form-group">
-              <label className="form-label" htmlFor="login-email">Email</label>
+              <label className="form-label" htmlFor="login-email">
+                Email
+              </label>
               <input
                 id="login-email"
                 type="email"
@@ -60,7 +76,9 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props)
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="login-password">Password</label>
+              <label className="form-label" htmlFor="login-password">
+                Password
+              </label>
               <input
                 id="login-password"
                 type="password"
@@ -70,6 +88,25 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props)
                 required
               />
             </div>
+            <label
+              className="form-group"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                id="login-remember"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span className="form-label" style={{ margin: 0 }}>
+                Remember me for 1 day
+              </span>
+            </label>
           </div>
           <div className="modal-footer">
             <button type="submit" disabled={loading}>
@@ -77,7 +114,11 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }: Props)
             </button>
             <p className="modal-switch-text">
               Don&apos;t have an account?{" "}
-              <button type="button" className="link-btn" onClick={onSwitchToSignup}>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={onSwitchToSignup}
+              >
                 Sign up
               </button>
             </p>

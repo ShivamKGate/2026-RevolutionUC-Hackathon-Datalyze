@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { agentActivityStatusClass } from "../lib/agentActivityUi";
 import { getLatestPipelineRun, type AgentActivityRow } from "../lib/api";
 
 export default function AgentsPage() {
@@ -70,7 +71,9 @@ export default function AgentsPage() {
             {rows.map((a) => (
               <li key={a.agent_id} className="agent-activity-item">
                 <strong>{a.agent_name}</strong>
-                <span className="agent-activity-status">{a.status}</span>
+                <span className={agentActivityStatusClass(a.status)}>
+                  {a.status}
+                </span>
                 <p className="agent-activity-msg">{a.message}</p>
               </li>
             ))}

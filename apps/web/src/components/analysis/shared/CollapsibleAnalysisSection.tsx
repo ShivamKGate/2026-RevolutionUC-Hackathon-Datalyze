@@ -1,54 +1,63 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 
 type Props = {
   title: string;
-  summary?: ReactNode;
   defaultOpen?: boolean;
-  storageKey?: string;
+  summary: ReactNode;
   children: ReactNode;
+  /** sessionStorage key for open state (per run slug prefix from parent). */
+  storageKey?: string;
+  className?: string;
 };
 
 export function CollapsibleAnalysisSection({
   title,
-  summary,
   defaultOpen = false,
-  storageKey,
+  summary,
   children,
+  storageKey,
+  className,
 }: Props) {
+  const panelId = useId();
   const [open, setOpen] = useState(() => {
-    if (storageKey) {
-      const saved = sessionStorage.getItem(storageKey);
-      if (saved !== null) return saved === "true";
+    if (storageKey && typeof sessionStorage !== "undefined") {
+      const v = sessionStorage.getItem(storageKey);
+      if (v === "1") return true;
+      if (v === "0") return false;
     }
     return defaultOpen;
   });
 
   useEffect(() => {
-    if (storageKey) {
-      sessionStorage.setItem(storageKey, String(open));
-    }
+    if (!storageKey || typeof sessionStorage === "undefined") return;
+    sessionStorage.setItem(storageKey, open ? "1" : "0");
   }, [open, storageKey]);
 
   return (
-    <section className="collapsible-section">
+    <section
+      className={`collapsible-analysis-section ${className ?? ""}`.trim()}
+    >
       <button
         type="button"
-        className="collapsible-section-header"
+        className="collapsible-analysis-toggle"
         aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="collapsible-section-title">{title}</span>
-        {!open && summary && (
-          <span className="collapsible-section-summary">{summary}</span>
-        )}
-        <span className="collapsible-section-chevron" aria-hidden="true">
-          {open ? "▾" : "▸"}
+        <span className="collapsible-analysis-chevron" aria-hidden>
+          {open ? "▼" : "▶"}
         </span>
+        <span className="collapsible-analysis-title">{title}</span>
+        {!open && (
+          <span className="collapsible-analysis-summary">{summary}</span>
+        )}
       </button>
-      {open && (
-        <div className="collapsible-section-body">
+      {open ? (
+        <div id={panelId} className="collapsible-analysis-body">
           {children}
         </div>
+      ) : (
+        <div id={panelId} className="collapsible-analysis-body" hidden />
       )}
     </section>
   );

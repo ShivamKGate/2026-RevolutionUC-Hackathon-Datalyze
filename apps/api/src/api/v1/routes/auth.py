@@ -1,3 +1,5 @@
+import base64
+import json
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -10,6 +12,9 @@ from db.session import SessionLocal
 from schemas.auth import LoginRequest, RegisterRequest, UserOut
 
 router = APIRouter()
+
+# "Remember me": persist cookies in the browser for up to 24 hours.
+REMEMBER_ME_MAX_AGE_SECONDS = 86400
 
 _USER_SELECT_BY_ID = """
 SELECT u.id, u.email, u.name, u.role, u.setup_complete, u.onboarding_path,
@@ -52,23 +57,53 @@ def _verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def _create_token(user_id: int) -> str:
+def _create_token(user_id: int, *, expires_delta: timedelta) -> str:
     payload = {
         "sub": str(user_id),
-        "exp": datetime.utcnow() + timedelta(hours=settings.jwt_expire_hours),
+        "exp": datetime.utcnow() + expires_delta,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
-def _set_auth_cookie(response: Response, token: str) -> None:
-    response.set_cookie(
-        key=settings.cookie_name,
-        value=token,
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite="lax",
-        max_age=settings.jwt_expire_hours * 3600,
+def _user_info_cookie_value(profile: UserOut) -> str:
+    raw = json.dumps(
+        {"id": profile.id, "email": profile.email, "name": profile.name},
+        separators=(",", ":"),
     )
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def _set_auth_cookie(response: Response, token: str, *, persistent: bool) -> None:
+    kwargs: dict = {
+        "key": settings.cookie_name,
+        "value": token,
+        "httponly": True,
+        "secure": settings.cookie_secure,
+        "samesite": "lax",
+        "path": "/",
+    }
+    if persistent:
+        kwargs["max_age"] = REMEMBER_ME_MAX_AGE_SECONDS
+    response.set_cookie(**kwargs)
+
+
+def _set_user_info_cookie(response: Response, profile: UserOut, *, persistent: bool) -> None:
+    kwargs: dict = {
+        "key": settings.user_info_cookie_name,
+        "value": _user_info_cookie_value(profile),
+        "httponly": False,
+        "secure": settings.cookie_secure,
+        "samesite": "lax",
+        "path": "/",
+    }
+    if persistent:
+        kwargs["max_age"] = REMEMBER_ME_MAX_AGE_SECONDS
+    response.set_cookie(**kwargs)
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(key=settings.cookie_name, path="/")
+    response.delete_cookie(key=settings.user_info_cookie_name, path="/")
 
 
 def get_current_user(request: Request) -> dict:
@@ -127,8 +162,10 @@ def register(body: RegisterRequest, response: Response):
         raise
     finally:
         db.close()
-    token = _create_token(profile.id)
-    _set_auth_cookie(response, token)
+    expires = timedelta(hours=settings.jwt_expire_hours)
+    token = _create_token(profile.id, expires_delta=expires)
+    _set_auth_cookie(response, token, persistent=False)
+    _set_user_info_cookie(response, profile, persistent=False)
     return profile
 
 
@@ -145,14 +182,21 @@ def login(body: LoginRequest, response: Response):
         profile = fetch_user_out(db, row.id)
     finally:
         db.close()
-    token = _create_token(profile.id)
-    _set_auth_cookie(response, token)
+    persistent = body.remember_me
+    expires = (
+        timedelta(seconds=REMEMBER_ME_MAX_AGE_SECONDS)
+        if persistent
+        else timedelta(hours=settings.jwt_expire_hours)
+    )
+    token = _create_token(profile.id, expires_delta=expires)
+    _set_auth_cookie(response, token, persistent=persistent)
+    _set_user_info_cookie(response, profile, persistent=persistent)
     return profile
 
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie(key=settings.cookie_name)
+    _clear_auth_cookies(response)
     return {"message": "Logged out"}
 
 

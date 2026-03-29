@@ -14,7 +14,11 @@ export type User = {
   public_scrape_enabled?: boolean;
 };
 
-export type LoginRequest = { email: string; password: string };
+export type LoginRequest = {
+  email: string;
+  password: string;
+  remember_me?: boolean;
+};
 export type SignupRequest = { name: string; email: string; password: string };
 export type SetupRequest = {
   company_name: string;
@@ -362,6 +366,50 @@ export async function stopActiveRuns(): Promise<StopActiveRunsResponse> {
     throw new Error(`Stop active runs failed (${response.status}): ${detail}`);
   }
   return (await response.json()) as StopActiveRunsResponse;
+}
+
+export type StopPipelineRunResponse = {
+  status: string;
+  slug: string;
+};
+
+/** Force-stop a single pending/running analysis. */
+export async function stopPipelineRun(
+  slug: string,
+): Promise<StopPipelineRunResponse> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/stop`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Stop run failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as StopPipelineRunResponse;
+}
+
+export type DeletePipelineRunResponse = {
+  status: string;
+  slug: string;
+  filesystem_errors?: string[];
+};
+
+/** Remove a finished run from history (not allowed while pending/running). */
+export async function deletePipelineRun(
+  slug: string,
+): Promise<DeletePipelineRunResponse> {
+  const response = await fetch(`/api/v1/runs/${encodeURIComponent(slug)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Delete run failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as DeletePipelineRunResponse;
 }
 
 export async function listPipelineRuns(): Promise<PipelineRun[]> {

@@ -1,0 +1,33 @@
+{
+  "runs": [
+    {
+      "name": "with_upload",
+      "slug": "SNUkoxvowhM_4iBf",
+      "status": "completed_with_warnings",
+      "log_count": 22,
+      "has_replay": true
+    },
+    {
+      "name": "scrape_only",
+      "slug": "oR918RuTAE35nyDF",
+      "status": "completed_with_warnings"
+    },
+    {
+      "name": "sequential_mode",
+      "slug": "aLnQeR_HpE77PppP",
+      "status": "completed_with_warnings"
+    },
+    {
+      "name": "parallel_mode",
+      "slug": "uhWMQd4vCsLlrrwe",
+      "status": "completed_with_warnings"
+    },
+    {
+      "name": "forced_warning",
+      "slug": "DXnKel8nXnXCyzXm",
+      "status": "completed_with_warnings"
+    }
+  ],
+  "errors": [],
+  "cross_user_replay_status": 404
+}

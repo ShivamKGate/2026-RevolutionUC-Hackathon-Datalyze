@@ -1,5 +1,4 @@
 import type { AgentResults, VisualizationPlan } from "./types";
-import { ExportButton } from "./shared/ExportButton";
 import { PredictiveTemplate } from "./predictive/PredictiveTemplate";
 import { AutomationTemplate } from "./automation/AutomationTemplate";
 import { OptimizationTemplate } from "./optimization/OptimizationTemplate";
@@ -11,15 +10,26 @@ type Props = {
   agentResults: AgentResults;
   visualizationPlan?: VisualizationPlan;
   slug: string;
+  /** When true, hide the ConfidenceStrip (e.g. shown in analysis page header). */
+  hideConfidenceStrip?: boolean;
 };
 
-export function TrackRenderer({ track, agentResults, slug }: Props) {
+export function TrackRenderer({
+  track,
+  agentResults,
+  visualizationPlan,
+  slug,
+  hideConfidenceStrip,
+}: Props) {
   return (
     <div className="analysis-template">
-      <div className="analysis-header">
-        <ExportButton slug={slug} />
-      </div>
-      <TrackContent track={track} agentResults={agentResults} />
+      <TrackContent
+        track={track}
+        agentResults={agentResults}
+        visualizationPlan={visualizationPlan}
+        collapseStoragePrefix={slug}
+        hideConfidenceStrip={hideConfidenceStrip}
+      />
     </div>
   );
 }
@@ -27,19 +37,31 @@ export function TrackRenderer({ track, agentResults, slug }: Props) {
 function TrackContent({
   track,
   agentResults,
+  visualizationPlan,
+  collapseStoragePrefix,
+  hideConfidenceStrip,
 }: {
   track: string;
   agentResults: AgentResults;
+  visualizationPlan?: VisualizationPlan;
+  collapseStoragePrefix: string;
+  hideConfidenceStrip?: boolean;
 }) {
+  const common = {
+    agentResults,
+    visualizationPlan,
+    collapseStoragePrefix,
+    hideConfidenceStrip,
+  };
   switch (track) {
     case "predictive":
-      return <PredictiveTemplate agentResults={agentResults} />;
+      return <PredictiveTemplate {...common} />;
     case "automation":
-      return <AutomationTemplate agentResults={agentResults} />;
+      return <AutomationTemplate {...common} />;
     case "optimization":
-      return <OptimizationTemplate agentResults={agentResults} />;
+      return <OptimizationTemplate {...common} />;
     case "supply_chain":
-      return <SupplyChainTemplate agentResults={agentResults} />;
+      return <SupplyChainTemplate {...common} />;
     default:
       return (
         <div className="analysis-coming-soon">

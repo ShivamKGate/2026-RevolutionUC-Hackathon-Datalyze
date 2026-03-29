@@ -14,4 +14,5 @@ export type {
   ExecutiveSummaryOutput,
   KnowledgeGraphOutput,
   ConfidenceBreakdown,
+  ChartPriorityEntry,
 } from "./types";

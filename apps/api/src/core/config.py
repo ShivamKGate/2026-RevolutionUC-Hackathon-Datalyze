@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     orchestrator_max_retries: int = Field(default=2)
     orchestrator_timeout_seconds: int = Field(default=45)
     # Orchestrator runtime policy flags
-    orch_enable_parallel_branches: bool = Field(default=False)
+    orch_enable_parallel_branches: bool = Field(default=True)
+    """Run independent agent branches concurrently (ThreadPoolExecutor)."""
+    orch_max_parallel_agents: int = Field(default=2)
+    """Cap simultaneous parallel agent dispatches (ingest/process only; analyze/synthesize are sequential)."""
     orch_enable_adaptive_policy: bool = Field(default=False)
     orch_enable_stage_gates: bool = Field(default=True)
     orch_max_run_seconds: int = Field(default=420)
@@ -46,10 +49,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256")
     jwt_expire_hours: int = Field(default=48)
     cookie_name: str = Field(default="datalyze_token")
+    """HttpOnly JWT session cookie."""
+    user_info_cookie_name: str = Field(default="datalyze_user")
+    """Non-HttpOnly JSON (base64) cookie: id, email, name — for client-readable session hint."""
     cookie_secure: bool = Field(default=False)
 
     @field_validator(
-        "orchestrator_max_retries", "orchestrator_timeout_seconds", "orch_max_run_seconds",
+        "orchestrator_max_retries",
+        "orchestrator_timeout_seconds",
+        "orch_max_run_seconds",
+        "orch_max_parallel_agents",
         mode="before",
     )
     @classmethod
@@ -59,6 +68,7 @@ class Settings(BaseSettings):
                 "orchestrator_max_retries": 2,
                 "orchestrator_timeout_seconds": 45,
                 "orch_max_run_seconds": 420,
+                "orch_max_parallel_agents": 2,
             }
             return defaults.get(info.field_name, 0)
         return v

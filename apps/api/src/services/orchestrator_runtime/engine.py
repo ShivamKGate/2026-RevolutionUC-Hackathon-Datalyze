@@ -32,6 +32,7 @@ from services.orchestrator_runtime.contracts import (
     RunManifest,
     RunStatus,
     StageGateResult,
+    StageID,
 )
 from services.orchestrator_runtime.persistence import (
     append_decision,
@@ -69,6 +70,24 @@ from services.orchestrator_runtime.track_profiles import (
 from services.run_paths import create_run_directory, run_dir_relative
 
 logger = logging.getLogger("orchestrator")
+
+# Analyze / synthesize stages mostly call shared heavy LLM endpoints; running
+# those agents in parallel often trips provider concurrency limits (e.g. 4
+# "units" with two 4-unit requests). Keep them strictly sequential.
+_LLM_HEAVY_STAGES_NO_PARALLEL = frozenset(
+    {StageID.ANALYZE.value, StageID.SYNTHESIZE.value},
+)
+
+
+def _failure_detail_from_memory(memory: MemoryState, agent_id: str, max_len: int = 360) -> str:
+    for e in reversed(memory.events):
+        if e.get("type") == "agent_failed" and e.get("agent") == agent_id:
+            d = (e.get("detail") or "").strip().replace("\n", " ")
+            if len(d) > max_len:
+                return d[: max_len - 1] + "…"
+            return d
+    return ""
+
 
 _GENERIC_OUTPUT_PHRASES = frozenset({
     "completed", "done", "ok", "success", "finished", "complete",
@@ -883,7 +902,12 @@ class OrchestratorEngine:
             if not next_agents:
                 break
 
-            if settings.orch_enable_parallel_branches and len(next_agents) > 1:
+            parallel_ok = (
+                settings.orch_enable_parallel_branches
+                and len(next_agents) > 1
+                and stage_id.value not in _LLM_HEAVY_STAGES_NO_PARALLEL
+            )
+            if parallel_ok:
                 self._dispatch_parallel(next_agents)
             else:
                 for agent_id in next_agents:
@@ -1057,7 +1081,8 @@ class OrchestratorEngine:
         stage = self.memory.current_stage
         futures = {}
 
-        with ThreadPoolExecutor(max_workers=min(len(agent_ids), 4)) as executor:
+        cap = max(1, min(len(agent_ids), settings.orch_max_parallel_agents))
+        with ThreadPoolExecutor(max_workers=cap) as executor:
             for agent_id in agent_ids:
                 self.step_counter += 1
                 step = self.step_counter
@@ -1153,11 +1178,16 @@ class OrchestratorEngine:
                 "message": self.prior_outputs.get(agent_id, {}).get("summary", "Completed"),
             })
         for agent_id in self.memory.failed:
+            n_retry = self.memory.retries.get(agent_id, 0)
+            err_tail = _failure_detail_from_memory(self.memory, agent_id)
+            msg = f"Failed after {n_retry} retries"
+            if err_tail:
+                msg = f"{msg}: {err_tail}"
             agent_activity.append({
                 "agent_id": agent_id,
                 "agent_name": agent_id.replace("_", " ").title(),
                 "status": "failed",
-                "message": f"Failed after {self.memory.retries.get(agent_id, 0)} retries",
+                "message": msg,
             })
         for agent_id in self.memory.skipped:
             agent_activity.append({

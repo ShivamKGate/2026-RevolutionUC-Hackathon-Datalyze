@@ -1,0 +1,151 @@
+{
+  "run_at_utc": "2026-03-29_00-54-34",
+  "environment": {
+    "orch_max_run_seconds_default": 900,
+    "test_orch_max_run_seconds": 120,
+    "fixture_path": "D:\\Desktop\\All Projects\\2026-RevolutionUC-Hackathon-Datalyze\\Miscellaneous\\data\\sources\\Google_Dataset_Analytics_Sample.xlsx",
+    "fixture_exists": true
+  },
+  "flows": [
+    {
+      "name": "with_upload",
+      "slug": "Dl4EY9xS19rfY_NK",
+      "terminal_status": "completed_with_warnings",
+      "elapsed_ms": 1212.5,
+      "log_row_count": 22,
+      "replay_http": 200,
+      "replay_has_final_report": true,
+      "final_report_keys": [
+        "agent_results",
+        "completed_agents",
+        "failed_agents",
+        "finalized_at",
+        "fix_suggestions",
+        "run_slug",
+        "skipped_agents",
+        "status",
+        "summary",
+        "timing",
+        "track",
+        "warnings"
+      ],
+      "has_fix_suggestions": false,
+      "run_dir_path": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005434-Dl4EY9xS19rfY_NK"
+    },
+    {
+      "name": "scrape_only",
+      "slug": "d_TfqhkFwYrnxB2C",
+      "terminal_status": "completed_with_warnings",
+      "elapsed_ms": 1210.3,
+      "log_row_count": 22,
+      "replay_http": 200,
+      "replay_has_final_report": true,
+      "final_report_keys": [
+        "agent_results",
+        "completed_agents",
+        "failed_agents",
+        "finalized_at",
+        "fix_suggestions",
+        "run_slug",
+        "skipped_agents",
+        "status",
+        "summary",
+        "timing",
+        "track",
+        "warnings"
+      ],
+      "has_fix_suggestions": false,
+      "run_dir_path": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005435-d_TfqhkFwYrnxB2C"
+    },
+    {
+      "name": "sequential_parallel_off",
+      "slug": "eTFOiWzHnq0DxSJF",
+      "terminal_status": "completed_with_warnings",
+      "elapsed_ms": 1211.9,
+      "log_row_count": 22,
+      "replay_http": 200,
+      "replay_has_final_report": true,
+      "final_report_keys": [
+        "agent_results",
+        "completed_agents",
+        "failed_agents",
+        "finalized_at",
+        "fix_suggestions",
+        "run_slug",
+        "skipped_agents",
+        "status",
+        "summary",
+        "timing",
+        "track",
+        "warnings"
+      ],
+      "has_fix_suggestions": false,
+      "run_dir_path": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005436-eTFOiWzHnq0DxSJF"
+    },
+    {
+      "name": "parallel_branches_on",
+      "slug": "t3yas3HLNdPADd0G",
+      "terminal_status": "completed_with_warnings",
+      "elapsed_ms": 1212.5,
+      "log_row_count": 22,
+      "replay_http": 200,
+      "replay_has_final_report": true,
+      "final_report_keys": [
+        "agent_results",
+        "completed_agents",
+        "failed_agents",
+        "finalized_at",
+        "fix_suggestions",
+        "run_slug",
+        "skipped_agents",
+        "status",
+        "summary",
+        "timing",
+        "track",
+        "warnings"
+      ],
+      "has_fix_suggestions": false,
+      "run_dir_path": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005438-t3yas3HLNdPADd0G"
+    },
+    {
+      "name": "forced_time_budget",
+      "slug": "OBK3_ob1139CnID8",
+      "terminal_status": "completed_with_warnings",
+      "elapsed_ms": 1213.0,
+      "log_row_count": 22,
+      "replay_http": 200,
+      "replay_has_final_report": true,
+      "final_report_keys": [
+        "agent_results",
+        "completed_agents",
+        "failed_agents",
+        "finalized_at",
+        "fix_suggestions",
+        "run_slug",
+        "skipped_agents",
+        "status",
+        "summary",
+        "timing",
+        "track",
+        "warnings"
+      ],
+      "has_fix_suggestions": false,
+      "run_dir_path": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005439-OBK3_ob1139CnID8"
+    }
+  ],
+  "cross_user_replay": {
+    "http_status": 200,
+    "slug": "Dl4EY9xS19rfY_NK"
+  },
+  "filesystem_spot_check": {
+    "run_dir_relative": "data/pipeline_runs/predictive/google-kartavya_singh-save-20260329_005434-Dl4EY9xS19rfY_NK",
+    "resolved_exists": true,
+    "has_run_manifest": true,
+    "has_memory_json": true,
+    "has_decision_ledger": false,
+    "has_final_report": true,
+    "has_context_context_json": true,
+    "has_artifacts_index": true
+  },
+  "errors": []
+}

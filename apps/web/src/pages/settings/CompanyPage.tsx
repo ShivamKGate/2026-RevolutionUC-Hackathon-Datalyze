@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { updateUserCompany } from "../../lib/api";
+import { apiOnboardingPathToFormValue } from "../../lib/trackOnboarding";
 
 const TRACK_OPTIONS = [
   { value: "deep_analysis", label: "Predictive / Deep Analysis" },
@@ -22,7 +23,7 @@ export default function CompanyPage() {
     if (!user) return;
     setCompanyName(user.company_name ?? "");
     setPublicScrape(Boolean(user.public_scrape_enabled));
-    setOnboardingPath(user.onboarding_path ?? "deep_analysis");
+    setOnboardingPath(apiOnboardingPathToFormValue(user.onboarding_path));
   }, [user]);
 
   async function handleSubmit(e: FormEvent) {

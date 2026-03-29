@@ -2,7 +2,8 @@ import "./charts.css";
 
 export type KPICardProps = {
   title: string;
-  value: string | number;
+  /** API may occasionally send a structured object; we stringify for display */
+  value: string | number | Record<string, unknown>;
   previousValue?: string | number;
   changePct?: number;
   trend?: "up" | "down" | "flat";
@@ -10,11 +11,18 @@ export type KPICardProps = {
   className?: string;
 };
 
-function formatValue(v: string | number): string {
+function formatValue(v: unknown): string {
   if (typeof v === "number" && Number.isFinite(v)) {
     if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
     if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
     return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  if (typeof v === "object" && v !== null) {
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return "[object]";
+    }
   }
   return String(v);
 }

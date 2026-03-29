@@ -13,6 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     Image as RLImage,
     Paragraph,
@@ -30,6 +31,12 @@ from services.export_common import (
     section_dict,
 )
 from services.export_html import collect_figures_for_pdf, knowledge_graph_node_rows
+
+from services.pdf_chart_assets import (
+    render_driver_bar_chart,
+    render_forecast_bar_chart,
+    render_knowledge_graph_png,
+)
 
 logger = logging.getLogger("export_pdf")
 
@@ -131,6 +138,23 @@ def _make_table(headers: list[str], rows: list[list[str]], col_widths: list[floa
     return tbl
 
 
+def _flowable_image(png_bytes: bytes, max_width: float) -> RLImage | None:
+    if not png_bytes:
+        return None
+    try:
+        ir = ImageReader(BytesIO(png_bytes))
+        iw, ih = ir.getSize()
+        if iw <= 0 or ih <= 0:
+            return None
+        scale = max_width / float(iw)
+        w = max_width
+        h = min(ih * scale, max_width * 1.25)
+        return RLImage(BytesIO(png_bytes), width=w, height=h)
+    except Exception:
+        logger.warning("Could not embed PNG in PDF", exc_info=True)
+        return None
+
+
 def _priority_color(priority: str) -> str:
     p = str(priority).lower()
     if "high" in p or "critical" in p:
@@ -162,6 +186,10 @@ async def generate_pdf_report(
             report = json.loads(report_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
+    if not report and replay_payload:
+        fr = replay_payload.get("final_report")
+        if isinstance(fr, dict):
+            report = fr
 
     ar = merge_replay_agent_results(replay_payload or {})
     if not ar:
@@ -179,6 +207,9 @@ async def generate_pdf_report(
     insight_data = merged_section("insight_generation")
     trend_data = merged_section("trend_forecasting")
     swot_data = merged_section("swot_analysis")
+    kg_data = merged_section("knowledge_graph_builder")
+    kg_nodes = kg_data.get("nodes") if isinstance(kg_data.get("nodes"), list) else []
+    kg_edges = kg_data.get("edges") if isinstance(kg_data.get("edges"), list) else []
 
     # ── Header ──────────────────────────────────────────────
     elements.append(Paragraph("DATALYZE", s["title"]))
@@ -301,7 +332,7 @@ async def generate_pdf_report(
         elements.append(Spacer(1, 8))
 
     # ── KPI / Forecast Summary ──────────────────────────────
-    forecasts = trend_data.get("forecasts") or []
+    forecasts: list[Any] = trend_data.get("forecasts") or []
     if forecasts:
         elements.append(Paragraph("KPI / Forecast Summary", s["section"]))
         kpi_headers = ["KPI / Metric", "Forecast", "Details"]
@@ -317,6 +348,77 @@ async def generate_pdf_report(
                 kpi_rows.append([str(fc), "", ""])
         if kpi_rows:
             elements.append(_make_table(kpi_headers, kpi_rows, [1.8 * inch, 2.0 * inch, 2.4 * inch]))
+            elements.append(Spacer(1, 10))
+
+    # ── Static chart figures (matplotlib) ───────────────────
+    fc_png = render_forecast_bar_chart(
+        [x for x in forecasts if isinstance(x, dict)],
+    )
+    img_fc = _flowable_image(fc_png, CONTENT_W) if fc_png else None
+    if img_fc:
+        elements.append(Paragraph("Forecast chart", s["section"]))
+        elements.append(img_fc)
+        elements.append(Spacer(1, 10))
+
+    drivers = trend_data.get("drivers") or []
+    if isinstance(drivers, list) and drivers:
+        dr_png = render_driver_bar_chart([x for x in drivers if isinstance(x, dict)])
+        img_dr = _flowable_image(dr_png, CONTENT_W) if dr_png else None
+        if img_dr:
+            elements.append(Paragraph("Driver impact chart", s["section"]))
+            elements.append(img_dr)
+            elements.append(Spacer(1, 10))
+
+    # ── Knowledge graph — NetworkX layout + edge list (supplements Plotly figure above) ──
+    if kg_nodes:
+        kg_png = render_knowledge_graph_png(
+            [x for x in kg_nodes if isinstance(x, dict)],
+            [x for x in kg_edges if isinstance(x, dict)],
+        )
+        img_kg = _flowable_image(kg_png, CONTENT_W) if kg_png else None
+        elements.append(Paragraph("Knowledge graph — topology", s["section"]))
+        if img_kg:
+            elements.append(img_kg)
+            elements.append(Spacer(1, 8))
+        node_rows: list[list[str]] = []
+        for n in kg_nodes[:40]:
+            if not isinstance(n, dict):
+                continue
+            node_rows.append([
+                str(n.get("id", "—")),
+                str(n.get("label", "—"))[:40],
+                str(n.get("type", "—")),
+                str(n.get("context", ""))[:60],
+            ])
+        if node_rows:
+            elements.append(Paragraph("Graph nodes", s["body_muted"]))
+            elements.append(
+                _make_table(
+                    ["ID", "Label", "Type", "Context"],
+                    node_rows,
+                    [0.9 * inch, 1.5 * inch, 0.9 * inch, 3.0 * inch],
+                ),
+            )
+            elements.append(Spacer(1, 8))
+        edge_rows: list[list[str]] = []
+        for e in kg_edges[:60]:
+            if not isinstance(e, dict):
+                continue
+            edge_rows.append([
+                str(e.get("source", "—")),
+                str(e.get("target", "—")),
+                str(e.get("relationship", "—"))[:36],
+                str(e.get("strength", "")),
+            ])
+        if edge_rows:
+            elements.append(Paragraph("Graph edges", s["body_muted"]))
+            elements.append(
+                _make_table(
+                    ["Source", "Target", "Relationship", "Strength"],
+                    edge_rows,
+                    [1.0 * inch, 1.0 * inch, 2.2 * inch, 1.0 * inch],
+                ),
+            )
             elements.append(Spacer(1, 10))
 
     # ── Insights ────────────────────────────────────────────

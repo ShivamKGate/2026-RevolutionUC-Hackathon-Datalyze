@@ -17,6 +17,7 @@ api_router.include_router(database_router, prefix="/database", tags=["database"]
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(users_router, prefix="/users", tags=["users"])
 api_router.include_router(files_router, prefix="/files", tags=["files"])
-api_router.include_router(runs_router, prefix="/runs", tags=["runs"])
+# Export routes must register before `/{slug}` so paths like `/runs/{slug}/export/pdf` match.
 api_router.include_router(exports_router, prefix="/runs", tags=["exports"])
+api_router.include_router(runs_router, prefix="/runs", tags=["runs"])
 api_router.include_router(admin_router, prefix="/admin", tags=["admin"])

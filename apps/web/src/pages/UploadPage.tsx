@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { onboardingPathToAnalysisTrackId } from "../lib/trackOnboarding";
 import UploadedFileList from "../components/uploads/UploadedFileList";
 import {
   deleteUploadedFile,
@@ -40,6 +41,7 @@ export default function UploadPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const trackInitDone = useRef(false);
   const [track, setTrack] = useState<string>(TRACKS[0]!.id);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -68,6 +70,21 @@ export default function UploadPage() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!user || trackInitDone.current) return;
+    trackInitDone.current = true;
+    const email = user.email?.trim().toLowerCase() ?? "";
+    if (email === "singhk6@mail.uc.edu") {
+      setTrack("predictive");
+      return;
+    }
+    if (email === "sinayksp@mail.uc.edu") {
+      setTrack("automation");
+      return;
+    }
+    setTrack(onboardingPathToAnalysisTrackId(user.onboarding_path));
+  }, [user]);
 
   function toggleSelect(id: number) {
     setSelectedIds((prev) => {

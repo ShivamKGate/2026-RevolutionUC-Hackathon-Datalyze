@@ -114,6 +114,14 @@ export type EvaluatorChart = {
   title: string;
   data_source_agent: string;
   priority: number;
+  chart_id?: string;
+  metric?: string;
+};
+
+export type ChartPriorityEntry = {
+  chart_id: string;
+  score: number;
+  reason?: string;
 };
 
 export type EvaluatorRecommendation = {
@@ -135,6 +143,7 @@ export type VisualizationPlan = {
   knowledge_graph: { available: boolean; node_count: number };
   overall_confidence: number;
   confidence_breakdown: ConfidenceBreakdown;
+  chart_priority?: ChartPriorityEntry[];
 };
 
 /* ── knowledge_graph_builder ─────────────────────────────────────── */

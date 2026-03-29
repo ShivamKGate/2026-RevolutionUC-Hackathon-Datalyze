@@ -20,6 +20,7 @@ venv/
 Thumbs.db
 .idea/
 .vscode/
+.superpowers/
 
 # Miscellaneous/data/sources/*
 !Miscellaneous/data/sources/E2E_Analytics_Co/

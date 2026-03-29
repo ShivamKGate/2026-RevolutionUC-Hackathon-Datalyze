@@ -8,6 +8,7 @@ Intended to run after analysis agents complete and before executive_summary
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 AGENT_ID = "output_evaluator"
@@ -22,7 +23,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         "overall_confidence",
         "confidence_breakdown",
     ],
-    "optional": [],
+    "optional": ["chart_priority"],
 }
 
 
@@ -33,6 +34,29 @@ def _as_dict(data: Any) -> dict[str, Any]:
             return inner
         return data
     return {}
+
+
+def _slug(s: str) -> str:
+    t = re.sub(r"[^a-z0-9]+", "_", str(s).lower()).strip("_")
+    return (t[:48] or "x").rstrip("_")
+
+
+def _build_chart_priority(charts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Higher score = earlier in UI (descending sort)."""
+    sorted_charts = sorted(charts, key=lambda c: int(c.get("priority") or 999))
+    n = len(sorted_charts)
+    out: list[dict[str, Any]] = []
+    for i, c in enumerate(sorted_charts):
+        cid = str(c.get("chart_id") or c.get("type") or f"chart_{i}")
+        score = round(1.0 - (i / max(n, 1)), 4)
+        out.append(
+            {
+                "chart_id": cid,
+                "score": score,
+                "reason": str(c.get("title", ""))[:200],
+            }
+        )
+    return out
 
 
 def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, Any]:
@@ -47,38 +71,69 @@ def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, A
     kpi_cards: list[dict[str, Any]] = []
     charts: list[dict[str, Any]] = []
     recommendations: list[dict[str, Any]] = []
-    chart_priority = 1
+    priority_seq = 1
 
     def add_chart(
         ctype: str,
         title: str,
         source_agent: str,
         *,
+        chart_id: str | None = None,
         extra: dict[str, Any] | None = None,
     ) -> None:
-        nonlocal chart_priority
+        nonlocal priority_seq
         row: dict[str, Any] = {
             "type": ctype,
             "title": title,
             "data_source_agent": source_agent,
-            "priority": chart_priority,
+            "priority": priority_seq,
         }
-        chart_priority += 1
+        priority_seq += 1
         if extra:
             row.update(extra)
+        row["chart_id"] = chart_id or row.get("chart_id") or _slug(f"{ctype}_{title}")
         charts.append(row)
 
     # --- trend_forecasting ---
     tf = _as_dict(outputs_by_agent_id.get("trend_forecasting"))
-    for fc in tf.get("forecasts") or []:
-        if not isinstance(fc, dict):
-            continue
-        metric = str(fc.get("metric", "metric"))
+    fc_list = [x for x in (tf.get("forecasts") or []) if isinstance(x, dict)]
+    if fc_list:
+        primary = str(fc_list[0].get("metric", "metrics"))
+        title = (
+            f"{primary} (+{len(fc_list) - 1} more) — forecast"
+            if len(fc_list) > 1
+            else f"{primary} — forecast"
+        )
         add_chart(
             "time_series",
-            f"{metric} — forecast",
+            title,
             "trend_forecasting",
-            extra={"metric": metric},
+            chart_id="forecast_panel",
+            extra={"metric": primary},
+        )
+    drivers = tf.get("drivers") or []
+    if isinstance(drivers, list) and drivers:
+        add_chart(
+            "waterfall",
+            "Driver sensitivity",
+            "trend_forecasting",
+            chart_id="driver_waterfall",
+        )
+    anoms = tf.get("anomalies") or []
+    if isinstance(anoms, list) and anoms:
+        add_chart(
+            "timeline",
+            "Anomaly timeline",
+            "trend_forecasting",
+            chart_id="anomaly_timeline",
+        )
+    if len(fc_list) > 1:
+        add_chart(
+            "time_series",
+            "Segment forecasts",
+            "trend_forecasting",
+            chart_id="segment_forecasts",
+            extra={"metric": "segments"},
         )
 
     # --- insight_generation ---
@@ -99,9 +154,20 @@ def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, A
                 "source_agent": "insight_generation",
             }
         )
-        ct = str(ins.get("chart_type", "kpi_card"))
-        if ct != "kpi_card":
-            add_chart(ct if ct else "bar_chart", title, "insight_generation")
+    insights_list = [x for x in (ig.get("insights") or []) if isinstance(x, dict)]
+    if insights_list:
+        add_chart(
+            "radar",
+            "Current vs predicted (insights)",
+            "insight_generation",
+            chart_id="insight_radar",
+        )
+        add_chart(
+            "heatmap",
+            "Cohort / metric heatmap",
+            "insight_generation",
+            chart_id="cohort_heatmap",
+        )
     for rec in ig.get("recommendations") or []:
         if not isinstance(rec, dict):
             continue
@@ -123,28 +189,61 @@ def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, A
     au = _as_dict(outputs_by_agent_id.get("automation_strategy"))
     procs = au.get("processes") or []
     if isinstance(procs, list) and procs:
-        add_chart("process_sankey", "Process automation opportunities", "automation_strategy")
+        add_chart(
+            "process_sankey",
+            "Process automation opportunities",
+            "automation_strategy",
+            chart_id="bottleneck_sankey",
+        )
         add_chart(
             "automation_matrix",
             "Impact vs effort (processes)",
             "automation_strategy",
+            chart_id="opportunity_matrix",
+        )
+        add_chart(
+            "roi_scatter",
+            "ROI analysis",
+            "automation_strategy",
+            chart_id="roi_bubbles",
+        )
+        add_chart(
+            "capacity_projection",
+            "Capacity projection",
+            "automation_strategy",
+            chart_id="capacity_projection",
         )
 
     # --- sentiment_analysis ---
     sa = _as_dict(outputs_by_agent_id.get("sentiment_analysis"))
     if sa.get("sentiment_distribution") or sa.get("trend_summary"):
-        add_chart("sentiment_distribution", "Sentiment distribution", "sentiment_analysis")
+        add_chart(
+            "sentiment_distribution",
+            "Sentiment distribution",
+            "sentiment_analysis",
+            chart_id="sentiment_distribution",
+        )
 
     # --- swot_analysis ---
     sw = _as_dict(outputs_by_agent_id.get("swot_analysis"))
     if any(sw.get(k) for k in ("strengths", "weaknesses", "opportunities", "threats")):
-        add_chart("swot_quadrant", "SWOT overview", "swot_analysis")
+        add_chart(
+            "swot_quadrant",
+            "SWOT overview",
+            "swot_analysis",
+            chart_id="swot_quadrant",
+        )
 
     # --- conflict_detection ---
     cd = _as_dict(outputs_by_agent_id.get("conflict_detection"))
     contradictions = cd.get("contradictions") or []
     if isinstance(contradictions, list) and contradictions:
-        add_chart("conflict_table", "Detected conflicts", "conflict_detection")
+        add_chart(
+            "conflict_table",
+            "Detected conflicts",
+            "conflict_detection",
+            chart_id="conflict_table",
+        )
         for c in contradictions:
             if not isinstance(c, dict):
                 continue
@@ -175,7 +274,19 @@ def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, A
     if isinstance(edges, list):
         knowledge_graph["edge_count"] = len(edges)
     if node_count:
-        add_chart("knowledge_graph_network", "Knowledge graph", "knowledge_graph_builder")
+        add_chart(
+            "knowledge_graph_network",
+            "Knowledge graph",
+            "knowledge_graph_builder",
+            chart_id="knowledge_graph_network",
+        )
+
+    # Ensure every chart has chart_id (extras may overwrite)
+    for i, c in enumerate(charts):
+        if not c.get("chart_id"):
+            c["chart_id"] = f"{c.get('type', 'chart')}_{i}"
+
+    chart_priority = _build_chart_priority(charts)
 
     # --- confidence_breakdown (heuristic) ---
     processor_ids = (
@@ -231,6 +342,7 @@ def build_visualization_plan(outputs_by_agent_id: dict[str, Any]) -> dict[str, A
         "knowledge_graph": knowledge_graph,
         "overall_confidence": overall_confidence,
         "confidence_breakdown": confidence_breakdown,
+        "chart_priority": chart_priority,
     }
 
 
