@@ -41,7 +41,7 @@ _USERS: list[tuple[str, str, str, str, str]] = [
     # name, email, password, role, company_name
     ("Kartavya Singh", "singhk6@mail.uc.edu", "Kart@1710", "admin", _COMPANY_GOOGLE),
     ("Shivam Kharangate", "sinayksp@mail.uc.edu", "Shivam@1802", "admin", _COMPANY_GOOGLE),
-    ("Demo User", "demo@revuc.com", "Demo@123", "viewer", _COMPANY_E2E),
+    ("Demo User", "demo@revuc.com", "Demo@123", "admin", _COMPANY_E2E),
     ("Demo Automation", "demo.automation@revuc.com", "Demo@123", "viewer", _COMPANY_E2E),
     ("Demo Optimization", "demo.optimization@revuc.com", "Demo@123", "viewer", _COMPANY_E2E),
     ("Demo Predictive", "demo.predictive@revuc.com", "Demo@123", "viewer", _COMPANY_E2E),
