@@ -4,207 +4,142 @@
 
 Raw Data ↓, AI-Driven Strategies ↑
 
-## Description
-
-Datalyze is a local-first, multi-agent business intelligence platform for teams that need fast, practical decisions from raw data. Companies can upload internal files or pair them with targeted public data collection, then receive structured insights, forecasts, automation opportunities, and executive-ready outputs. The platform is designed to run at near-zero cost with open tooling, while still delivering enterprise-style analysis through orchestrated AI agents.
-
 ## Inspiration
 
-Most companies already have valuable signals hidden in spreadsheets, PDFs, exports, logs, and documents, but those signals stay trapped in disconnected tools and inconsistent formats. Traditional BI platforms are often expensive, rigid, or too technical for lean teams, especially startups and small organizations that still need high-quality strategic direction.
+Most teams already have the right data, but it is fragmented across spreadsheets, PDFs, exports, JSON dumps, and documents that do not naturally talk to each other. Traditional BI setups are often expensive, slow to configure, and difficult to trust under time pressure. We wanted a system that accepts real-world messy data as-is and still produces decision-ready output.
 
-We were inspired by a simple question: what if teams could drop in all their data exactly as-is and still get clear, reliable recommendations without a long setup process? Multi-agent AI made that feel achievable, because specialized agents can each handle one part of the problem (classification, cleaning, synthesis, forecasting, reporting) while an orchestrator keeps the system coherent.
+The core idea was simple: instead of one model trying to do everything, split the work across specialized agents and coordinate them through an orchestrator with explicit rules. RevolutionUC gave us the perfect constraint environment to prove this approach quickly with a two-person team, limited time, and a practical demo target.
 
-RevolutionUC gave us the forcing function to build this quickly, prove it live, and shape it around real constraints: a two-person team, a compressed build window, local hardware, zero-cost principles, and a product experience that judges can understand immediately.
+## Last-hackathon mentality for first place
 
-## What It Does
+We operated with a "ship complete flow, not isolated features" mindset. Every sprint decision was evaluated against one question: does this improve our live end-to-end demo reliability?
 
-Datalyze runs in two modes. In Private Mode, a company uploads internal files and all processing stays local. In Public Mode, an admin can optionally run a controlled scraper session to gather credible, relevant public data aligned to the selected business goal.
+We focused on maximum usable value per unit effort:
 
-During onboarding, users choose the problem track they want to optimize: predictive forecasting, automation strategy, business optimization, or supply-chain/operations insights. That choice configures the downstream pipeline so the system prioritizes the most relevant processing logic and evidence types.
+$$
+\text{Impact Score} = \frac{\text{Demo Reliability} \times \text{User Clarity}}{\text{Build Complexity} \times \text{Time Risk}}
+$$
 
-A central orchestrator coordinates specialized agents that classify files, parse mixed formats, clean and normalize extracted content, aggregate high-value signals, detect contradictions, generate forecasts, synthesize insights, produce SWOT output, and compile an executive summary. Every major result is tagged with confidence and source provenance so users can see what evidence supports each recommendation.
+This led us to prioritize: stable orchestration, clean onboarding, file upload-to-insight continuity, replayable run logs/artifacts, and transparent system health tooling. Stretch ideas were captured, but core-path completeness came first.
 
-The dashboard then surfaces insight cards, interactive charts, a knowledge graph, a live agent feed, an orchestration view, and a conversational data interface for natural-language follow-up questions. Teams can export deliverables as PDF and CSV, share a local run link, and generate a podcast-style narration of findings through ElevenLabs.
+## What it does
 
-Everything is built to be local-first, budget-aware, and practical in a hackathon setting: run the app from terminal, run local models with Ollama, use credits only where external APIs are strategically valuable, and keep the system understandable end-to-end.
+Datalyze is a local-first, multi-agent business intelligence platform that transforms raw business data into strategic outputs.
 
-## How We Built It
+- **Private Mode:** Companies upload internal data and run analysis locally.
+- **Public Mode (controlled):** Admin can optionally enrich runs with targeted public evidence gathering.
+- **Track-driven onboarding:** Users select a goal track (predictive, automation, optimization, supply chain/operations), and the pipeline adapts priorities accordingly.
 
-### Frontend
+At runtime, the orchestrator coordinates agent stages for classification, extraction, cleaning, aggregation, synthesis, and reporting. The system stores run logs and artifacts for replay/debug, then surfaces results through dashboard flows and analysis detail views. Export-oriented outputs and narration support are included as part of the story and implementation path.
 
-We ship the UI as **React + TypeScript + Vite** with Tailwind-style global styling and a feature-oriented `src/` layout. The app proxies `/api/v1/*` to the FastAPI backend during development. Core journeys implemented for the hackathon demo include **auth**, **company settings** (default analysis track + public scrape toggle), **file upload**, **dashboard / analysis list**, **start analysis**, and **analysis detail** with live polling of run status and pipeline logs. A **Developer** settings page exposes health checks, agent boot status, DB sanity, and **clear all analyses** for local iteration.
+## How we built it
 
-### Backend & Data Layer
+### Product architecture
 
-The API is **FastAPI** (`apps/api`) with versioned routes under `api/v1`. **PostgreSQL** stores users, companies, uploaded file metadata, pipeline runs, and **`pipeline_run_logs`** / **`pipeline_run_artifacts`** for replay. `npm run dev` runs `scripts/setup-schema.mjs`, which applies SQL migrations through **`004_orchestrator_runtime.sql`** so orchestrator columns and log tables always exist on fresh clones. File uploads land under a company-scoped storage path; each run can reference uploaded file IDs and persist a **filesystem-first** artifact tree under `data/pipeline_runs/`.
+- **Monorepo workflow:** `npm run dev` starts both frontend and API.
+- **Frontend:** React + TypeScript + Vite (`apps/web`) with auth, setup, dashboard, upload, analysis detail, admin, and settings flows.
+- **Backend:** FastAPI (`apps/api`) with versioned `/api/v1` routes for health, agents, auth, users, files, runs, exports, database, and admin operations.
+- **Data layer:** PostgreSQL for users/companies/files/runs/logs/artifacts + filesystem-first run artifacts for reproducibility.
 
-### AI Agent Architecture
+### Orchestration architecture
 
-The system implements a **multi-agent registry** (specialized per-agent modules + shared contracts) and a **Python orchestrator runtime** that replaces placeholder runs: it walks **track profile stages**, respects a **DAG** of agent dependencies, dispatches **CrewAI**-backed agents (and external/system agents where applicable), normalizes outputs to a shared **adapter envelope**, and writes **memory**, **decision ledger**, and **final report** artifacts. Parallelism and adaptive policy are **config flags**; the first full successful baseline used **sequential** execution with **stage gates** enabled.
+- **Agent registry:** Declarative `AgentSpec` model with dependencies, model type, responsibilities, and boot-time initialization.
+- **Execution engine:** Orchestrator runtime dispatches steps through a shared adapter envelope, records memory and decision history, and writes final report artifacts.
+- **Policy layer:** Retry strategy, time-budget checks, stage gates, and adaptive controls to keep runs robust under real API/model conditions.
+- **Heavy-model brain pass:** Post-classifier orchestration refinement that can skip optional agents safely via explicit allow/deny constraints.
 
-### LLM Infrastructure (Ollama)
+### Agent architecture
 
-We run Ollama locally as the base inference server and split workloads between a heavy reasoning model and a lighter throughput model. Heavy tasks run on models such as `deepseek-r1:14b` or `qwen2.5:14b` constrained to <12GB VRAM compatibility across both machines; lighter tasks run on faster models such as `llama3.2:3b` or `phi3:mini` for lower latency.
+The boot-time **agent registry** defines **24** specialized agents (`apps/api/src/services/agent_registry.py`). Each has an `id`, model tier (heavy / light / Gemini / system / ElevenLabs, etc.), explicit **dependencies**, and a single responsibility so the orchestrator can walk a DAG and normalize outputs through a shared envelope.
 
-### Data Ingestion Pipeline
+| Agent id | Brief role |
+| --- | --- |
+| `orchestrator` | Global coordination: execution order, retries, dependency enforcement, strategic dispatch. |
+| `pipeline_classifier` | Chooses analysis track and emphasis from onboarding context; configures scraper targeting when relevant. |
+| `public_data_scraper` | Gathers bounded public evidence aligned to the track (Public Mode). |
+| `file_type_classifier` | Routes uploads to the correct format-specific processors. |
+| `pdf_processor` | Extracts text, tables, and chart references from PDFs; vision/OCR when needed. |
+| `csv_processor` | Parses and normalizes CSV; schema inference and summary stats. |
+| `excel_processor` | Multi-sheet workbook extraction with metadata. |
+| `json_processor` | Flattens nested JSON into analysis-ready records. |
+| `image_multimodal_processor` | Recovers text and chart meaning from images and screenshots. |
+| `plain_text_processor` | Direct extraction for TXT/MD/log-like inputs. |
+| `data_cleaning` | Normalization, dedup flags, encoding and format hygiene before aggregation. |
+| `smart_categorizer_metadata` | Domain and content-type tags to sharpen aggregation and retrieval. |
+| `aggregator` | Builds a prioritized, synthesis-ready corpus from cleaned data and optional scraper artifacts. |
+| `conflict_detection` | Surfaces contradictions with references and severity. |
+| `knowledge_graph_builder` | Produces entity nodes and edges for graph-style views. |
+| `trend_forecasting` | KPI-style forecasts and plotting payloads when time-series signal exists. |
+| `sentiment_analysis` | Sentiment and trends from feedback/review-style text. |
+| `insight_generation` | Primary structured business insights with confidence and provenance. |
+| `swot_analysis` | SWOT quadrants grounded in evidence. |
+| `executive_summary` | Concise board-ready narrative from the insight package. |
+| `automation_strategy` | Short, practical automation recommendations from operations evidence. |
+| `data_provenance_tracker` | System-layer lineage across transformations for explainability. |
+| `natural_language_search` | Grounded conversational Q&A over embedded corpus (RAG-style policy). |
+| `elevenlabs_narration` | Turns executive summary text into downloadable narration audio. |
 
-Ingestion starts with onboarding context, then Gemini classification configures the active track. Uploaded files are typed, routed to specialized processors, normalized, categorized, and scored by usefulness before synthesis. Public scraping can run asynchronously when enabled, with admin play/pause controls and one-company-at-a-time scheduling. Duplicate detection and metadata enrichment reduce wasted compute and improve downstream relevance.
+### Model and integration strategy
 
-### Visualization Layer
+- **Primary LLM routing:** Featherless via OpenAI-compatible interface for CrewAI-compatible execution.
+- **Specialized external support:** Gemini for classifier/vision-heavy contexts; ElevenLabs as narration path.
+- **Local-first economics:** External APIs are used selectively where they provide outsized value.
 
-We combine D3.js, Chart.js, and Plotly.js depending on chart type and interactivity needs. D3 powers the knowledge graph and orchestration views; Chart.js and Plotly support KPI trend and comparison visualizations. Insight cards include chart context, confidence values, and source tags for explainability.
+### Engineering workflow
 
-### Voice & Audio (ElevenLabs)
+We built with strict iterative loops: implement -> test run -> inspect logs/artifacts -> tighten policies/contracts -> rerun. This let us move fast without losing system coherence.
 
-Executive summaries are transformed into podcast-style narration through ElevenLabs so teams can consume analysis in audio form during reviews, standups, or async decision cycles. The UI includes playback and download controls for immediate demoability.
+## Challenges we ran into
 
-### Semantic Search (pgvector)
+1. **Multi-agent coordination complexity**  
+   Without strict contracts, specialized agents can drift, overlap, or deadlock. We solved this with dependency-aware orchestration, stage gates, and centralized dispatch decisions.
 
-Processed chunks and metadata are embedded and indexed in PostgreSQL with `pgvector`. The chat interface uses semantic retrieval to answer natural-language questions grounded in current run context and can trigger visualization generation when user prompts request chart outputs.
+2. **Provider limits and runtime variability**  
+   Heavy parallel execution can trigger rate/concurrency issues. We introduced staged execution controls and retry/backoff policy handling.
 
-### External API Integrations (Gemini, ElevenLabs, optional: Solana, Presage)
+3. **Mixed-format ingestion reliability**  
+   Real-world files are inconsistent. We needed stronger normalization and routing logic so downstream synthesis remained stable.
 
-Gemini is integrated in a high-leverage role as the pipeline classifier and vision fallback for chart/OCR extraction from mixed PDFs/images. ElevenLabs is used for narrated summary output. Solana and Presage are treated as optional stretch integrations that do not impact core pipeline success.
+4. **Hackathon speed vs architectural clarity**  
+   Rapid delivery risks messy internals. We countered this with explicit boundaries (routes vs services, runtime contracts, artifact persistence) to keep the system maintainable.
 
-### Development Environment & Tooling
+5. **Cost discipline under ambitious scope**  
+   We had to balance product ambition with near-zero-cost constraints, choosing local-first defaults and strategic external API usage.
 
-The project is developed in Cursor with Claude assistance, versioned with Git/GitHub, and tested across Windows/Linux environments. The default local workflow is **`npm run dev`** at the repo root (starts Vite + FastAPI together). For local LLM inference, run **`ollama serve`** in a second terminal when using Ollama-backed providers.
+## Accomplishments that we're proud of
 
-### Integration baseline (post-merge)
+- Delivered a practical **local-first multi-agent BI system** with a working frontend-backend-orchestrator loop.
+- Built a **boot-time agent registry** plus runtime observability patterns (status, logs, artifacts) that make agent systems understandable.
+- Shipped an orchestrator runtime with **policy-aware retries, quality gating, and persistence**, not just one-shot LLM calls.
+- Created a demo-ready user journey from onboarding and upload through analysis detail and replayable run outcomes.
+- Kept the project structure clean enough for parallel development under hackathon pressure.
 
-A consolidated narrative of **current integration changes**, **end-to-end flow**, **first successful run metrics**, and an **expectations vs achieved** accuracy sheet lives in **`Miscellaneous/Datalyze.md`**. Use it as the handoff document before upload or demo.
+## What we learned
 
-## Challenges We Ran Into
+- **Agent quality alone is not enough:** contracts, sequencing, and policy controls are what make multi-agent systems reliable.
+- **Observability is a core feature:** logs, artifacts, and replay capability dramatically improve development velocity and trust.
+- **Constraints create better products:** time, hardware, and budget limits forced simpler and stronger architecture decisions.
+- **User trust requires explainability:** confidence and provenance-oriented thinking must be designed in from the start.
+- **End-to-end coherence beats isolated sophistication:** a complete stable flow wins demos and enables real iteration.
 
-### Multi-Agent Coordination and Deadlock Avoidance
+## What's next for Datalyze: Raw Data ↓, AI-Driven Strategies ↑
 
-Keeping many specialized agents productive without circular waits required strict dependency ordering, explicit handoff contracts, and orchestrator guardrails to detect and recover from stalled states.
+Near-term roadmap focuses on tightening reliability and raising output quality:
 
-### VRAM-Aware Model Selection
+- Improve file routing and extraction fidelity across difficult mixed-format uploads.
+- Expand replay payload parity for richer dashboard cards and clearer analysis traceability.
+- Harden CI smoke tests for orchestrator dispatch and terminal run states.
+- Strengthen narration handoff quality from executive summary to generated audio.
+- Explore optional SSE-style live stream updates while preserving current stable polling behavior.
 
-We needed heavy reasoning quality while honoring the 12GB VRAM floor across both machines. That forced careful model benchmarking, token budgeting, and fallback planning.
+Mid-term expansion:
 
-### Multi-Format Reliability
+- Deeper semantic retrieval and grounded chat workflows over run artifacts.
+- More robust duplicate detection and incremental rerun intelligence.
+- Optional deployment modes beyond local-first while preserving privacy-first defaults.
 
-The pipeline needed to treat PDFs, CSVs, Excel, JSON, images, and plain text consistently enough for shared downstream logic, which required robust extraction normalization and file-type specific edge-case handling.
+Long-term vision:
 
-### Real-Time Activity Streaming
-
-The live agent feed and orchestration visuals had to feel instantaneous without slowing core processing, so we separated stream updates from heavy compute and tuned event payload granularity.
-
-### Zero-Cost Constraint
-
-Balancing product ambition with strict cost discipline meant prioritizing local inference and open tooling while using external APIs only where they provide outsized strategic value.
-
-### Compressed Timeline
-
-A short delivery window forced ruthless MVP decisions, clear priorities, and parallel task ownership while preserving end-to-end coherence.
-
-### Equal Contribution Across Domains
-
-With two builders and three major domains (frontend, backend, agents), we planned cross-domain pairing and rotation to keep contribution balanced.
-
-[To be filled in as the project progresses]
-
-## Accomplishments That We're Proud Of
-
-### Local-First Multi-Agent Stack Under Hackathon Constraints
-
-We designed a practical, full-pipeline architecture that runs locally with near-zero cost while still delivering credible business outputs.
-
-### Real-Time Agent Orchestration Visualization
-
-The live orchestration diagram turns complex backend behavior into something judges and users can instantly understand.
-
-### Interactive Knowledge Graph
-
-Entity-level drill-down gives users a navigable map of relationships, not just static charts.
-
-### Podcast-Style Insight Narration
-
-Turning summaries into listenable audio improves accessibility and demo impact.
-
-### Broad File-Format Support
-
-Specialized processors let teams work with the data they already have, instead of forcing rigid input templates.
-
-### Reproducible Build Workflow
-
-The architecture and tooling choices keep setup approachable for anyone cloning and running locally.
-
-[To be filled in as the project progresses]
-
-## What We Learned
-
-### Agent Systems Need Strong Contracts
-
-Agent quality is not enough by itself; clearly defined handoffs and state semantics are what keep complex pipelines reliable.
-
-### Constraints Improve Architecture
-
-Hardware and budget limits pushed us toward simpler, more durable design choices that improved practicality.
-
-### Explainability Is a Product Feature
-
-Confidence scoring, provenance tags, and plain-language explanations significantly increase trust in generated recommendations.
-
-### UX Matters as Much as Model Quality
-
-Live feeds, progress tracking, and interactive diagrams make sophisticated systems understandable and usable in real workflows.
-
-### Scope Control Is Strategic
-
-Separating core, optional, and stretch modules preserved momentum and reduced risk under a tight delivery schedule.
-
-## What's Next for Datalyze
-
-- Optional cloud deployment mode alongside local-first runtime.
-- Industry benchmarking against publicly available peer/company signals.
-- White-label offering for consulting workflows with explicit licensing controls.
-- Scheduled incremental ingestion and automated weekly reruns.
-- Deeper Solana integration for auditable data/event trails.
-- Mobile companion for executive summary viewing and approvals.
-- CRM/ERP connectors (Salesforce, SAP, and similar systems).
-- Subscription intelligence reports delivered on a recurring cadence.
-
-## Built With
-
-- React
-- Vite
-- TypeScript
-- Tailwind CSS
-- D3.js
-- Chart.js
-- Plotly.js
-- Shadcn/ui
-- Radix UI
-- Python
-- FastAPI
-- CrewAI
-- PostgreSQL
-- pgvector
-- Ollama
-- LangChain
-- Google Gemini API
-- ElevenLabs API
-- Firecrawl
-- Playwright
-- BeautifulSoup
-- Git
-- GitHub
-- Cursor
-- Claude
-- Windows
-- Linux
-- NVIDIA CUDA
-- deepseek-r1
-- qwen2.5
-- llama3.2
-- phi3
-
-## Links
-
-- GitHub Repository: [INSERT GITHUB LINK]
-- Demo Video: [INSERT VIDEO LINK]
-- Live Demo (if deployed): [INSERT LINK]
-- Devpost: [INSERT DEVPOST LINK]
+$$
+\text{Datalyze Goal}:\quad \text{From raw, fragmented evidence} \rightarrow \text{trusted, actionable strategy in one flow}
+$$
