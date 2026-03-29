@@ -56,6 +56,10 @@ from services.orchestrator_runtime.policies import (
     generate_fix_suggestions,
     pick_next_agents,
 )
+from services.orchestrator_runtime.cancellation import (
+    clear_cancel_request,
+    is_cancel_requested,
+)
 from services.orchestrator_runtime.track_profiles import (
     TrackID,
     get_track_profile,
@@ -466,6 +470,84 @@ class OrchestratorEngine:
         self.context: dict[str, Any] = {}
         self.prior_outputs: dict[str, dict[str, Any]] = {}
         self._input_hash: str = ""
+        self._finalized_cancel: bool = False
+
+    def _abort_if_cancelled(self) -> bool:
+        """If user requested stop, finalize as cancelled and return True."""
+        if self._finalized_cancel:
+            return True
+        if not is_cancel_requested(self.run_slug):
+            return False
+        self._finalize_cancelled()
+        return True
+
+    def _finalize_cancelled(self) -> None:
+        """Mark run cancelled in DB and artifacts (cooperative stop)."""
+        if self._finalized_cancel:
+            return
+        self._finalized_cancel = True
+        clear_cancel_request(self.run_slug)
+        self.memory.state = "cancelled"
+        self.memory.done = True
+        self.memory.add_event("run_cancelled", "orchestrator", "Stopped by user request")
+
+        summary = (
+            f"Analysis stopped by user. "
+            f"Partial progress: {len(self.memory.completed)} agent(s) completed."
+        )
+        pipeline_log = [
+            f"[{e['timestamp']}] [{e['agent']}] {e['type']}: {e.get('detail', '')}"
+            for e in self.memory.events
+        ]
+        agent_activity: list[dict[str, Any]] = []
+        for agent_id in self.memory.completed:
+            agent_activity.append({
+                "agent_id": agent_id,
+                "agent_name": agent_id.replace("_", " ").title(),
+                "status": "completed",
+                "message": self.prior_outputs.get(agent_id, {}).get("summary", "Completed"),
+            })
+        for agent_id in self.memory.skipped:
+            agent_activity.append({
+                "agent_id": agent_id,
+                "agent_name": agent_id.replace("_", " ").title(),
+                "status": "skipped",
+                "message": "Skipped",
+            })
+
+        replay_payload: dict[str, Any] = {
+            "cancelled": True,
+            "agent_activity": agent_activity,
+            "pipeline_log": pipeline_log[-100:],
+        }
+        if self.run_dir:
+            write_memory(self.run_dir, self.memory)
+            replay_payload["run_dir"] = run_dir_relative(self.run_dir)
+            final_report = {
+                "run_slug": self.run_slug,
+                "track": self.track_id.value,
+                "status": "cancelled",
+                "summary": summary,
+                "cancelled": True,
+                "finalized_at": datetime.now(UTC).isoformat(),
+            }
+            write_final_report(self.run_dir, final_report)
+            replay_payload["final_report"] = final_report
+
+        db_update_run_status(
+            self.run_id,
+            status="cancelled",
+            summary=summary,
+            pipeline_log=pipeline_log or [f"[{self.run_slug}] Analysis stopped by user."],
+            agent_activity=agent_activity,
+            replay_payload=replay_payload,
+            run_dir_path=run_dir_relative(self.run_dir) if self.run_dir else None,
+        )
+        db_insert_run_log(
+            self.run_id, "system", "orchestrator", "run_cancelled",
+            "Run stopped by user (cooperative cancellation).", "warning",
+        )
+        logger.info("Run %s cancelled by user", self.run_slug)
 
     def execute(self) -> None:
         """Run the full pipeline. Called from background thread."""
@@ -473,6 +555,19 @@ class OrchestratorEngine:
         now = datetime.now(UTC)
 
         try:
+            if is_cancel_requested(self.run_slug):
+                clear_cancel_request(self.run_slug)
+                db_update_run_status(
+                    self.run_id,
+                    status="cancelled",
+                    summary="Analysis stopped by user before execution started.",
+                )
+                db_insert_run_log(
+                    self.run_id, "system", "orchestrator", "run_cancelled",
+                    "Cancelled before run directory was created.", "warning",
+                )
+                return
+
             # Create run directory
             self.run_dir = create_run_directory(
                 track=self.track_id.value,
@@ -540,18 +635,32 @@ class OrchestratorEngine:
                 "start",
             )
 
+            if self._abort_if_cancelled():
+                return
+
             # Execute each stage
             for stage_config in self.profile.stages:
                 if self._is_budget_exceeded():
                     self.memory.warnings.append("Time budget exceeded, finalizing early")
                     break
 
+                if self._abort_if_cancelled():
+                    return
+
                 self._execute_stage(stage_config)
+
+                if self._abort_if_cancelled():
+                    return
+
+            if self._finalized_cancel:
+                return
 
             # Finalize
             self._finalize()
 
         except Exception as exc:
+            if self._finalized_cancel:
+                return
             logger.error("Orchestrator fatal error: %s\n%s", exc, traceback.format_exc())
             self.memory.state = "failed"
             self.memory.add_event("fatal_error", "orchestrator", str(exc)[:1000])
@@ -627,6 +736,9 @@ class OrchestratorEngine:
 
     def _execute_stage(self, stage_config: Any) -> None:
         """Execute all agents in a stage respecting DAG and policies."""
+        if self._abort_if_cancelled():
+            return
+
         stage_id = stage_config.stage_id
         self.memory.current_stage = stage_id.value
         self.memory.add_event("stage_started", "orchestrator", stage_id.value)
@@ -723,6 +835,9 @@ class OrchestratorEngine:
         while iteration < max_stage_iterations:
             iteration += 1
 
+            if self._abort_if_cancelled():
+                return
+
             if self._is_budget_exceeded():
                 break
 
@@ -747,6 +862,8 @@ class OrchestratorEngine:
                 self._dispatch_parallel(next_agents)
             else:
                 for agent_id in next_agents:
+                    if self._abort_if_cancelled():
+                        return
                     self._dispatch_single(agent_id, stage_id.value)
 
         # Stage gate
@@ -775,6 +892,9 @@ class OrchestratorEngine:
 
     def _dispatch_single(self, agent_id: str, stage: str) -> None:
         """Dispatch a single agent with retry support."""
+        if self._abort_if_cancelled():
+            return
+
         self.step_counter += 1
         step = self.step_counter
 
@@ -906,6 +1026,9 @@ class OrchestratorEngine:
 
     def _dispatch_parallel(self, agent_ids: list[str]) -> None:
         """Dispatch multiple agents in parallel using thread pool."""
+        if self._abort_if_cancelled():
+            return
+
         stage = self.memory.current_stage
         futures = {}
 
@@ -925,6 +1048,8 @@ class OrchestratorEngine:
             write_memory(self.run_dir, self.memory)
 
             for future in as_completed(futures):
+                if self._abort_if_cancelled():
+                    return
                 agent_id, step = futures[future]
                 try:
                     envelope = future.result(timeout=settings.orchestrator_timeout_seconds)

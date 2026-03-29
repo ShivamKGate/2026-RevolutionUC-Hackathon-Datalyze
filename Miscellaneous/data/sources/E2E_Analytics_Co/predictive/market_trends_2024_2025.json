@@ -1,0 +1,138 @@
+{
+  "industry": "Analytics & Business Intelligence",
+  "source": "Composite Industry Reports (Gartner, IDC, Forrester)",
+  "last_updated": "2025-12-20",
+  "market_size_estimates": {
+    "2024": 285000000000,
+    "2025": 312000000000,
+    "2026_projected": 345000000000
+  },
+  "quarterly_benchmarks": [
+    {
+      "quarter": "2024-Q1",
+      "avg_growth_rate": 0.08,
+      "avg_customer_acquisition_cost": 450,
+      "avg_nps": 42,
+      "avg_churn_rate": 0.045,
+      "avg_deal_cycle_days": 38,
+      "market_sentiment": "cautiously optimistic"
+    },
+    {
+      "quarter": "2024-Q2",
+      "avg_growth_rate": 0.09,
+      "avg_customer_acquisition_cost": 435,
+      "avg_nps": 44,
+      "avg_churn_rate": 0.042,
+      "avg_deal_cycle_days": 36,
+      "market_sentiment": "positive"
+    },
+    {
+      "quarter": "2024-Q3",
+      "avg_growth_rate": 0.07,
+      "avg_customer_acquisition_cost": 470,
+      "avg_nps": 40,
+      "avg_churn_rate": 0.051,
+      "avg_deal_cycle_days": 41,
+      "market_sentiment": "mixed \u2014 supply chain concerns"
+    },
+    {
+      "quarter": "2024-Q4",
+      "avg_growth_rate": 0.11,
+      "avg_customer_acquisition_cost": 420,
+      "avg_nps": 46,
+      "avg_churn_rate": 0.038,
+      "avg_deal_cycle_days": 33,
+      "market_sentiment": "strong year-end demand"
+    },
+    {
+      "quarter": "2025-Q1",
+      "avg_growth_rate": 0.09,
+      "avg_customer_acquisition_cost": 440,
+      "avg_nps": 43,
+      "avg_churn_rate": 0.044,
+      "avg_deal_cycle_days": 37,
+      "market_sentiment": "stable"
+    },
+    {
+      "quarter": "2025-Q2",
+      "avg_growth_rate": 0.1,
+      "avg_customer_acquisition_cost": 415,
+      "avg_nps": 47,
+      "avg_churn_rate": 0.039,
+      "avg_deal_cycle_days": 34,
+      "market_sentiment": "positive \u2014 AI adoption accelerating"
+    },
+    {
+      "quarter": "2025-Q3",
+      "avg_growth_rate": 0.1,
+      "avg_customer_acquisition_cost": 425,
+      "avg_nps": 45,
+      "avg_churn_rate": 0.041,
+      "avg_deal_cycle_days": 35,
+      "market_sentiment": "steady growth"
+    },
+    {
+      "quarter": "2025-Q4",
+      "avg_growth_rate": 0.12,
+      "avg_customer_acquisition_cost": 400,
+      "avg_nps": 49,
+      "avg_churn_rate": 0.035,
+      "avg_deal_cycle_days": 31,
+      "market_sentiment": "bullish \u2014 record deal volume"
+    }
+  ],
+  "competitor_pricing": [
+    {
+      "competitor": "AnalytiCore",
+      "plan": "Enterprise",
+      "monthly_price": 2500,
+      "features": "Full BI suite, predictive models, 24/7 support",
+      "trend": "increasing",
+      "yoy_price_change": 0.08
+    },
+    {
+      "competitor": "DataPulse",
+      "plan": "Professional",
+      "monthly_price": 1800,
+      "features": "Dashboard builder, SQL access, email support",
+      "trend": "stable",
+      "yoy_price_change": 0.02
+    },
+    {
+      "competitor": "InsightBridge",
+      "plan": "Growth",
+      "monthly_price": 1200,
+      "features": "Basic analytics, 5 dashboards, chat support",
+      "trend": "decreasing",
+      "yoy_price_change": -0.05
+    },
+    {
+      "competitor": "MetricFlow",
+      "plan": "Business",
+      "monthly_price": 2100,
+      "features": "Real-time analytics, API access, custom reports",
+      "trend": "increasing",
+      "yoy_price_change": 0.06
+    },
+    {
+      "competitor": "ClearLens Analytics",
+      "plan": "Standard",
+      "monthly_price": 950,
+      "features": "Pre-built dashboards, data connectors, community support",
+      "trend": "stable",
+      "yoy_price_change": 0.01
+    }
+  ],
+  "growth_projections": {
+    "conservative": 0.06,
+    "moderate": 0.1,
+    "aggressive": 0.15,
+    "basis": "Weighted analysis of market size growth, customer acquisition trends, and competitive dynamics"
+  },
+  "key_trends": [
+    "AI-powered analytics adoption growing 35% YoY among SMEs",
+    "Self-service BI tools displacing traditional consulting engagements",
+    "Data privacy regulations driving demand for on-premise analytics options",
+    "Embedded analytics becoming table stakes for SaaS platforms"
+  ]
+}

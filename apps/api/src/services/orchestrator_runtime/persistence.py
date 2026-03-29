@@ -212,7 +212,13 @@ def db_update_run_status(
             sets.append("input_hash = :ihash")
             params["ihash"] = input_hash
 
-        if status in ("completed", "completed_with_warnings", "failed", "duplicate"):
+        if status in (
+            "completed",
+            "completed_with_warnings",
+            "failed",
+            "duplicate",
+            "cancelled",
+        ):
             sets.append("ended_at = NOW()")
 
         sql = f"UPDATE pipeline_runs SET {', '.join(sets)} WHERE id = :rid"
