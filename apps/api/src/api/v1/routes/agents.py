@@ -366,14 +366,11 @@ def run_specialized_agents(payload: AgentMVPRequest) -> AgentMVPResponse:
 @router.get("/ollama-catalog", response_model=OllamaCatalogResponse)
 def ollama_catalog() -> OllamaCatalogResponse:
     key_ok = settings.llm_api_key_configured
-    if settings.llm_provider == "ollama":
-        sanity = "Running in Ollama mode; API key is not required for local inference."
-    else:
-        sanity = (
-            "LLM_API_KEY is set; remote inference should work for run=true."
-            if key_ok
-            else "Set LLM_API_KEY in apps/api/.env (Featherless API key). Init/boot works; live generation will fail until the key is set."
-        )
+    sanity = (
+        "LLM_API_KEY is set; Featherless inference should work for run=true."
+        if key_ok
+        else "Set LLM_API_KEY in apps/api/.env (Featherless API key). Init/boot works; live generation will fail until the key is set."
+    )
     return OllamaCatalogResponse(
         hardware_summary=HARDWARE_SUMMARY,
         defaults={

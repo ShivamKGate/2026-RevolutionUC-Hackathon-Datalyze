@@ -50,12 +50,17 @@ class AgentNode:
 
 
 def _normalize_model(model: str) -> str:
-    return model
+    normalized = model.strip()
+    # LiteLLM/CrewAI requires an explicit provider prefix for custom model IDs.
+    # We use Featherless via OpenAI-compatible API, so force OpenAI routing.
+    if "/" in normalized and not normalized.startswith(("openai/", "azure/", "gemini/")):
+        return f"openai/{normalized}"
+    return normalized
 
 
 def _prime_crewai_env() -> None:
     """CrewAI reads OPENAI_* env vars internally for its LLM wire protocol. We
-    point them to the configured provider (Featherless / Ollama)."""
+    point them to Featherless (OpenAI-compatible base URL + API key)."""
     os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
     os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 

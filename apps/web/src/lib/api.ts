@@ -168,7 +168,7 @@ export async function postAgentsMVP(
   return (await response.json()) as AgentMVPResponse;
 }
 
-// ─── Ollama Catalog ───────────────────────────────────────────────────────────
+// ─── Model catalog (Featherless; route name: ollama-catalog) ─────────────────
 
 export type OllamaCatalogResponse = {
   hardware_summary: string;

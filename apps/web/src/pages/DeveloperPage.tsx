@@ -136,7 +136,7 @@ export default function DeveloperPage() {
             {loading === "health" ? "Checking..." : "Check API"}
           </button>
           <button onClick={fetchCatalog} disabled={loading !== null}>
-            {loading === "catalog" ? "Loading..." : "Ollama Catalog"}
+            {loading === "catalog" ? "Loading..." : "Model catalog (Featherless)"}
           </button>
           <button onClick={fetchBootStatus} disabled={loading !== null}>
             {loading === "boot" ? "Loading..." : "Boot Status"}
@@ -173,7 +173,7 @@ export default function DeveloperPage() {
 
         {catalog && (
           <div className="status success">
-            <strong>Hardware:</strong> {catalog.hardware_summary}
+            <strong>Featherless:</strong> {catalog.hardware_summary}
             <div className="detail-grid">
               {catalog.models.map((m) => (
                 <div key={m.id} className="detail-card">

@@ -21,7 +21,7 @@ Local-first, multi-agent business intelligence platform scaffold for RevolutionU
 - Frontend: React + TypeScript + Vite
 - Backend: FastAPI (Python)
 - Orchestration script: root `npm run dev` with `concurrently`
-- Planned AI stack: Ollama + agent modules (to be implemented incrementally)
+- AI stack: **Featherless** (remote OpenAI-compatible API) for CrewAI agents; optional Gemini / ElevenLabs for specific agents
 
 ## Quick Start (Windows / PowerShell)
 
@@ -64,8 +64,7 @@ If Python 3.12 is missing, the script prints install hints (e.g. `winget install
 
 ### Terminals
 
-- **Typical:** **one** terminal — `npm run dev` (web + API).
-- **With Ollama:** **two** terminals — `npm run dev` and `ollama serve`.
+- **Typical:** **one** terminal — `npm run dev` (web + API). Set `LLM_API_KEY` in `apps/api/.env` for Featherless-backed agents.
 
 ## Running Services
 

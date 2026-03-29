@@ -26,14 +26,11 @@ def llm_chat_completion(
     system_instruction: str | None = None,
     max_tokens: int = 800,
 ) -> str:
-    """Send a chat completion via the configured LLM provider (Featherless/Ollama)."""
-    is_ollama = settings.llm_provider == "ollama"
-    if not is_ollama and not settings.llm_api_key_configured:
+    """Send a chat completion via Featherless (OpenAI-compatible API)."""
+    if not settings.llm_api_key_configured:
         raise ValueError("LLM_API_KEY is not set in apps/api/.env")
 
     base = settings.llm_base_url.rstrip("/")
-    if is_ollama and not base.endswith("/v1"):
-        base = f"{base}/v1"
     url = f"{base}/chat/completions"
     messages: list[dict[str, str]] = []
     if system_instruction:
@@ -47,9 +44,10 @@ def llm_chat_completion(
         "max_tokens": max_tokens,
     }
 
-    headers = {"Content-Type": "application/json"}
-    if not is_ollama:
-        headers["Authorization"] = f"Bearer {settings.llm_api_key.strip()}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.llm_api_key.strip()}",
+    }
 
     with httpx.Client(timeout=60.0) as client:
         resp = client.post(url, headers=headers, json=body)

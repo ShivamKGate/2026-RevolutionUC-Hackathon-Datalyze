@@ -26,9 +26,11 @@ Hard rules:
 3) Prefer browser-based verification for user-visible behavior (Cursor browser MCP or Chrome DevTools MCP). Use terminal/API (curl, httpx, TestClient) when testing auth headers, webhooks, or non-UI contracts.
 4) Run at least THREE sequential test batches aligned with the user’s goal (e.g. baseline → after fix #1 → after fix #2). Each batch must end with observations and a score vs the acceptance criteria.
 5) If the user names a misbehaving agent or subsystem, scope tests to that agent’s inputs/outputs (logs, artifacts, replay) and name the campaign folder accordingly (e.g. playbook-runs/insight-generation-contract/).
-6) Company/data selection is STRICTLY one of: (A) demo company “E2E Analytics Co.” for demo-account flows, (B) user-provided synthetic data / prior fixtures, (C) user custom instructions only, or (D) “Google” scenario using the canonical sample workbook path in §6. Do not invent a fourth company for regression tests without user approval.
-7) After changes, re-run the same core checks from earlier batches and explicitly DIFF results (before vs after) in report.md.
-8) End with a Final verdict (§11 template): what was done, accuracy vs target, residual risk, recommended follow-ups.
+6) Company/data selection is STRICTLY one of: (A) demo company "End-to-End Analytics Co." (canonical demo tenant) for demo-account and synthetic-data flows, (B) user-provided synthetic data / prior fixtures, (C) user custom instructions only, or (D) "Google" scenario using the canonical sample workbook path in §6. Do not invent a fourth company for regression tests without user approval.
+7) If synthetic data must be created (user asks, or test cannot run without fixtures), generate it for "End-to-End Analytics Co." only and persist it through the app upload flow so files land under `data/company/<company-slug>/private/` with DB metadata, matching normal saved-file behavior.
+8) Treat demo tenant naming as fixed for tests: display name "End-to-End Analytics Co." (short alias "E2E Analytics Co." is acceptable only if existing data already uses it). Do not create additional demo-company variants.
+9) After changes, re-run the same core checks from earlier batches and explicitly DIFF results (before vs after) in report.md.
+10) End with a Final verdict (§11 template): what was done, accuracy vs target, residual risk, recommended follow-ups.
 
 Do not commit noisy artifacts; report.md under each campaign is intended to be trackable (see .gitignore rules). If you add a new top-level scratch pattern, update .gitignore as described in the playbook.
 ```
@@ -89,20 +91,31 @@ If you introduce a **new** class of scratch directory **outside** `playbook-runs
 
 ---
 
-## 6. Company and data sources (only three modes)
+## 6. Company and data sources
 
 The playbook standardizes **where** tests run so results are comparable across sessions.
 
-### 6.1 Demo tenant — **E2E Analytics Co.**
+### 6.1 Demo tenant — **End-to-End Analytics Co.**
 
 - **Use when:** Exercising **demo accounts**, investor demos, or “clean slate” company behavior.
-- **Expectation:** Anyone with a **demo account** is provisioned into this company (or an equivalent shared demo org) so they can run the app without touching production customer data.
+- **Expectation:** Anyone with a **demo account** is provisioned into this company so they can run the app without touching production customer data.
+- **Name policy:** Canonical display name is **"End-to-End Analytics Co."**. Existing short alias **"E2E Analytics Co."** may be retained only for backward compatibility.
 - **Tests:** onboarding, default track, upload limits, public scrape toggle, “happy path” narrative.
+
+### 6.1.1 Synthetic data generation policy (default)
+
+- **Trigger:** If the user asks for synthetic data, or tests are blocked without sample files.
+- **Company lock:** Synthetic datasets are created for **End-to-End Analytics Co.** only.
+- **Persistence contract:** Save synthetic files via app upload (UI or `/api/v1/files/upload`) so persisted paths and DB rows match production behavior.
+- **Expected storage shape:** `data/company/<slugified-company-name>/private/<uuid>_<original_filename>`.
+- **Slug note:** slugification follows app logic (spaces/hyphens become underscores). For "End-to-End Analytics Co.", expected slug is typically `End_to_End_Analytics_Co`.
+- **Reproducibility:** Record each generated file path, row count, and purpose in campaign `report.md`.
 
 ### 6.2 User synthetic / pre-created data
 
 - **Use when:** The user (or repo docs) already defined fixtures, CSV/XLSX under a documented path, or seed scripts.
 - **Action:** Point tests at **exact paths** and record file hashes or row counts in `report.md` for reproducibility.
+- **If generating new synthetic fixtures:** Prefer §6.1.1 policy and persist under the End-to-End demo tenant unless the user explicitly overrides company scope.
 
 ### 6.3 User custom instructions only
 
@@ -119,6 +132,33 @@ The playbook standardizes **where** tests run so results are comparable across s
 **Note:** The folder `Miscellaneous/data/sources/` may be **gitignored** in this repository to avoid committing large binaries. That does **not** change the playbook: testers keep the file locally or obtain it from team storage; always record **actual path used** on disk in `report.md`.
 
 As the team adds more sanctioned files under `Miscellaneous/data/sources/`, extend this section with a small table (filename → intended test purpose).
+
+### 6.1.2 E2E_Analytics_Co synthetic data location
+
+Synthetic data for the demo company lives at:
+
+```
+Miscellaneous/data/sources/E2E_Analytics_Co/
+├── predictive/       # Sales, revenue, churn, KPIs, market trends
+├── automation/       # Workflow logs, efficiency metrics, SOPs, system audit
+├── optimization/     # Operational costs, department performance, goals, benchmarks
+└── supply_chain/     # Supplier deliveries, inventory, logistics, procurement
+```
+
+Each subdirectory contains at least 4 files (CSV, XLSX, PDF, JSON) covering that analysis track's domain. This directory is **NOT gitignored** — it is committed to the repo so demo data is always available.
+
+The `.gitignore` rule is: `Miscellaneous/data/sources/Google*` stays ignored, but `Miscellaneous/data/sources/E2E_Analytics_Co/` and all contents are tracked.
+
+### 6.1.3 Demo account credentials
+
+| Field | Value |
+|---|---|
+| **Email** | `demo@revuc.com` |
+| **Password** | `admin@123` |
+| **Company** | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
+| **Role** | `admin` |
+
+This account is seeded via `apps/api/src/db/seeds/001_seed.sql`. When testing demo flows, always use this account and this company.
 
 ---
 
@@ -161,7 +201,7 @@ Create `Miscellaneous/tests/playbook-runs/<slug>/report.md` **before Batch A** a
 - **Date:**
 - **Branch / commit:**
 - **App URLs:** web = …, API = …
-- **Data mode:** E2E Analytics Co | synthetic | custom only | Google workbook
+- **Data mode:** End-to-End Analytics Co | synthetic | custom only | Google workbook
 - **Acceptance criteria (from user):**
   1. …
 
@@ -291,6 +331,54 @@ When the user names **one agent** (or small set):
 - **Integration baseline:** `Miscellaneous/Datalyze.md` or `Miscellaneous/Datalyze_Integration_Baseline_Report.md` (if renamed)
 - **Test index:** `Miscellaneous/tests/report.md`
 - **Orchestrator plan vs implementation:** `Miscellaneous/Datalyze Orchestrator Runtime - Master Plan vs Implementation Report.md`
+
+---
+
+## 16. Agent prompt version tracking
+
+When agent prompts are modified (especially during the fine-tuning sprint), log every change to:
+
+```
+Miscellaneous/tests/agent_prompt_versions.jsonl
+```
+
+Each line is a JSON record:
+```json
+{"timestamp": "2026-03-29T...", "agent_id": "trend_forecasting", "change": "Added chart-ready JSON schema with confidence bands", "version": 2, "author": "shivam"}
+```
+
+This enables comparing run-to-run quality. When testing, note the prompt version used in the campaign `report.md`.
+
+---
+
+## 17. Demo replay testing procedure
+
+When testing admin replay mode:
+
+1. Run a full analysis on the demo account (`demo@revuc.com`) for a specific track
+2. Verify the run completes successfully
+3. Navigate to Admin → Demo Replay
+4. Verify the replay for that track is captured (shows in the replay list)
+5. Click "Play Replay" and verify:
+   - Pipeline log entries appear progressively (animated)
+   - Charts and KPIs render correctly
+   - Playback speed controls work (1x, 2x, 5x)
+6. Record evidence in campaign `report.md`
+
+---
+
+## 18. Upload track association testing
+
+When testing file uploads with track association:
+
+1. Upload a file with `analysis_track = "predictive"`
+2. Upload another file with `analysis_track = "automation"`
+3. Upload a third file with no track (should be visible in all tracks)
+4. Navigate to Upload page, select track filter:
+   - "Predictive" filter → should show file 1 + file 3 only
+   - "Automation" filter → should show file 2 + file 3 only
+5. Start an analysis for "Predictive" → verify only files 1 and 3 are used
+6. Record results in campaign `report.md`
 
 ---
 

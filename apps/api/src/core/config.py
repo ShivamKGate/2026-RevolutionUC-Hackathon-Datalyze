@@ -8,7 +8,7 @@ empty-string default when the variable is absent.
 
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, ValidationInfo, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
@@ -24,10 +24,8 @@ class Settings(BaseSettings):
     app_name: str
     environment: str
     allowed_origins_raw: str
-    llm_provider: str = Field(default="")
+    llm_provider: str = Field(default="featherless")
     llm_base_url: str = Field(default="")
-    # Backward-compat with pre-merge local envs that still define OLLAMA_HOST.
-    ollama_host: str = Field(default="", validation_alias=AliasChoices("ollama_host", "OLLAMA_HOST"))
     llm_api_key: str = Field(default="")
     heavy_model: str
     heavy_alt_model: str = Field(default="")
@@ -89,19 +87,15 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def _apply_backwards_compat(self) -> "Settings":
+    def _apply_llm_defaults(self) -> "Settings":
+        """CrewAI inference uses Featherless only (OpenAI-compatible HTTP API, no local Ollama)."""
         featherless_default_base = "https://api.featherless.ai/v1"
-        if self.ollama_host:
-            if not self.llm_base_url or self.llm_base_url == featherless_default_base:
-                self.llm_base_url = self.ollama_host
-            if not self.llm_provider or self.llm_provider == "featherless":
-                self.llm_provider = "ollama"
         if not self.llm_base_url:
             self.llm_base_url = featherless_default_base
-        if not self.llm_provider:
-            self.llm_provider = "featherless"
-        if self.llm_provider == "ollama" and self.llm_base_url.endswith(":11434"):
-            self.llm_base_url = f"{self.llm_base_url}/v1"
+        # Legacy .env files used local Ollama (:11434); migrate base URL to Featherless.
+        if ":11434" in self.llm_base_url:
+            self.llm_base_url = featherless_default_base
+        self.llm_provider = "featherless"
         if not self.heavy_alt_model:
             self.heavy_alt_model = self.heavy_model
         return self
@@ -125,8 +119,6 @@ class Settings(BaseSettings):
 
     @property
     def llm_api_key_configured(self) -> bool:
-        if self.llm_provider == "ollama":
-            return True
         k = (self.llm_api_key or "").strip()
         if not k or k == "DATALYZE_PLACEHOLDER_KEY":
             return False

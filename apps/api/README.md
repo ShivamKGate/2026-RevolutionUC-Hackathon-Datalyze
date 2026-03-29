@@ -49,14 +49,8 @@ From the repo root, `npm run dev:api` runs `scripts/run-api.mjs`, which creates 
 
 ## Model catalog (Featherless)
 
-- Route: `GET /api/v1/agents/ollama-catalog`
+- Route: `GET /api/v1/agents/ollama-catalog` (name is historical; data is Featherless defaults + model matrix)
 - Purpose: return the active model matrix and provider defaults used by the API.
-- Env vars (see `.env.example`): `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_API_KEY`, `HEAVY_MODEL`, `LIGHT_MODEL`, `EMBEDDING_MODEL`.
+- Env vars (see `.env.example`): `LLM_BASE_URL`, `LLM_API_KEY`, `HEAVY_MODEL`, `HEAVY_ALT_MODEL`, `LIGHT_MODEL`, `EMBEDDING_MODEL`.
 
-## Local pulls (optional legacy Ollama flow)
-
-For Featherless, no local model pull is required. The script remains for teams that switch back to local Ollama inference.
-
-```powershell
-.\scripts\pull-datalyze-ollama-models.ps1
-```
+Inference targets **Featherless** only (`https://api.featherless.ai/v1` by default). No local GPU or Ollama is required.

@@ -21,9 +21,17 @@ from services.agents import get_agent_module
 from services.agents.normalizer import normalize_agent_output
 
 
+def _normalize_model(model: str) -> str:
+    normalized = model.strip()
+    # Route org/model slugs through OpenAI-compatible provider (Featherless).
+    if "/" in normalized and not normalized.startswith(("openai/", "azure/", "gemini/")):
+        return f"openai/{normalized}"
+    return normalized
+
+
 def _prime_crewai_env() -> None:
     """CrewAI reads OPENAI_* env vars internally for its LLM wire protocol. We
-    point them to the configured provider (Featherless / Ollama)."""
+    point them to Featherless (OpenAI-compatible base URL + API key)."""
     os.environ.setdefault("OPENAI_BASE_URL", settings.llm_base_url)
     os.environ.setdefault("OPENAI_API_KEY", settings.llm_api_key or "DATALYZE_PLACEHOLDER_KEY")
 
@@ -31,7 +39,7 @@ def _prime_crewai_env() -> None:
 def _build_llm(model_name: str) -> LLM:
     _prime_crewai_env()
     return LLM(
-        model=model_name,
+        model=_normalize_model(model_name),
         base_url=settings.llm_base_url,
         api_key=settings.llm_api_key,
     )
