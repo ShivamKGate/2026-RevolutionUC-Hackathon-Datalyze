@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 
 from api.v1.routes.auth import get_current_user
@@ -425,6 +426,78 @@ def get_run_replay(request: Request, slug: str):
     run = _row_to_out(row)
     logs = db_get_run_logs(int(row.id))
     return {"run": run.model_dump(), "logs": logs, "replay_payload": run.replay_payload or {}}
+
+
+def _authorized_run_dir(slug: str, company_id: int) -> Path | None:
+    """Resolve on-disk run directory for this company’s run, or None if missing."""
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                "SELECT run_dir_path FROM pipeline_runs "
+                "WHERE slug=:slug AND company_id=:cid",
+            ),
+            {"slug": slug, "cid": company_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        return None
+    return _resolve_run_dir(row.run_dir_path)
+
+
+@router.get("/{slug}/narration/manifest")
+def get_narration_manifest(request: Request, slug: str) -> dict[str, Any]:
+    """JSON index of realtime narration clips + whether final executive-summary MP3 exists."""
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    rd = _authorized_run_dir(slug, company_id)
+    if rd is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if not rd.is_dir():
+        return {"clips": [], "final_narration": False}
+
+    idx = rd / "artifacts" / "narration_realtime" / "index.json"
+    clips: list[dict[str, Any]] = []
+    if idx.is_file():
+        try:
+            data = json.loads(idx.read_text(encoding="utf-8"))
+            raw = data.get("clips")
+            if isinstance(raw, list):
+                clips = [c for c in raw if isinstance(c, dict)]
+        except (json.JSONDecodeError, OSError):
+            clips = []
+
+    final_narration = (rd / "artifacts" / "narration.mp3").is_file()
+    return {"clips": clips, "final_narration": final_narration}
+
+
+@router.get("/{slug}/narration/realtime/{seq}")
+def get_narration_realtime_audio(request: Request, slug: str, seq: int) -> FileResponse:
+    """Serve one realtime narration clip (matches engine: narration_realtime/{seq:04d}.mp3)."""
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    rd = _authorized_run_dir(slug, company_id)
+    if rd is None or not rd.is_dir():
+        raise HTTPException(status_code=404, detail="Run not found")
+    path = rd / "artifacts" / "narration_realtime" / f"{seq:04d}.mp3"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Clip not found")
+    return FileResponse(path, media_type="audio/mpeg", filename=f"{seq:04d}.mp3")
+
+
+@router.get("/{slug}/narration/final")
+def get_narration_final_audio(request: Request, slug: str) -> FileResponse:
+    """Serve executive-summary narration MP3 (artifacts/narration.mp3)."""
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    rd = _authorized_run_dir(slug, company_id)
+    if rd is None or not rd.is_dir():
+        raise HTTPException(status_code=404, detail="Run not found")
+    path = rd / "artifacts" / "narration.mp3"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Narration not ready")
+    return FileResponse(path, media_type="audio/mpeg", filename="narration.mp3")
 
 
 @router.get("/{slug}", response_model=PipelineRunOut)

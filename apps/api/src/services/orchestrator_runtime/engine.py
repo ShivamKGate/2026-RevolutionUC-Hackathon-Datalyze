@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import secrets
 import time
 import traceback
@@ -33,6 +34,10 @@ from services.orchestrator_runtime.contracts import (
     RunStatus,
     StageGateResult,
     StageID,
+)
+from services.orchestrator_runtime.orchestrator_brain import (
+    merge_skip_agent_lists,
+    run_heavy_orchestration_brain,
 )
 from services.orchestrator_runtime.persistence import (
     append_decision,
@@ -162,6 +167,221 @@ def _artifact_primary_payload(artifacts: list[Any]) -> dict[str, Any]:
         if isinstance(v, dict):
             return v
     return {}
+
+
+def _try_parse_executive_json(raw: str) -> dict[str, Any] | None:
+    """Parse executive-summary JSON from model output (may include fences or prose)."""
+    s = (raw or "").strip()
+    s = re.sub(r"^```(?:json)?\s*", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"\s*```\s*$", "", s)
+    try:
+        data = json.loads(s)
+    except json.JSONDecodeError:
+        m = re.search(r"\{[\s\S]*\}", s)
+        if not m:
+            return None
+        try:
+            data = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return None
+    return data if isinstance(data, dict) else None
+
+
+def _format_executive_dict_for_speech(data: dict[str, Any], max_chars: int = 2400) -> str:
+    """Flatten structured executive summary into spoken prose."""
+    parts: list[str] = []
+    if h := data.get("headline"):
+        parts.append(str(h).strip())
+    if s := data.get("situation_overview"):
+        parts.append(str(s).strip())
+    kf = data.get("key_findings")
+    if isinstance(kf, list) and kf:
+        parts.append(
+            "Key findings: " + ". ".join(str(x).strip() for x in kf[:10] if x),
+        )
+    rh = data.get("risk_highlights")
+    if isinstance(rh, list) and rh:
+        parts.append(
+            "Risk highlights: " + ". ".join(str(x).strip() for x in rh[:6] if x),
+        )
+    na = data.get("next_actions")
+    if isinstance(na, list) and na:
+        parts.append(
+            "Next actions: " + ". ".join(str(x).strip() for x in na[:8] if x),
+        )
+    cs = data.get("confidence_statement")
+    if isinstance(cs, dict):
+        oc = cs.get("overall_confidence")
+        basis = (cs.get("basis") or "").strip()
+        if oc is not None or basis:
+            conf_bit = f"Confidence: {oc}." if oc is not None else ""
+            parts.append(f"{conf_bit} {basis}".strip())
+    out = " ".join(p for p in parts if p)
+    return out[:max_chars] if len(out) > max_chars else out
+
+
+def _format_summary_text_for_tts(raw: str) -> str:
+    """Normalize markdown-fenced or JSON executive summary for speech synthesis."""
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    parsed = _try_parse_executive_json(raw)
+    if parsed:
+        spoken = _format_executive_dict_for_speech(parsed)
+        if spoken:
+            return spoken
+    cleaned = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```\s*$", "", cleaned)
+    return cleaned.strip()
+
+
+def _resolve_executive_summary_text(context: dict[str, Any]) -> str:
+    """Text for ElevenLabs: explicit field, then prior_outputs executive_summary envelope."""
+    direct = (context.get("executive_summary") or "").strip()
+    if direct:
+        return _format_summary_text_for_tts(direct)
+
+    prior = context.get("prior_outputs") or {}
+    env = prior.get("executive_summary")
+    if not isinstance(env, dict):
+        return ""
+
+    raw_summary = (env.get("summary") or "").strip()
+    if raw_summary:
+        spoken = _format_summary_text_for_tts(raw_summary)
+        if spoken:
+            return spoken
+
+    arts = env.get("artifacts") or []
+    structured = _artifact_primary_payload(arts) if arts else {}
+    if isinstance(structured, dict) and structured:
+        return _format_executive_dict_for_speech(structured)
+    return ""
+
+
+def _word_count_spoken(s: str) -> int:
+    return len([w for w in (s or "").split() if w.strip()])
+
+
+def _strip_podcast_script(raw: str) -> str:
+    """Remove accidental fences or labels from LLM output."""
+    t = (raw or "").strip()
+    t = re.sub(r"^```(?:\w*)?\s*", "", t, flags=re.MULTILINE)
+    t = re.sub(r"\s*```\s*$", "", t)
+    t = re.sub(r"^(?:Podcast script|Script|Transcript)\s*:\s*", "", t, flags=re.IGNORECASE)
+    return t.strip()
+
+
+def _build_podcast_source_material(context: dict[str, Any]) -> str:
+    """Aggregate executive summary + key structured agent outputs for podcast script LLM."""
+    chunks: list[str] = []
+    prior = context.get("prior_outputs") or {}
+    company = context.get("company_name", "Unknown Company")
+    track = context.get("track", "predictive")
+
+    exec_flat = _resolve_executive_summary_text(context)
+    if exec_flat:
+        chunks.append(f"--- Executive synthesis (verbatim) ---\n{exec_flat[:6000]}")
+
+    structured = _collect_structured_outputs(prior)
+    priority = (
+        "insight_generation",
+        "swot_analysis",
+        "trend_forecasting",
+        "conflict_detection",
+        "sentiment_analysis",
+        "executive_summary",
+        "aggregator",
+        "automation_strategy",
+    )
+    for aid in priority:
+        blob = structured.get(aid)
+        if not isinstance(blob, dict) or not blob:
+            continue
+        try:
+            compact = json.dumps(blob, ensure_ascii=False)[:3500]
+        except (TypeError, ValueError):
+            compact = str(blob)[:3500]
+        chunks.append(f"--- {aid} (structured JSON) ---\n{compact}")
+
+    for aid, env in prior.items():
+        if aid in (
+            "elevenlabs_narration",
+            "pipeline_classifier",
+            "output_evaluator",
+        ):
+            continue
+        if aid in structured:
+            continue
+        summ = (env.get("summary") or "").strip()
+        if 120 < len(summ) < 2000:
+            chunks.append(f"--- {aid} (agent summary) ---\n{summ[:1800]}")
+
+    body = "\n\n".join(chunks)
+    header = f"Company: {company}. Analysis track: {track}.\n\n"
+    return (header + body)[:14000]
+
+
+def _generate_podcast_script_via_llm(context: dict[str, Any]) -> str:
+    """Synthesize a 1–1.5 minute spoken podcast script from analysis outputs."""
+    if not settings.llm_api_key_configured:
+        return ""
+
+    source = _build_podcast_source_material(context)
+    if not source.strip():
+        return ""
+
+    company = context.get("company_name", "this company")
+    track = context.get("track", "analysis")
+
+    from services.external_agent_clients import llm_chat_completion
+
+    user_message = (
+        "Write a single continuous podcast monologue for listeners who want a spoken briefing "
+        "on a business analysis run.\n\n"
+        "SOURCE MATERIAL (fragments, JSON, and summaries — synthesize into one coherent story):\n"
+        f"{source}\n\n"
+        "STRICT RULES:\n"
+        "- Output ONLY the words to be read aloud by a text-to-speech voice.\n"
+        "- No markdown, no bullet characters, no section headers, no stage directions, "
+        "no 'host:', no music cues, no timestamps.\n"
+        "- Length: between 240 and 320 words (about 1 to 1.5 minutes at normal speaking pace). "
+        "Do not exceed 320 words.\n"
+        "- Open with one or two engaging sentences that welcome the listener and name the company "
+        f"and that this is the {track} analysis insights.\n"
+        "- Weave together the most important findings, tradeoffs, risks, and opportunities from the source.\n"
+        "- Include concrete next actions or recommendations when the source material supports them.\n"
+        "- Do not invent numbers, companies, or facts not present or clearly implied in the source.\n"
+        "- Close with one short memorable sign-off (one sentence).\n"
+        "- Use plain sentences; vary rhythm so it sounds natural when spoken.\n"
+    )
+
+    try:
+        raw = llm_chat_completion(
+            model=settings.heavy_alt_model or settings.heavy_model,
+            user_message=user_message,
+            system_instruction=(
+                "You write only spoken podcast scripts for business intelligence. "
+                "You never add preamble or commentary outside the script."
+            ),
+            max_tokens=1100,
+        )
+    except Exception as exc:
+        logger.warning("Podcast script LLM call failed: %s", exc)
+        return ""
+
+    script = _strip_podcast_script(raw)
+    wc = _word_count_spoken(script)
+    if wc < 120:
+        logger.warning(
+            "Podcast script too short (%s words, need ~120+); will use fallback", wc,
+        )
+        return ""
+    if wc > 380:
+        # Hard cap so TTS stays ~1.5 min; trim at sentence boundary near 320 words
+        words = script.split()
+        script = " ".join(words[:320])
+    return script
 
 
 def _collect_structured_outputs(
@@ -374,33 +594,67 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
 
 
 def _run_elevenlabs_narration(context: dict[str, Any]) -> AgentEnvelope:
-    """Generate audio narration from executive summary."""
-    summary_text = context.get("executive_summary", "")
+    """Generate insight podcast MP3: LLM-written script from full analysis, then ElevenLabs TTS."""
+    summary_text = _resolve_executive_summary_text(context)
     if not summary_text:
         return AgentEnvelope.warning_envelope("No executive summary available for narration")
 
     if not settings.elevenlabs_api_key_configured:
         return AgentEnvelope.warning_envelope("ElevenLabs API key not configured")
 
+    script_llm = _generate_podcast_script_via_llm(context)
+    if script_llm.strip():
+        script = script_llm
+        script_source = "llm_podcast"
+    else:
+        script = (
+            "Welcome to your Datalyze insight briefing. "
+            "Here is the executive summary for this analysis. "
+            + summary_text
+        )
+        script_source = "fallback_exec_summary"
+        logger.info("Using fallback narration script (podcast LLM unavailable or too short)")
+
+    tts_payload = script[:5000]
+
     try:
         from services.external_agent_clients import elevenlabs_synthesize_mp3
 
-        audio_bytes = elevenlabs_synthesize_mp3(summary_text[:2500])
-        # Save audio to run artifacts
+        audio_bytes = elevenlabs_synthesize_mp3(tts_payload)
         run_dir = context.get("_run_dir")
         if run_dir:
-            audio_path = Path(run_dir) / "artifacts" / "narration.mp3"
+            base = Path(run_dir) / "artifacts"
+            audio_path = base / "narration.mp3"
             audio_path.write_bytes(audio_bytes)
+            rel = str(audio_path.relative_to(base))
             return AgentEnvelope(
                 status="ok",
-                summary="Audio narration generated",
+                summary="Insight podcast audio generated (LLM script + ElevenLabs)",
                 confidence=1.0,
-                artifacts=[{"type": "audio", "path": str(audio_path), "format": "mp3"}],
+                artifacts=[
+                    {
+                        "type": "audio",
+                        "path": rel,
+                        "format": "mp3",
+                        "narration_text": tts_payload[:2000],
+                        "status": "ok",
+                        "script_source": script_source,
+                        "approx_word_count": _word_count_spoken(tts_payload),
+                    },
+                ],
             )
         return AgentEnvelope(
             status="ok",
-            summary="Audio narration generated (in memory)",
+            summary="Insight podcast audio generated (in memory)",
             confidence=1.0,
+            artifacts=[
+                {
+                    "type": "audio",
+                    "format": "mp3",
+                    "narration_text": tts_payload[:2000],
+                    "status": "ok",
+                },
+            ],
         )
     except Exception as exc:
         return AgentEnvelope.error_envelope(f"Narration error: {str(exc)[:500]}")
@@ -426,12 +680,38 @@ def _build_task_prompt(
     retry_hint = context.get("_retry_hint", "")
     retry_section = f"\n\nIMPORTANT: {retry_hint}" if retry_hint else ""
 
+    brain = context.get("orchestrator_brain")
+    brain_section = ""
+    if isinstance(brain, dict):
+        brief = (brain.get("orchestrator_brief") or "").strip()
+        if brief:
+            brain_section = f"\n--- Orchestrator context (heavy model) ---\n{brief}\n"
+        ag = brain.get("per_agent_guidance") or {}
+        if isinstance(ag, dict) and spec.id in ag:
+            g = str(ag.get(spec.id, "")).strip()
+            if g:
+                brain_section += f"\n--- Guidance for this agent ---\n{g}\n"
+
+    cr = context.get("classifier_routing") or {}
+    routing_section = ""
+    if isinstance(cr, dict):
+        rec = cr.get("recommended_agents") or []
+        sk = cr.get("skip_agents") or []
+        if rec or sk:
+            routing_section = (
+                "\n--- Classifier routing ---\n"
+                f"Recommended emphasis: {rec}\n"
+                f"Skipped for this run: {sk}\n"
+            )
+
     return (
         f"You are the {spec.name} for the Datalyze platform.\n"
         f"Role: {spec.responsibilities}\n"
         f"Company: {company}\n"
         f"Analysis track: {track}\n"
         f"Input files: {file_count}\n"
+        f"{routing_section}"
+        f"{brain_section}"
         f"{prior_summary}\n\n"
         f"Your input: {spec.input_description}\n"
         f"Your expected output: {spec.output_description}\n\n"
@@ -514,6 +794,19 @@ class OrchestratorEngine:
         self._input_hash: str = ""
         self._finalized_cancel: bool = False
 
+    def _run_log(
+        self,
+        stage: str,
+        agent: str,
+        action: str,
+        detail: str,
+        status: str,
+        meta: dict[str, Any] | None = None,
+    ) -> None:
+        """Persist pipeline log row. Per-line ElevenLabs TTS is disabled for MVP (podcast playbook only)."""
+        d = (detail or "")[:2000]
+        db_insert_run_log(self.run_id, stage, agent, action, d, status, meta)
+
     def _abort_if_cancelled(self) -> bool:
         """If user requested stop, finalize as cancelled and return True."""
         if self._finalized_cancel:
@@ -585,8 +878,8 @@ class OrchestratorEngine:
             replay_payload=replay_payload,
             run_dir_path=run_dir_relative(self.run_dir) if self.run_dir else None,
         )
-        db_insert_run_log(
-            self.run_id, "system", "orchestrator", "run_cancelled",
+        self._run_log(
+            "system", "orchestrator", "run_cancelled",
             "Run stopped by user (cooperative cancellation).", "warning",
         )
         logger.info("Run %s cancelled by user", self.run_slug)
@@ -604,8 +897,8 @@ class OrchestratorEngine:
                     status="cancelled",
                     summary="Analysis stopped by user before execution started.",
                 )
-                db_insert_run_log(
-                    self.run_id, "system", "orchestrator", "run_cancelled",
+                self._run_log(
+                    "system", "orchestrator", "run_cancelled",
                     "Cancelled before run directory was created.", "warning",
                 )
                 return
@@ -652,8 +945,8 @@ class OrchestratorEngine:
                             },
                             input_hash=self._input_hash,
                         )
-                        db_insert_run_log(
-                            self.run_id, "system", "orchestrator", "duplicate_detected",
+                        self._run_log(
+                            "system", "orchestrator", "duplicate_detected",
                             f"Duplicate of run {dup_slug}", "info",
                         )
                         return
@@ -673,8 +966,8 @@ class OrchestratorEngine:
                 input_hash=self._input_hash,
             )
 
-            db_insert_run_log(
-                self.run_id, "system", "orchestrator", "run_started",
+            self._run_log(
+                "system", "orchestrator", "run_started",
                 f"Track: {self.track_id.value}, Files: {len(self.source_file_ids)}",
                 "start",
             )
@@ -692,6 +985,9 @@ class OrchestratorEngine:
                     return
 
                 self._execute_stage(stage_config)
+
+                if stage_config.stage_id == StageID.CLASSIFY:
+                    self._apply_heavy_orchestration_brain()
 
                 if self._abort_if_cancelled():
                     return
@@ -715,8 +1011,8 @@ class OrchestratorEngine:
                 status="failed",
                 summary=f"Pipeline failed: {str(exc)[:500]}",
             )
-            db_insert_run_log(
-                self.run_id, "system", "orchestrator", "fatal_error",
+            self._run_log(
+                "system", "orchestrator", "fatal_error",
                 str(exc)[:1000], "error",
             )
 
@@ -733,6 +1029,8 @@ class OrchestratorEngine:
             "onboarding_path": self.onboarding_path,
             "_run_dir": str(self.run_dir),
             "prior_outputs": self.prior_outputs,
+            "orchestrator_brain": {},
+            "classifier_routing": {},
         }
 
         # Build list of all agents across all stages
@@ -761,6 +1059,7 @@ class OrchestratorEngine:
                 "heavy_alt_model": settings.heavy_alt_model,
                 "light_model": settings.light_model,
                 "llm_provider": settings.llm_provider,
+                "orch_heavy_brain_enabled": str(settings.orch_heavy_brain_enabled),
             },
         )
         write_manifest(self.run_dir, manifest)
@@ -778,6 +1077,37 @@ class OrchestratorEngine:
         })
         update_artifacts_index(self.run_dir, [])
 
+    def _apply_heavy_orchestration_brain(self) -> None:
+        """After Gemini classification, call ``HEAVY_MODEL`` (``settings.heavy_model`` / .env) only."""
+        if not settings.orch_heavy_brain_enabled:
+            return
+        if "pipeline_classifier" not in self.prior_outputs:
+            return
+        arts = self.prior_outputs.get("pipeline_classifier", {}).get("artifacts", [])
+        classifier_result = _artifact_primary_payload(arts)
+        if not classifier_result:
+            return
+        brain = run_heavy_orchestration_brain(
+            track=self.track_id.value,
+            company_name=self.company_name,
+            onboarding_path=self.onboarding_path,
+            source_files_meta=self.source_files_meta,
+            classifier_result=classifier_result,
+            focus_agents=list(self.profile.focus_agents),
+        )
+        self.context["orchestrator_brain"] = brain
+        detail = f"heavy_model={brain.get('heavy_model')}; skips={brain.get('skip_agents')}"
+        brief = (brain.get("orchestrator_brief") or "").strip()
+        if brief:
+            detail += f"; brief_chars={len(brief)}"
+        self.memory.add_event("orchestrator_brain", "orchestrator", detail[:500])
+        if self.run_dir:
+            write_memory(self.run_dir, self.memory)
+        self._run_log(
+            "classify", "orchestrator", "heavy_brain",
+            detail[:2000], "info",
+        )
+
     def _execute_stage(self, stage_config: Any) -> None:
         """Execute all agents in a stage respecting DAG and policies."""
         if self._abort_if_cancelled():
@@ -788,8 +1118,8 @@ class OrchestratorEngine:
         self.memory.add_event("stage_started", "orchestrator", stage_id.value)
         write_memory(self.run_dir, self.memory)
 
-        db_insert_run_log(
-            self.run_id, stage_id.value, "orchestrator", "stage_started",
+        self._run_log(
+            stage_id.value, "orchestrator", "stage_started",
             f"Starting stage: {stage_id.value}", "start",
         )
 
@@ -811,22 +1141,27 @@ class OrchestratorEngine:
                     self.memory.pending.remove(a)
                 self.memory.add_event("agent_skipped", a, "No files to process")
 
-        # 1.1a — Classifier-based agent skip list + context routing
+        # 1.1a — Classifier + heavy-brain merged skip list + context routing
         classifier_artifacts = self.prior_outputs.get("pipeline_classifier", {}).get("artifacts", [])
         classifier_result = _artifact_primary_payload(classifier_artifacts)
+        skip_list: list[str] = []
         if classifier_result:
+            brain_skips: list[str] = []
+            ob = self.context.get("orchestrator_brain")
+            if isinstance(ob, dict):
+                brain_skips = [x for x in (ob.get("skip_agents") or []) if isinstance(x, str)]
+            merged_skip = merge_skip_agent_lists(
+                [x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)],
+                brain_skips,
+            )
             self.context["classifier_routing"] = {
-                "skip_agents": [
-                    x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
-                ],
+                "skip_agents": merged_skip,
                 "recommended_agents": [
                     x for x in (classifier_result.get("recommended_agents") or []) if isinstance(x, str)
                 ],
             }
             self.context["prior_outputs"] = self.prior_outputs
-        skip_list: list[str] = [
-            x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
-        ]
+            skip_list = merged_skip
         if skip_list:
             for a in valid_agents:
                 if (a in skip_list
@@ -929,13 +1264,13 @@ class OrchestratorEngine:
 
             if not gate_result.passed:
                 self.memory.warnings.extend(gate_result.issues)
-                db_insert_run_log(
-                    self.run_id, stage_id.value, "orchestrator", "gate_failed",
+                self._run_log(
+                    stage_id.value, "orchestrator", "gate_failed",
                     "; ".join(gate_result.issues), "warning",
                 )
 
-        db_insert_run_log(
-            self.run_id, stage_id.value, "orchestrator", "stage_completed",
+        self._run_log(
+            stage_id.value, "orchestrator", "stage_completed",
             f"Stage {stage_id.value} done", "success",
         )
 
@@ -954,18 +1289,26 @@ class OrchestratorEngine:
             self.memory.pending.remove(agent_id)
         write_memory(self.run_dir, self.memory)
 
-        db_insert_run_log(
-            self.run_id, stage, agent_id, "dispatch",
+        self._run_log(
+            stage, agent_id, "dispatch",
             f"Dispatching {agent_id} (step {step})", "start",
         )
 
         # Record decision
+        why = f"DAG ready, track={self.track_id.value}"
+        ob = self.context.get("orchestrator_brain")
+        if settings.orch_heavy_brain_enabled and isinstance(ob, dict):
+            guides = ob.get("per_agent_guidance") or {}
+            if isinstance(guides, dict) and agent_id in guides:
+                g = str(guides.get(agent_id, "")).strip()
+                if g:
+                    why = f"Heavy-orchestrated: {g[:280]}"
         decision = DecisionRecord(
             timestamp=datetime.now(UTC).isoformat(),
             step=step,
             stage=stage,
             agent_id=agent_id,
-            why_this_agent=f"DAG ready, track={self.track_id.value}",
+            why_this_agent=why,
             alternatives_considered=[],
             policy_mode="adaptive" if settings.orch_enable_adaptive_policy else "deterministic",
             confidence=0.0,
@@ -989,8 +1332,8 @@ class OrchestratorEngine:
                 self.memory.add_event("agent_retry", agent_id, retry.reason)
                 write_memory(self.run_dir, self.memory)
 
-                db_insert_run_log(
-                    self.run_id, stage, agent_id, "retry",
+                self._run_log(
+                    stage, agent_id, "retry",
                     f"Retry attempt {retry.attempt}: {retry.reason}", "warning",
                 )
 
@@ -1044,8 +1387,8 @@ class OrchestratorEngine:
             decision.outcome = "failed"
             self.memory.failed.append(agent_id)
             self.memory.add_event("agent_failed", agent_id, envelope.summary)
-            db_insert_run_log(
-                self.run_id, stage, agent_id, "failed",
+            self._run_log(
+                stage, agent_id, "failed",
                 envelope.summary[:500], "error",
             )
         else:
@@ -1054,8 +1397,8 @@ class OrchestratorEngine:
             self.memory.completed.append(agent_id)
             self.prior_outputs[agent_id] = envelope.to_dict()
             self.memory.add_event("agent_completed", agent_id, envelope.summary[:200])
-            db_insert_run_log(
-                self.run_id, stage, agent_id, "completed",
+            self._run_log(
+                stage, agent_id, "completed",
                 envelope.summary[:500], "success",
                 {"confidence": envelope.confidence},
             )
@@ -1090,6 +1433,11 @@ class OrchestratorEngine:
                 if agent_id in self.memory.pending:
                     self.memory.pending.remove(agent_id)
 
+                self._run_log(
+                    stage, agent_id, "dispatch",
+                    f"Dispatching {agent_id} (step {step})", "start",
+                )
+
                 ctx = dict(self.context)
                 ctx["prior_outputs"] = dict(self.prior_outputs)
                 future = executor.submit(_dispatch_agent, agent_id, ctx, self.run_dir)
@@ -1109,16 +1457,16 @@ class OrchestratorEngine:
                 if envelope.status == "error":
                     self.memory.failed.append(agent_id)
                     self.memory.add_event("agent_failed", agent_id, envelope.summary)
-                    db_insert_run_log(
-                        self.run_id, stage, agent_id, "failed",
+                    self._run_log(
+                        stage, agent_id, "failed",
                         envelope.summary[:500], "error",
                     )
                 else:
                     self.memory.completed.append(agent_id)
                     self.prior_outputs[agent_id] = envelope.to_dict()
                     self.memory.add_event("agent_completed", agent_id, envelope.summary[:200])
-                    db_insert_run_log(
-                        self.run_id, stage, agent_id, "completed",
+                    self._run_log(
+                        stage, agent_id, "completed",
                         envelope.summary[:500], "success",
                     )
 
@@ -1266,8 +1614,8 @@ class OrchestratorEngine:
             except Exception:
                 logger.warning("demo_replay capture failed", exc_info=True)
 
-        db_insert_run_log(
-            self.run_id, "system", "orchestrator", "finalized",
+        self._run_log(
+            "system", "orchestrator", "finalized",
             summary, "success",
         )
 
@@ -1280,6 +1628,7 @@ class OrchestratorEngine:
             "adaptive_policy_enabled": settings.orch_enable_adaptive_policy,
             "stage_gates_enabled": settings.orch_enable_stage_gates,
             "max_run_seconds": settings.orch_max_run_seconds,
+            "orch_heavy_brain_enabled": settings.orch_heavy_brain_enabled,
         }
 
     def _compute_input_hash(self) -> str:

@@ -42,9 +42,15 @@ class Settings(BaseSettings):
     orch_enable_adaptive_policy: bool = Field(default=False)
     orch_enable_stage_gates: bool = Field(default=True)
     orch_max_run_seconds: int = Field(default=420)
+    # After Gemini classification, call HEAVY_MODEL (e.g. Kimi) to refine skips + shared brief
+    orch_heavy_brain_enabled: bool = Field(default=True)
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")
+    # Optional: custom voice (see ElevenLabs voice library). Empty = default Rachel voice in TTS client.
+    elevenlabs_voice_id: str = Field(default="")
+    # Short spoken cues when each pipeline agent starts (separate MP3s under narration_steps/).
+    elevenlabs_pipeline_narration: bool = Field(default=True)
     jwt_secret: str = Field(default="change-me-in-production-use-a-long-random-string")
     jwt_algorithm: str = Field(default="HS256")
     jwt_expire_hours: int = Field(default=48)

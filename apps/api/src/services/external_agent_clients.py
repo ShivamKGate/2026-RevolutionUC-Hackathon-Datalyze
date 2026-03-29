@@ -20,6 +20,16 @@ ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
 
+def normalize_openai_compat_model_slug(model: str) -> str:
+    """Same routing as CrewAI/registry: org/model slugs need an openai/ prefix for Featherless."""
+    normalized = (model or "").strip()
+    if not normalized:
+        return normalized
+    if "/" in normalized and not normalized.startswith(("openai/", "azure/", "gemini/")):
+        return f"openai/{normalized}"
+    return normalized
+
+
 def llm_chat_completion(
     model: str,
     user_message: str,
@@ -29,6 +39,8 @@ def llm_chat_completion(
     """Send a chat completion via Featherless (OpenAI-compatible API)."""
     if not settings.llm_api_key_configured:
         raise ValueError("LLM_API_KEY is not set in apps/api/.env")
+
+    model = normalize_openai_compat_model_slug(model)
 
     base = settings.llm_base_url.rstrip("/")
     url = f"{base}/chat/completions"
@@ -107,15 +119,18 @@ def elevenlabs_synthesize_mp3(text: str, voice_id: str | None = None) -> bytes:
     if not settings.elevenlabs_api_key_configured:
         raise ValueError("ELEVENLABS_API_KEY is not set in apps/api/.env")
 
-    vid = (voice_id or DEFAULT_ELEVENLABS_VOICE_ID).strip()
+    env_voice = (settings.elevenlabs_voice_id or "").strip()
+    vid = (voice_id or env_voice or DEFAULT_ELEVENLABS_VOICE_ID).strip()
     url = ELEVENLABS_TTS_URL.format(voice_id=vid)
     headers = {
         "xi-api-key": settings.elevenlabs_api_key.strip(),
         "Content-Type": "application/json",
         "Accept": "audio/mpeg",
     }
+    # Insight podcast scripts can be ~250–350 words; cap under typical TTS request limits.
+    max_chars = min(len(text), 5000)
     payload = {
-        "text": text[:2500],
+        "text": text[:max_chars],
         "model_id": "eleven_multilingual_v2",
     }
 

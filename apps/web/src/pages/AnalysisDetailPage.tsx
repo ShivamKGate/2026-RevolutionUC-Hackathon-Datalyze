@@ -15,7 +15,7 @@ import {
   type PipelineRun,
   type PipelineRunLog,
 } from "../lib/api";
-import { TrackRenderer } from "../components/analysis";
+import { PodcastPlaybookPlayer, TrackRenderer } from "../components/analysis";
 import { ExportButton } from "../components/analysis/shared/ExportButton";
 const OrchestrationModeling = lazy(() =>
   import("../components/analysis/orchestration/OrchestrationModeling").then(
@@ -465,6 +465,8 @@ export default function AnalysisDetailPage() {
             </p>
           </div>
         )}
+
+        <PodcastPlaybookPlayer slug={run.slug} runStatus={run.status} />
 
         {viewRun.summary && (
           <div className="analysis-summary">{viewRun.summary}</div>

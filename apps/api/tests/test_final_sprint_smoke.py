@@ -7,6 +7,24 @@ import time
 from fastapi.testclient import TestClient
 
 
+def test_is_agent_ready_treats_skipped_deps_as_satisfied() -> None:
+    from services.orchestrator_runtime import policies
+
+    deps = {"insight_generation": ["aggregator", "trend_forecasting"]}
+    assert not policies.is_agent_ready(
+        "insight_generation",
+        ["aggregator"],
+        deps,
+        skipped=[],
+    )
+    assert policies.is_agent_ready(
+        "insight_generation",
+        ["aggregator"],
+        deps,
+        skipped=["trend_forecasting"],
+    )
+
+
 def test_time_budget_includes_wrap_up_phase() -> None:
     from services.orchestrator_runtime import policies
 
