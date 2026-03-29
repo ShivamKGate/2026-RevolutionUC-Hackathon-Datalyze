@@ -236,6 +236,131 @@ def _resolve_executive_summary_text(context: dict[str, Any]) -> str:
     return ""
 
 
+def _word_count_spoken(s: str) -> int:
+    return len([w for w in (s or "").split() if w.strip()])
+
+
+def _strip_podcast_script(raw: str) -> str:
+    """Remove accidental fences or labels from LLM output."""
+    t = (raw or "").strip()
+    t = re.sub(r"^```(?:\w*)?\s*", "", t, flags=re.MULTILINE)
+    t = re.sub(r"\s*```\s*$", "", t)
+    t = re.sub(r"^(?:Podcast script|Script|Transcript)\s*:\s*", "", t, flags=re.IGNORECASE)
+    return t.strip()
+
+
+def _build_podcast_source_material(context: dict[str, Any]) -> str:
+    """Aggregate executive summary + key structured agent outputs for podcast script LLM."""
+    chunks: list[str] = []
+    prior = context.get("prior_outputs") or {}
+    company = context.get("company_name", "Unknown Company")
+    track = context.get("track", "predictive")
+
+    exec_flat = _resolve_executive_summary_text(context)
+    if exec_flat:
+        chunks.append(f"--- Executive synthesis (verbatim) ---\n{exec_flat[:6000]}")
+
+    structured = _collect_structured_outputs(prior)
+    priority = (
+        "insight_generation",
+        "swot_analysis",
+        "trend_forecasting",
+        "conflict_detection",
+        "sentiment_analysis",
+        "executive_summary",
+        "aggregator",
+        "automation_strategy",
+    )
+    for aid in priority:
+        blob = structured.get(aid)
+        if not isinstance(blob, dict) or not blob:
+            continue
+        try:
+            compact = json.dumps(blob, ensure_ascii=False)[:3500]
+        except (TypeError, ValueError):
+            compact = str(blob)[:3500]
+        chunks.append(f"--- {aid} (structured JSON) ---\n{compact}")
+
+    for aid, env in prior.items():
+        if aid in (
+            "elevenlabs_narration",
+            "pipeline_classifier",
+            "output_evaluator",
+        ):
+            continue
+        if aid in structured:
+            continue
+        summ = (env.get("summary") or "").strip()
+        if 120 < len(summ) < 2000:
+            chunks.append(f"--- {aid} (agent summary) ---\n{summ[:1800]}")
+
+    body = "\n\n".join(chunks)
+    header = f"Company: {company}. Analysis track: {track}.\n\n"
+    return (header + body)[:14000]
+
+
+def _generate_podcast_script_via_llm(context: dict[str, Any]) -> str:
+    """Synthesize a 1–1.5 minute spoken podcast script from analysis outputs."""
+    if not settings.llm_api_key_configured:
+        return ""
+
+    source = _build_podcast_source_material(context)
+    if not source.strip():
+        return ""
+
+    company = context.get("company_name", "this company")
+    track = context.get("track", "analysis")
+
+    from services.external_agent_clients import llm_chat_completion
+
+    user_message = (
+        "Write a single continuous podcast monologue for listeners who want a spoken briefing "
+        "on a business analysis run.\n\n"
+        "SOURCE MATERIAL (fragments, JSON, and summaries — synthesize into one coherent story):\n"
+        f"{source}\n\n"
+        "STRICT RULES:\n"
+        "- Output ONLY the words to be read aloud by a text-to-speech voice.\n"
+        "- No markdown, no bullet characters, no section headers, no stage directions, "
+        "no 'host:', no music cues, no timestamps.\n"
+        "- Length: between 240 and 320 words (about 1 to 1.5 minutes at normal speaking pace). "
+        "Do not exceed 320 words.\n"
+        "- Open with one or two engaging sentences that welcome the listener and name the company "
+        f"and that this is the {track} analysis insights.\n"
+        "- Weave together the most important findings, tradeoffs, risks, and opportunities from the source.\n"
+        "- Include concrete next actions or recommendations when the source material supports them.\n"
+        "- Do not invent numbers, companies, or facts not present or clearly implied in the source.\n"
+        "- Close with one short memorable sign-off (one sentence).\n"
+        "- Use plain sentences; vary rhythm so it sounds natural when spoken.\n"
+    )
+
+    try:
+        raw = llm_chat_completion(
+            model=settings.heavy_alt_model or settings.heavy_model,
+            user_message=user_message,
+            system_instruction=(
+                "You write only spoken podcast scripts for business intelligence. "
+                "You never add preamble or commentary outside the script."
+            ),
+            max_tokens=1100,
+        )
+    except Exception as exc:
+        logger.warning("Podcast script LLM call failed: %s", exc)
+        return ""
+
+    script = _strip_podcast_script(raw)
+    wc = _word_count_spoken(script)
+    if wc < 120:
+        logger.warning(
+            "Podcast script too short (%s words, need ~120+); will use fallback", wc,
+        )
+        return ""
+    if wc > 380:
+        # Hard cap so TTS stays ~1.5 min; trim at sentence boundary near 320 words
+        words = script.split()
+        script = " ".join(words[:320])
+    return script
+
+
 def _collect_structured_outputs(
     prior_outputs: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
@@ -446,7 +571,7 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
 
 
 def _run_elevenlabs_narration(context: dict[str, Any]) -> AgentEnvelope:
-    """Generate audio narration from executive summary (reads prior_outputs if needed)."""
+    """Generate insight podcast MP3: LLM-written script from full analysis, then ElevenLabs TTS."""
     summary_text = _resolve_executive_summary_text(context)
     if not summary_text:
         return AgentEnvelope.warning_envelope("No executive summary available for narration")
@@ -454,12 +579,20 @@ def _run_elevenlabs_narration(context: dict[str, Any]) -> AgentEnvelope:
     if not settings.elevenlabs_api_key_configured:
         return AgentEnvelope.warning_envelope("ElevenLabs API key not configured")
 
-    intro = (
-        "Welcome to your Datalyze insight podcast — a short audio playbook for this analysis. "
-        "Here are the key takeaways. "
-    )
-    full_narration = intro + summary_text
-    tts_payload = full_narration[:2500]
+    script_llm = _generate_podcast_script_via_llm(context)
+    if script_llm.strip():
+        script = script_llm
+        script_source = "llm_podcast"
+    else:
+        script = (
+            "Welcome to your Datalyze insight briefing. "
+            "Here is the executive summary for this analysis. "
+            + summary_text
+        )
+        script_source = "fallback_exec_summary"
+        logger.info("Using fallback narration script (podcast LLM unavailable or too short)")
+
+    tts_payload = script[:5000]
 
     try:
         from services.external_agent_clients import elevenlabs_synthesize_mp3
@@ -473,27 +606,29 @@ def _run_elevenlabs_narration(context: dict[str, Any]) -> AgentEnvelope:
             rel = str(audio_path.relative_to(base))
             return AgentEnvelope(
                 status="ok",
-                summary="Audio narration generated from executive summary",
+                summary="Insight podcast audio generated (LLM script + ElevenLabs)",
                 confidence=1.0,
                 artifacts=[
                     {
                         "type": "audio",
                         "path": rel,
                         "format": "mp3",
-                        "narration_text": tts_payload[:1200],
+                        "narration_text": tts_payload[:2000],
                         "status": "ok",
+                        "script_source": script_source,
+                        "approx_word_count": _word_count_spoken(tts_payload),
                     },
                 ],
             )
         return AgentEnvelope(
             status="ok",
-            summary="Audio narration generated (in memory)",
+            summary="Insight podcast audio generated (in memory)",
             confidence=1.0,
             artifacts=[
                 {
                     "type": "audio",
                     "format": "mp3",
-                    "narration_text": tts_payload[:1200],
+                    "narration_text": tts_payload[:2000],
                     "status": "ok",
                 },
             ],

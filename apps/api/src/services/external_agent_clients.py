@@ -115,8 +115,10 @@ def elevenlabs_synthesize_mp3(text: str, voice_id: str | None = None) -> bytes:
         "Content-Type": "application/json",
         "Accept": "audio/mpeg",
     }
+    # Insight podcast scripts can be ~250–350 words; cap under typical TTS request limits.
+    max_chars = min(len(text), 5000)
     payload = {
-        "text": text[:2500],
+        "text": text[:max_chars],
         "model_id": "eleven_multilingual_v2",
     }
 
