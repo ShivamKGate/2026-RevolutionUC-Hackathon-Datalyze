@@ -25,3 +25,5 @@ Miscellaneous/data/sources
 
 # Local private uploads per company (public scrape artifacts under data/company/*/public/ may be committed)
 data/company/**/private/
+
+Miscellaneous/tests/
