@@ -24,16 +24,19 @@ SYSTEM_PROMPT = build_system_prompt(
         "Handle multi-sheet workbooks by producing a separate entry per sheet.\n\n"
         "Output schema:\n"
         "{\n"
-        '  "sheets": [{"sheet_name": "...", "rows": N, "columns": N, '
-        '"headers": ["col1", ...], "sample_data": [[...], ...]}],\n'
-        '  "workbook_metadata": {"total_sheets": N, "file_size_hint": "..."}\n'
+        '  "sheets": [{"sheet_name": "...", "rows": N, "columns": N, "headers": ["col1", ...], "sample_data": [[...], ...]}],\n'
+        '  "column_metadata": [{"sheet_name": "...", "column": "name", "type": "string|numeric|date|boolean", "nullable": true|false}],\n'
+        '  "data_preview": {"sheet_name": "...", "headers": ["col1"], "rows": [[...], [...]]},\n'
+        '  "detected_schema": {"time_columns": ["date_col"], "measure_columns": ["sales"], "dimension_columns": ["region"]},\n'
+        '  "workbook_metadata": {"total_sheets": N, "file_size_hint": "..."},\n'
+        '  "chart_suggestions": ["kpi_card", "bar_chart", "time_series_chart"]\n'
         "}\n\n"
         "Preserve named ranges and note formula presence if detectable."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["sheets", "workbook_metadata"],
+    "required": ["sheets", "column_metadata", "data_preview", "detected_schema", "workbook_metadata", "chart_suggestions"],
     "optional": ["named_ranges", "formulas_detected"],
 }
 
@@ -53,9 +56,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
         description=(
             "Process the Excel workbook and extract per-sheet data with "
             "headers and metadata. "
+            "Include column_metadata, data_preview, detected_schema, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: sheets, workbook_metadata',
+        expected_output="JSON object with keys: sheets, column_metadata, data_preview, detected_schema, workbook_metadata, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

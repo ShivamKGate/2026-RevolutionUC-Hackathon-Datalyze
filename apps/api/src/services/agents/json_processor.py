@@ -25,14 +25,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "Output schema:\n"
         "{\n"
         '  "records": [{"path": "root.field.subfield", "value": ..., "type": "string|number|bool|null|array|object"}],\n'
-        '  "nested_map": {"max_depth": N, "paths": ["root.a", "root.a.b", ...]}\n'
+        '  "column_metadata": [{"path": "root.a.b", "type": "string|number|bool|null|array|object"}],\n'
+        '  "data_preview": {"sample_records": [{"path": "root.a", "value": "..."}]},\n'
+        '  "detected_schema": {"max_depth": N, "time_fields": ["root.date"], "measure_fields": ["root.revenue"]},\n'
+        '  "nested_map": {"max_depth": N, "paths": ["root.a", "root.a.b", ...]},\n'
+        '  "chart_suggestions": ["kpi_card", "bar_chart", "time_series_chart"]\n'
         "}\n\n"
         "Keep parent-child path references for provenance tracking."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["records", "nested_map"],
+    "required": ["records", "column_metadata", "data_preview", "detected_schema", "nested_map", "chart_suggestions"],
     "optional": ["array_lengths", "depth"],
 }
 
@@ -52,9 +56,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
         description=(
             "Process the JSON document, flatten nested structures, and map "
             "parent-child relationships. "
+            "Include column_metadata, data_preview, detected_schema, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: records, nested_map',
+        expected_output="JSON object with keys: records, column_metadata, data_preview, detected_schema, nested_map, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

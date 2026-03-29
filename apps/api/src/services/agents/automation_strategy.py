@@ -20,23 +20,34 @@ SYSTEM_PROMPT = build_system_prompt(
     core_instructions=(
         "You recommend practical automation opportunities based on operations "
         "and process evidence from the aggregated corpus.\n\n"
-        "Produce 2-3 concrete automation suggestions, each with a clear "
-        "implementation path (2-3 steps), feasibility assessment, and "
-        "expected impact.\n\n"
+        "Analyze process candidates and return structured process-level "
+        "automation opportunities with bottlenecks and SOP drafting hints.\n\n"
         "Output schema:\n"
         "{\n"
-        '  "suggestions": [{"title": "...", "description": "...", "steps": ["Step 1", "Step 2"], '
-        '"feasibility": "high|medium|low", "expected_impact": "...", '
-        '"prerequisites": ["..."]}]\n'
+        '  "processes": [\n'
+        "    {\n"
+        '      "name": "string",\n'
+        '      "current_time_hours": N,\n'
+        '      "automated_time_hours": N,\n'
+        '      "cost_current": N,\n'
+        '      "cost_automated": N,\n'
+        '      "roi_months": N,\n'
+        '      "implementation_effort": "low|medium|high",\n'
+        '      "impact_score": 0.0-1.0\n'
+        "    }\n"
+        "  ],\n"
+        '  "bottlenecks": [{"stage": "string", "time_pct": N, "cost_pct": N}],\n'
+        '  "sop_draft": {"steps": ["string"], "estimated_savings_annual": N},\n'
+        '  "chart_suggestions": ["process_sankey", "roi_bubble_chart", "automation_matrix"]\n'
         "}\n\n"
-        "Suggestions only — no full implementation. "
-        "Focus on actionable, practical automation for the specific business."
+        "Focus on actionable, practical automation for the specific business. "
+        "Use realistic ranges grounded in provided evidence and avoid speculative extremes."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["suggestions"],
-    "optional": ["feasibility_scores", "implementation_steps", "prerequisites"],
+    "required": ["processes", "bottlenecks", "sop_draft", "chart_suggestions"],
+    "optional": [],
 }
 
 
@@ -53,11 +64,11 @@ def build_agent(llm: LLM) -> Agent:
 def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
     return Task(
         description=(
-            "Based on operations evidence, recommend 2-3 practical automation "
-            "opportunities with implementation steps and feasibility assessment. "
+            "Based on operations evidence, analyze automation opportunities and return "
+            "process metrics, bottlenecks, SOP draft, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with key: suggestions (array of suggestion objects)',
+        expected_output="JSON object with keys: processes, bottlenecks, sop_draft, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

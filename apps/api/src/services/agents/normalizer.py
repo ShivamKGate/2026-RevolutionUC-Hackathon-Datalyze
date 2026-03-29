@@ -26,6 +26,23 @@ from services.agents.contracts import AGENT_CONTRACTS, AgentContract
 
 
 def _extract_summary(agent_id: str, output: dict[str, Any]) -> str:
+    if agent_id == "output_evaluator" and isinstance(output.get("charts"), list):
+        nc = len(output["charts"])
+        nk = len(output.get("kpi_cards") or [])
+        oc = output.get("overall_confidence", "")
+        return f"Visualization plan: {nc} chart(s), {nk} KPI card(s), overall_confidence={oc}"
+    if "file_routing_map" in output and isinstance(output["file_routing_map"], dict):
+        n = len(output["file_routing_map"])
+        return f"Routed {n} file(s) to processors"
+    if (
+        agent_id == "pipeline_classifier"
+        and isinstance(output.get("reasoning"), str)
+        and "track" in output
+    ):
+        tr = output.get("track", "")
+        conf = output.get("confidence", "")
+        reason = output["reasoning"][:400]
+        return f"Track: {tr} (confidence {conf}). {reason}"
     for key in ("summary", "answer", "narration_text"):
         if key in output:
             val = output[key]
@@ -37,12 +54,60 @@ def _extract_summary(agent_id: str, output: dict[str, Any]) -> str:
     if "chunks" in output and isinstance(output["chunks"], list):
         return f"Processed {len(output['chunks'])} chunk(s)"
     if "nodes" in output:
-        return f"Built graph with {len(output.get('nodes', []))} nodes"
+        n = len(output.get("nodes", []))
+        if agent_id == "knowledge_graph_builder" and isinstance(output.get("edges"), list):
+            m = len(output["edges"])
+            return f"Built graph with {n} nodes and {m} edges"
+        return f"Built graph with {n} nodes"
     return f"Agent {agent_id} completed successfully"
 
 
 def _extract_artifacts(output: dict[str, Any]) -> list[Any]:
     artifacts = []
+    if "file_routing_map" in output and isinstance(output["file_routing_map"], dict):
+        artifacts.append(
+            {"kind": "file_routing_map", "map": output["file_routing_map"]}
+        )
+    if (
+        "track" in output
+        and "recommended_agents" in output
+        and "skip_agents" in output
+    ):
+        artifacts.append(
+            {
+                "kind": "pipeline_classification",
+                "track": output.get("track"),
+                "confidence": output.get("confidence"),
+                "reasoning": output.get("reasoning"),
+                "secondary_track": output.get("secondary_track"),
+                "file_types_detected": output.get("file_types_detected"),
+                "data_domains_detected": output.get("data_domains_detected"),
+                "recommended_agents": output.get("recommended_agents"),
+                "skip_agents": output.get("skip_agents"),
+                "priority_map": output.get("priority_map"),
+                "scraper_strategy": output.get("scraper_strategy"),
+            }
+        )
+    if (
+        isinstance(output.get("nodes"), list)
+        and isinstance(output.get("edges"), list)
+        and "clusters" in output
+    ):
+        artifacts.append(
+            {
+                "kind": "knowledge_graph",
+                "nodes": output.get("nodes"),
+                "edges": output.get("edges"),
+                "clusters": output.get("clusters"),
+                "chart_suggestions": output.get("chart_suggestions"),
+            }
+        )
+    if (
+        isinstance(output.get("kpi_cards"), list)
+        and isinstance(output.get("charts"), list)
+        and "confidence_breakdown" in output
+    ):
+        artifacts.append({"kind": "visualization_plan", "plan": dict(output)})
     for key in ("artifacts", "chunks", "records", "sheets", "forecasts", "suggestions", "insights"):
         if key in output and isinstance(output[key], list):
             artifacts.extend(output[key])
@@ -53,6 +118,11 @@ def _extract_confidence(output: dict[str, Any]) -> float:
     if "confidence" in output:
         try:
             return float(output["confidence"])
+        except (TypeError, ValueError):
+            pass
+    if "overall_confidence" in output:
+        try:
+            return float(output["overall_confidence"])
         except (TypeError, ValueError):
             pass
     if "confidence_scores" in output and isinstance(output["confidence_scores"], list):

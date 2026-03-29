@@ -24,14 +24,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "Output schema (keep compact, max 3 sample chunks):\n"
         "{\n"
         '  "chunks": [{"chunk_id": "c1", "page": 1, "content": "...", "type": "text"}],\n'
-        '  "page_map": {"total_pages": 1, "chunks_per_page": {"1": 1}}\n'
+        '  "column_metadata": [],\n'
+        '  "data_preview": {"sample_chunks": [{"chunk_id": "c1", "page": 1, "content": "..."}]},\n'
+        '  "detected_schema": {"sections": ["financial_summary", "operations"], "tables_detected": N},\n'
+        '  "page_map": {"total_pages": 1, "chunks_per_page": {"1": 1}},\n'
+        '  "chart_suggestions": ["kpi_card", "section_bar_chart"]\n'
         "}\n\n"
         "Keep chunk content brief. Focus on structure over verbosity."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["chunks", "page_map"],
+    "required": ["chunks", "column_metadata", "data_preview", "detected_schema", "page_map", "chart_suggestions"],
     "optional": ["tables", "charts", "ocr_used"],
 }
 
@@ -51,9 +55,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
         description=(
             "Parse the provided PDF document into semantic chunks with page mapping. "
             "Extract tables and chart references if present. "
+            "Include data_preview, detected_schema, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: chunks, page_map',
+        expected_output="JSON object with keys: chunks, column_metadata, data_preview, detected_schema, page_map, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

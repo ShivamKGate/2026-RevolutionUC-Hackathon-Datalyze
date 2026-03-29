@@ -25,15 +25,17 @@ SYSTEM_PROMPT = build_system_prompt(
         "Output schema:\n"
         "{\n"
         '  "contradictions": [{"id": "...", "description": "...", "side_a": "...", '
-        '"side_b": "...", "severity": "high|medium|low", "confidence": 0.0-1.0}],\n'
-        '  "supporting_references": [{"contradiction_id": "...", "source_items": ["item_id1", "item_id2"]}]\n'
+        '"side_b": "...", "severity": "high|medium|low", "confidence": 0.0-1.0, '
+        '"resolution_suggestion": "string"}],\n'
+        '  "supporting_references": [{"contradiction_id": "...", "source_items": ["item_id1", "item_id2"]}],\n'
+        '  "chart_suggestions": ["conflict_severity_bar", "conflict_resolution_table"]\n'
         "}\n\n"
         "Only report genuine conflicts, not differences in granularity or perspective."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["contradictions", "supporting_references"],
+    "required": ["contradictions", "supporting_references", "chart_suggestions"],
     "optional": ["severity_levels", "confidence"],
 }
 
@@ -53,9 +55,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
         description=(
             "Analyze the aggregated corpus for contradictions and conflicts. "
             "Report each with severity, confidence, and supporting references. "
+            "Include resolution_suggestion for each contradiction and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: contradictions, supporting_references',
+        expected_output="JSON object with keys: contradictions, supporting_references, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )
