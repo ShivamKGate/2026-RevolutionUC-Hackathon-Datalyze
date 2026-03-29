@@ -136,6 +136,39 @@ def db_insert_run_log(
         db.close()
 
 
+def db_find_latest_matching_completed_run(
+    company_id: int,
+    input_hash: str,
+    exclude_run_id: int,
+) -> dict[str, Any] | None:
+    """Latest completed run with same input_hash (excluding exclude_run_id), or None.
+
+    Used for deduplication (caller compares started_at age) and prior-run notes.
+    """
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                "SELECT run_slug, started_at FROM pipeline_runs "
+                "WHERE company_id = :cid "
+                "  AND input_hash = :hash "
+                "  AND input_hash IS NOT NULL "
+                "  AND input_hash <> '' "
+                "  AND status IN ('completed', 'completed_with_warnings') "
+                "  AND id <> :rid "
+                "ORDER BY started_at DESC NULLS LAST LIMIT 1"
+            ),
+            {"cid": company_id, "hash": input_hash, "rid": exclude_run_id},
+        ).fetchone()
+        if not row:
+            return None
+        return {"run_slug": row.run_slug, "started_at": row.started_at}
+    except Exception:
+        return None
+    finally:
+        db.close()
+
+
 def db_update_run_status(
     run_id: int,
     status: str,
@@ -146,6 +179,7 @@ def db_update_run_status(
     config_json: dict | None = None,
     replay_payload: dict | None = None,
     run_dir_path: str | None = None,
+    input_hash: str | None = None,
 ) -> None:
     """Update pipeline_runs row with current status and optional projections."""
     db = SessionLocal()
@@ -174,8 +208,11 @@ def db_update_run_status(
         if run_dir_path is not None:
             sets.append("run_dir_path = :rdp")
             params["rdp"] = run_dir_path
+        if input_hash is not None:
+            sets.append("input_hash = :ihash")
+            params["ihash"] = input_hash
 
-        if status in ("completed", "completed_with_warnings", "failed"):
+        if status in ("completed", "completed_with_warnings", "failed", "duplicate"):
             sets.append("ended_at = NOW()")
 
         sql = f"UPDATE pipeline_runs SET {', '.join(sets)} WHERE id = :rid"

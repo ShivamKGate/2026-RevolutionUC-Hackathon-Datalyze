@@ -64,11 +64,15 @@ def check_time_budget(start_time: float, max_seconds: int | None = None) -> dict
     max_s = max_seconds if max_seconds is not None else settings.orch_max_run_seconds
     elapsed = time.time() - start_time
     remaining = max(0, max_s - elapsed)
+    wrap_up_threshold = max_s - 120  # 2 minutes before deadline
+    in_wrap_up = elapsed >= wrap_up_threshold
     return {
         "elapsed_seconds": round(elapsed, 1),
         "max_seconds": max_s,
         "remaining_seconds": round(remaining, 1),
         "budget_exceeded": remaining <= 0,
+        "in_wrap_up_phase": in_wrap_up,
+        "wrap_up_started_at": wrap_up_threshold,
     }
 
 

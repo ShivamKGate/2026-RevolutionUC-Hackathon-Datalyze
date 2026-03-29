@@ -105,7 +105,7 @@ TRACK_PROFILES: dict[TrackID, TrackProfile] = {
         track_id=TrackID.PREDICTIVE,
         name="Predictive / Trend Forecasting",
         description="KPI projections, confidence bands, executive projections",
-        focus_agents=["trend_forecasting", "insight_generation"],
+        focus_agents=["trend_forecasting", "insight_generation", "sentiment_analysis"],
         stages=[
             _CLASSIFY_STAGE,
             _INGEST_STAGE,
@@ -154,7 +154,8 @@ TRACK_PROFILES: dict[TrackID, TrackProfile] = {
             ),
             StageConfig(
                 stage_id=StageID.SYNTHESIZE,
-                agents=["insight_generation", "automation_strategy", "swot_analysis"],
+                agents=["insight_generation", "automation_strategy"],
+                optional_agents=["swot_analysis"],
                 quality_gate=True,
             ),
             _FINALIZE_STAGE,
@@ -213,7 +214,8 @@ TRACK_PROFILES: dict[TrackID, TrackProfile] = {
             ),
             StageConfig(
                 stage_id=StageID.SYNTHESIZE,
-                agents=["insight_generation", "swot_analysis"],
+                agents=["insight_generation"],
+                optional_agents=["swot_analysis"],
                 quality_gate=True,
             ),
             _FINALIZE_STAGE,

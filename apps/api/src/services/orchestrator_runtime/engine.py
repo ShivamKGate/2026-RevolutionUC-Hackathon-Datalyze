@@ -12,6 +12,7 @@ Integration note for Shivam's specialization branch:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import secrets
@@ -34,6 +35,7 @@ from services.orchestrator_runtime.contracts import (
 )
 from services.orchestrator_runtime.persistence import (
     append_decision,
+    db_find_latest_matching_completed_run,
     db_insert_artifacts,
     db_insert_run_log,
     db_update_run_status,
@@ -62,6 +64,80 @@ from services.orchestrator_runtime.track_profiles import (
 from services.run_paths import create_run_directory, run_dir_relative
 
 logger = logging.getLogger("orchestrator")
+
+_GENERIC_OUTPUT_PHRASES = frozenset({
+    "completed", "done", "ok", "success", "finished", "complete",
+    "task completed", "analysis complete", "analysis done",
+})
+
+
+def _is_minimal_output(envelope: AgentEnvelope) -> bool:
+    """Return True if the envelope summary is too thin to be actionable."""
+    summary = (envelope.summary or "").strip()
+    return len(summary) < 20 or summary.lower() in _GENERIC_OUTPUT_PHRASES
+
+
+def _needed_processors_from_ftc_result(ftc_result: dict[str, Any]) -> set[str]:
+    """Collect processor agent IDs from file_type_classifier JSON (map or file_routing list)."""
+    needed: set[str] = set()
+    m = ftc_result.get("file_routing_map")
+    if isinstance(m, dict):
+        for v in m.values():
+            if isinstance(v, str) and v.strip():
+                needed.add(v.strip())
+    rows = ftc_result.get("file_routing")
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                p = row.get("processor")
+                if isinstance(p, str) and p.strip():
+                    needed.add(p.strip())
+    return needed
+
+
+def _normalize_classifier_track(raw: str | None, onboarding_path: str) -> str:
+    t = (raw or "").strip().lower().replace("-", "_")
+    valid = {x.value for x in TrackID}
+    if t in valid:
+        return t
+    return resolve_track(onboarding_path).value
+
+
+def _classifier_routing_defaults(canonical_track: str) -> tuple[list[str], list[str]]:
+    """Default skip_agents / recommended_agents when the LLM omits them."""
+    try:
+        tid = TrackID(canonical_track)
+    except ValueError:
+        tid = TrackID.PREDICTIVE
+    profile = get_track_profile(tid)
+    recommended = list(profile.focus_agents)
+    skip: list[str] = []
+    if tid in (TrackID.PREDICTIVE, TrackID.OPTIMIZATION, TrackID.SUPPLY_CHAIN):
+        skip = ["automation_strategy"]
+    return skip, recommended
+
+
+def _finalize_classifier_result(parsed: dict[str, Any], onboarding_path: str) -> dict[str, Any]:
+    nt = _normalize_classifier_track(parsed.get("track"), onboarding_path)
+    merged = {**parsed, "track": nt}
+    d_skip, d_rec = _classifier_routing_defaults(nt)
+    if not merged.get("skip_agents"):
+        merged["skip_agents"] = d_skip
+    if not merged.get("recommended_agents"):
+        merged["recommended_agents"] = d_rec
+    return merged
+
+
+def _artifact_primary_payload(artifacts: list[Any]) -> dict[str, Any]:
+    """First dict payload from agent artifacts (result or data / agent_output)."""
+    if not artifacts or not isinstance(artifacts[0], dict):
+        return {}
+    block = artifacts[0]
+    for key in ("result", "data"):
+        v = block.get(key)
+        if isinstance(v, dict):
+            return v
+    return {}
 
 
 def _build_dependency_map() -> dict[str, list[str]]:
@@ -183,8 +259,20 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
         f"Company context: {context.get('company_name', 'Unknown')}\n"
         f"User goal: {onboarding_path}\n"
         f"Files: {len(context.get('source_file_ids', []))} uploaded\n\n"
-        f"Available tracks: predictive, automation, optimization, supply_chain\n"
-        f"Respond with JSON: {{\"track\": \"<track>\", \"confidence\": 0.9}}"
+        f"Available tracks: predictive, automation, optimization, supply_chain\n\n"
+        "Respond with ONLY a JSON object:\n"
+        "{\n"
+        '  "track": "<one of the four tracks>",\n'
+        '  "confidence": 0.0-1.0,\n'
+        '  "skip_agents": ["<agent_id>", ...],\n'
+        '  "recommended_agents": ["<agent_id>", ...]\n'
+        "}\n"
+        "skip_agents: pipeline agents that are clearly irrelevant for this track "
+        "(use [] if unsure).\n"
+        "recommended_agents: highest-value agents for this track (use [] if unsure).\n"
+        "Valid agent_id examples: automation_strategy, trend_forecasting, "
+        "sentiment_analysis, swot_analysis, conflict_detection, insight_generation, "
+        "knowledge_graph_builder, public_data_scraper."
     )
 
     def _build_llm_envelope(raw: str, source: str) -> AgentEnvelope | None:
@@ -192,6 +280,9 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
             parsed = json.loads(raw)
         except json.JSONDecodeError:
             return None
+        if not isinstance(parsed, dict):
+            return None
+        parsed = _finalize_classifier_result(parsed, onboarding_path)
         return AgentEnvelope(
             status="ok",
             summary=f"Track classified ({source}): {parsed.get('track', track)}",
@@ -218,7 +309,7 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
             model=settings.light_model,
             user_message=prompt,
             system_instruction="You are a pipeline classification agent.",
-            max_tokens=220,
+            max_tokens=450,
         )
         envelope = _build_llm_envelope(raw, "light_model_fallback")
         if envelope is not None:
@@ -229,11 +320,12 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
 
     # Rule-based fallback using onboarding_path
     resolved = resolve_track(onboarding_path)
+    result = _finalize_classifier_result({"track": resolved.value, "confidence": 0.7}, onboarding_path)
     return AgentEnvelope(
         status="ok",
         summary=f"Track classified (rule-based fallback): {resolved.value}",
         confidence=0.7,
-        artifacts=[{"type": "classification", "result": {"track": resolved.value}}],
+        artifacts=[{"type": "classification", "result": result}],
     )
 
 
@@ -287,6 +379,9 @@ def _build_task_prompt(
         summaries = [f"- {aid}: {out.get('summary', 'done')}" for aid, out in prior_outputs.items()]
         prior_summary = "\nPrior agent results:\n" + "\n".join(summaries[-10:])
 
+    retry_hint = context.get("_retry_hint", "")
+    retry_section = f"\n\nIMPORTANT: {retry_hint}" if retry_hint else ""
+
     return (
         f"You are the {spec.name} for the Datalyze platform.\n"
         f"Role: {spec.responsibilities}\n"
@@ -298,6 +393,7 @@ def _build_task_prompt(
         f"Your expected output: {spec.output_description}\n\n"
         f"Produce a concise JSON response with your analysis results. "
         f"Keep output under 500 tokens. Focus on actionable findings."
+        f"{retry_section}"
     )
 
 
@@ -369,6 +465,7 @@ class OrchestratorEngine:
         self.step_counter: int = 0
         self.context: dict[str, Any] = {}
         self.prior_outputs: dict[str, dict[str, Any]] = {}
+        self._input_hash: str = ""
 
     def execute(self) -> None:
         """Run the full pipeline. Called from background thread."""
@@ -388,6 +485,45 @@ class OrchestratorEngine:
             self._init_context()
             self._write_initial_artifacts(now)
 
+            # 1.4 — Deduplication: same inputs within 24h → redirect; older match → note in context
+            self._input_hash = self._compute_input_hash()
+            prior_match = db_find_latest_matching_completed_run(
+                self.company_id, self._input_hash, self.run_id,
+            )
+            if prior_match:
+                started = prior_match["started_at"]
+                if started is not None:
+                    if getattr(started, "tzinfo", None) is None:
+                        started = started.replace(tzinfo=UTC)
+                    else:
+                        started = started.astimezone(UTC)
+                    age_sec = (datetime.now(UTC) - started).total_seconds()
+                    if age_sec < 24 * 3600:
+                        dup_slug = prior_match["run_slug"]
+                        db_update_run_status(
+                            self.run_id,
+                            status="duplicate",
+                            summary=(
+                                "A similar analysis was recently completed. "
+                                "Redirecting to the most recent matching analysis."
+                            ),
+                            replay_payload={
+                                "redirect_to_slug": dup_slug,
+                                "reason": "duplicate_input",
+                            },
+                            input_hash=self._input_hash,
+                        )
+                        db_insert_run_log(
+                            self.run_id, "system", "orchestrator", "duplicate_detected",
+                            f"Duplicate of run {dup_slug}", "info",
+                        )
+                        return
+                self.context["previous_matching_analysis_slug"] = prior_match["run_slug"]
+                self.memory.warnings.append(
+                    f"Prior analysis with the same inputs exists (run {prior_match['run_slug']}); "
+                    "proceeding with a fresh run."
+                )
+
             # Mark run as running in DB
             db_update_run_status(
                 self.run_id,
@@ -395,6 +531,7 @@ class OrchestratorEngine:
                 track=self.track_id.value,
                 config_json=self._build_config_json(),
                 run_dir_path=run_dir_relative(self.run_dir),
+                input_hash=self._input_hash,
             )
 
             db_insert_run_log(
@@ -518,6 +655,67 @@ class OrchestratorEngine:
                     self.memory.pending.remove(a)
                 self.memory.add_event("agent_skipped", a, "No files to process")
 
+        # 1.1a — Classifier-based agent skip list + context routing
+        classifier_artifacts = self.prior_outputs.get("pipeline_classifier", {}).get("artifacts", [])
+        classifier_result = _artifact_primary_payload(classifier_artifacts)
+        if classifier_result:
+            self.context["classifier_routing"] = {
+                "skip_agents": [
+                    x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
+                ],
+                "recommended_agents": [
+                    x for x in (classifier_result.get("recommended_agents") or []) if isinstance(x, str)
+                ],
+            }
+            self.context["prior_outputs"] = self.prior_outputs
+        skip_list: list[str] = [
+            x for x in (classifier_result.get("skip_agents") or []) if isinstance(x, str)
+        ]
+        if skip_list:
+            for a in valid_agents:
+                if (a in skip_list
+                        and a not in self.memory.completed
+                        and a not in self.memory.skipped):
+                    self.memory.skipped.append(a)
+                    if a in self.memory.pending:
+                        self.memory.pending.remove(a)
+                    self.memory.add_event("agent_skipped", a, "Classifier recommended skip")
+
+        # 1.1b — File-type classifier processor routing (file_routing list and/or file_routing_map)
+        if "file_type_classifier" in self.prior_outputs:
+            ftc_artifacts = self.prior_outputs["file_type_classifier"].get("artifacts", [])
+            ftc_result = _artifact_primary_payload(ftc_artifacts)
+            needed_processors = _needed_processors_from_ftc_result(ftc_result)
+            if needed_processors:
+                all_file_processors = {
+                    "pdf_processor", "csv_processor", "excel_processor",
+                    "json_processor", "plain_text_processor", "image_multimodal_processor",
+                }
+                for a in valid_agents:
+                    if (a in all_file_processors
+                            and a not in needed_processors
+                            and a not in self.memory.completed
+                            and a not in self.memory.skipped):
+                        self.memory.skipped.append(a)
+                        if a in self.memory.pending:
+                            self.memory.pending.remove(a)
+                        self.memory.add_event("agent_skipped", a, "No matching file type for this processor")
+
+        # 1.3 — Wrap-up phase: skip optional agents when approaching time limit
+        budget = check_time_budget(self.start_time)
+        self.memory.timing_budget = budget
+        if budget.get("in_wrap_up_phase"):
+            if not any("wrap-up phase" in w for w in self.memory.warnings):
+                self.memory.warnings.append("Entered wrap-up phase — finalizing with available results")
+            for a in stage_config.optional_agents:
+                if (a not in self.memory.completed
+                        and a not in self.memory.failed
+                        and a not in self.memory.skipped):
+                    self.memory.skipped.append(a)
+                    if a in self.memory.pending:
+                        self.memory.pending.remove(a)
+                    self.memory.add_event("agent_skipped", a, "Skipped — wrap-up phase active")
+
         # Orchestrator loop for this stage
         max_stage_iterations = len(valid_agents) * 3  # safety cap
         iteration = 0
@@ -634,6 +832,43 @@ class OrchestratorEngine:
                 if envelope.status != "error":
                     break
                 retry = evaluate_retry(agent_id, envelope, self.memory)
+
+        # 1.5 — Guardrails: retry on empty/minimal output
+        if envelope.status != "error" and _is_minimal_output(envelope):
+            self.memory.add_event("agent_retry", agent_id, "Minimal output — retrying with enhanced context")
+            enhanced_ctx = dict(self.context)
+            enhanced_ctx["prior_outputs"] = self.prior_outputs
+            enhanced_ctx["_retry_hint"] = (
+                "Your previous response was too brief. Provide a detailed, substantive analysis "
+                "with specific findings, metrics, and actionable recommendations."
+            )
+            retry_envelope = _dispatch_agent(agent_id, enhanced_ctx, self.run_dir)
+            if not _is_minimal_output(retry_envelope):
+                envelope = retry_envelope
+            else:
+                self.memory.warnings.append(f"Agent {agent_id} produced minimal output after retry")
+
+        # 1.5 — Guardrails: retry on low confidence (once, only if not already retried)
+        elif (envelope.status != "error"
+              and envelope.confidence < 0.4
+              and self.memory.retries.get(agent_id, 0) == 0):
+            self.memory.add_event(
+                "agent_retry", agent_id,
+                f"Low confidence ({envelope.confidence:.2f}) — retrying with additional context",
+            )
+            enhanced_ctx = dict(self.context)
+            enhanced_ctx["prior_outputs"] = self.prior_outputs
+            enhanced_ctx["_retry_hint"] = (
+                "Your previous response had low confidence. Provide more specific, "
+                "data-driven analysis with concrete figures and evidence."
+            )
+            retry_envelope = _dispatch_agent(agent_id, enhanced_ctx, self.run_dir)
+            if retry_envelope.status != "error":
+                envelope = retry_envelope
+            else:
+                self.memory.warnings.append(
+                    f"Agent {agent_id} confidence {envelope.confidence:.2f} below threshold"
+                )
 
         # Record outcome
         if envelope.status == "error":
@@ -845,3 +1080,13 @@ class OrchestratorEngine:
             "stage_gates_enabled": settings.orch_enable_stage_gates,
             "max_run_seconds": settings.orch_max_run_seconds,
         }
+
+    def _compute_input_hash(self) -> str:
+        """SHA-256 of (company_id, sorted file IDs, track, onboarding_path) for dedup."""
+        raw = (
+            f"{self.company_id}:"
+            f"{sorted(self.source_file_ids)}:"
+            f"{self.track_id.value}:"
+            f"{self.onboarding_path}"
+        )
+        return hashlib.sha256(raw.encode()).hexdigest()

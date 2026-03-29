@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     orch_enable_parallel_branches: bool = Field(default=False)
     orch_enable_adaptive_policy: bool = Field(default=False)
     orch_enable_stage_gates: bool = Field(default=True)
-    orch_max_run_seconds: int = Field(default=900)
+    orch_max_run_seconds: int = Field(default=420)
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
     elevenlabs_api_key: str = Field(default="")
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
             defaults = {
                 "orchestrator_max_retries": 2,
                 "orchestrator_timeout_seconds": 45,
-                "orch_max_run_seconds": 900,
+                "orch_max_run_seconds": 420,
             }
             return defaults.get(info.field_name, 0)
         return v

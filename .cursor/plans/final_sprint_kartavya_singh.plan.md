@@ -21,7 +21,6 @@ isProject: false
 
 ## E2E_Analytics_Co — Demo Company Profile
 
-
 | Field                    | Value                                                                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **Display Name**         | End-to-End Analytics Co.                                                                                                              |
@@ -35,7 +34,6 @@ isProject: false
 | **Data Characteristics** | Multi-department, multi-regional (US East, US West, EU), seasonal patterns, realistic anomalies, growth trajectory with 2 dip periods |
 | **Demo Goal**            | Every analysis track produces rich insights, meaningful charts, and actionable recommendations from this company's data               |
 
-
 This company profile must be referenced in all synthetic data generation, seed scripts, and testing. The demo user (`demo@revuc.com`) is provisioned into this company with admin role.
 
 ---
@@ -43,7 +41,6 @@ This company profile must be referenced in all synthetic data generation, seed s
 ## Ownership & Merge-Safety
 
 ### Files You Own (Exclusive — No Merge Conflicts)
-
 
 | Layer                    | Files / Directories                                                                                                         |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
@@ -58,7 +55,6 @@ This company profile must be referenced in all synthetic data generation, seed s
 | **Supply Chain Visuals** | `apps/web/src/components/analysis/supply_chain/` (NEW)                                                                      |
 | **Synthetic Data**       | `Miscellaneous/data/sources/E2E_Analytics_Co/optimization/` and `Miscellaneous/data/sources/E2E_Analytics_Co/supply_chain/` |
 | **Gitignore**            | `.gitignore` (E2E data rules)                                                                                               |
-
 
 ### Files You Must NOT Edit (Shivam Owns)
 
@@ -89,32 +85,35 @@ This company profile must be referenced in all synthetic data generation, seed s
 The `_execute_stage()` method currently runs all agents listed in the track profile's stage config. The problem is that `track_profiles.py` includes the same large set of agents across all tracks. Fix this:
 
 1. **Consume the `pipeline_classifier` output** from the classify stage:
-  - After the classify stage runs, read `prior_outputs["pipeline_classifier"]` for the `recommended_agents` and `skip_agents` fields (Shivam is adding these to the classifier output)
-  - Update the engine's context with this routing information
-2. **Filter stage agents dynamically:**
+
+- After the classify stage runs, read `prior_outputs["pipeline_classifier"]` for the `recommended_agents` and `skip_agents` fields (Shivam is adding these to the classifier output)
+- Update the engine's context with this routing information
+
+1. **Filter stage agents dynamically:**
 
 ```python
    # In _execute_stage(), after getting valid_agents:
    classifier_output = self.prior_outputs.get("pipeline_classifier", {})
    recommended = classifier_output.get("artifacts", [{}])[0].get("result", {}).get("recommended_agents", [])
    skip_list = classifier_output.get("artifacts", [{}])[0].get("result", {}).get("skip_agents", [])
-   
+
    if skip_list:
        valid_agents = [a for a in valid_agents if a not in skip_list]
-   
+
 
 ```
 
 1. **File-type aware processor filtering:**
-  - After the `file_type_classifier` agent runs in the ingest stage, read its `file_routing_map` from `prior_outputs`
-  - Skip processors that have no matching files:
+
+- After the `file_type_classifier` agent runs in the ingest stage, read its `file_routing_map` from `prior_outputs`
+- Skip processors that have no matching files:
 
 ```python
      file_routing = self.prior_outputs.get("file_type_classifier", {})
      routing_map = ...  # extract from artifacts
      needed_processors = set(routing_map.values())
      # Skip processors not in needed_processors
-     
+
 
 ```
 
@@ -485,12 +484,12 @@ If the API returns `redirect_to_slug` (from deduplication in Phase 1.4):
 Import from Shivam's modules:
 
 ```tsx
-import { TrackRenderer } from '../components/analysis/TrackRenderer';
-import { ExportButton } from '../components/analysis/shared/ExportButton';
-import { ConfidencePanel } from '../components/analysis/shared/ConfidencePanel';
-import { KPIRow } from '../components/analysis/shared/KPIRow';
-import { RecommendationsPanel } from '../components/analysis/shared/RecommendationsPanel';
-import { ExecutiveSummarySection } from '../components/analysis/shared/ExecutiveSummarySection';
+import { TrackRenderer } from "../components/analysis/TrackRenderer";
+import { ExportButton } from "../components/analysis/shared/ExportButton";
+import { ConfidencePanel } from "../components/analysis/shared/ConfidencePanel";
+import { KPIRow } from "../components/analysis/shared/KPIRow";
+import { RecommendationsPanel } from "../components/analysis/shared/RecommendationsPanel";
+import { ExecutiveSummarySection } from "../components/analysis/shared/ExecutiveSummarySection";
 ```
 
 ---
@@ -619,19 +618,19 @@ Generate and save under `Miscellaneous/data/sources/E2E_Analytics_Co/`:
 
 Create at least **4 files**:
 
-1. `**operational_costs_breakdown.csv`** — Monthly cost data by department (Sales, Operations, Finance, HR, Logistics) for 24 months. Columns: month, department, labor_cost, tech_cost, overhead, revenue_generated, margin_pct. ~288 rows (12 months × 5 departments × 2 years + quarterly summaries).
-2. `**department_performance_metrics.xlsx`** — Sheet 1: Department KPIs (productivity, quality, employee satisfaction, customer satisfaction). Sheet 2: Goal progress tracking (quarterly goals, actual vs target). Sheet 3: Resource allocation (headcount, budget, utilization %).
-3. `**strategic_goals_alignment.pdf**` — Company strategic plan document with mission, vision, 5 strategic objectives, current progress, constraints identified, and quarterly review notes.
-4. `**financial_benchmarks.json**` — Industry benchmark data: peer company ratios (gross margin, operating margin, revenue per employee, customer acquisition cost), E2E's relative position, trend over 8 quarters.
+1. `**operational_costs_breakdown.csv` — Monthly cost data by department (Sales, Operations, Finance, HR, Logistics) for 24 months. Columns: month, department, labor_cost, tech_cost, overhead, revenue_generated, margin_pct. ~288 rows (12 months × 5 departments × 2 years + quarterly summaries).
+2. `**department_performance_metrics.xlsx` — Sheet 1: Department KPIs (productivity, quality, employee satisfaction, customer satisfaction). Sheet 2: Goal progress tracking (quarterly goals, actual vs target). Sheet 3: Resource allocation (headcount, budget, utilization %).
+3. `**strategic_goals_alignment.pdf` — Company strategic plan document with mission, vision, 5 strategic objectives, current progress, constraints identified, and quarterly review notes.
+4. `**financial_benchmarks.json` — Industry benchmark data: peer company ratios (gross margin, operating margin, revenue per employee, customer acquisition cost), E2E's relative position, trend over 8 quarters.
 
 ### 7.2 Supply Chain Track Data (`supply_chain/`)
 
 Create at least **4 files**:
 
-1. `**supplier_deliveries_log.csv`** — 1500+ delivery records over 24 months. Columns: order_id, supplier_name, product_category, order_date, promised_delivery, actual_delivery, quantity_ordered, quantity_received, defect_count, cost. Include 8 suppliers with varying reliability.
-2. `**inventory_levels_monthly.xlsx`** — Sheet 1: Monthly inventory by product category (10 categories × 24 months). Sheet 2: Reorder points and safety stock levels. Sheet 3: Stockout incidents with root cause codes.
-3. `**logistics_cost_analysis.pdf**` — Transportation and warehousing cost report with route analysis, carrier performance, seasonal cost variations, and optimization recommendations.
-4. `**procurement_orders_history.json**` — Structured procurement data: purchase orders with supplier, items, quantities, prices, lead times, quality scores. ~500 orders over 24 months.
+1. `**supplier_deliveries_log.csv` — 1500+ delivery records over 24 months. Columns: order_id, supplier_name, product_category, order_date, promised_delivery, actual_delivery, quantity_ordered, quantity_received, defect_count, cost. Include 8 suppliers with varying reliability.
+2. `**inventory_levels_monthly.xlsx` — Sheet 1: Monthly inventory by product category (10 categories × 24 months). Sheet 2: Reorder points and safety stock levels. Sheet 3: Stockout incidents with root cause codes.
+3. `**logistics_cost_analysis.pdf` — Transportation and warehousing cost report with route analysis, carrier performance, seasonal cost variations, and optimization recommendations.
+4. `**procurement_orders_history.json` — Structured procurement data: purchase orders with supplier, items, quantities, prices, lead times, quality scores. ~500 orders over 24 months.
 
 ### 7.3 Data Quality Requirements
 
@@ -708,34 +707,41 @@ Create or contribute to `Miscellaneous/presentation/datalyze_demo.html`.
 **Your sections:**
 
 1. **Cover Slide:**
-  - "Datalyze — Intelligent Business Analytics for Everyone"
-  - Team: Shivam Kharangate & Kartavya Singh
-  - RevolutionUC 2026
-2. **Business Strategy & Social Impact:**
-  - Problem: Small businesses and nonprofits lack access to advanced analytics
-  - Solution: AI-powered platform that makes enterprise-grade analysis accessible
-  - How it works: Upload data → AI agents analyze → Rich visual insights
-  - Social impact: Helping nonprofits understand their operations better
-  - Target users: SMEs, nonprofits, community organizations
-3. **Demo Flow (Scripted):**
-  - Slide with step-by-step demo script:
-  1. Open Datalyze → Show home page
-  2. Login as [demo@revuc.com](mailto:demo@revuc.com)
-  3. Dashboard shows past analyses
-  4. Upload new data files (E2E Analytics Co.)
-  5. Select analysis track → Start analysis
-  6. Watch agents work in real-time (or use replay mode for speed)
-  7. See charts, KPIs, recommendations appear
-  8. Explore knowledge graph
-  9. Export PDF report
-  10. Show admin replay mode
-4. **What's Next / Future Roadmap:**
-  - Scenario simulation (what-if analysis)
-  - Real-time data connectors (live API feeds)
-  - Multi-language support
-  - Mobile app
-  - Enterprise features (team collaboration, audit trails)
-  - Additional analysis tracks
+
+- "Datalyze — Intelligent Business Analytics for Everyone"
+- Team: Shivam Kharangate & Kartavya Singh
+- RevolutionUC 2026
+
+1. **Business Strategy & Social Impact:**
+
+- Problem: Small businesses and nonprofits lack access to advanced analytics
+- Solution: AI-powered platform that makes enterprise-grade analysis accessible
+- How it works: Upload data → AI agents analyze → Rich visual insights
+- Social impact: Helping nonprofits understand their operations better
+- Target users: SMEs, nonprofits, community organizations
+
+1. **Demo Flow (Scripted):**
+
+- Slide with step-by-step demo script:
+
+1. Open Datalyze → Show home page
+2. Login as [demo@revuc.com](mailto:demo@revuc.com)
+3. Dashboard shows past analyses
+4. Upload new data files (E2E Analytics Co.)
+5. Select analysis track → Start analysis
+6. Watch agents work in real-time (or use replay mode for speed)
+7. See charts, KPIs, recommendations appear
+8. Explore knowledge graph
+9. Export PDF report
+10. Show admin replay mode
+11. **What's Next / Future Roadmap:**
+
+- Scenario simulation (what-if analysis)
+- Real-time data connectors (live API feeds)
+- Multi-language support
+- Mobile app
+- Enterprise features (team collaboration, audit trails)
+- Additional analysis tracks
 
 ### 9.2 Presentation Design Notes
 
@@ -776,7 +782,6 @@ These are explicitly deferred:
 
 ## Execution Order & Priority
 
-
 | Priority | Phase                              | Est. Effort  | Dependencies                                 |
 | -------- | ---------------------------------- | ------------ | -------------------------------------------- |
 | **P0**   | Phase 1: Smart Orchestrator Fix    | 2 sessions   | None — start immediately                     |
@@ -789,13 +794,11 @@ These are explicitly deferred:
 | **P2**   | Phase 8: Testing                   | 1–2 sessions | Phases 1-7 complete                          |
 | **P3**   | Phase 9: Presentation              | 1 session    | After all testing passes                     |
 
-
 **Total estimated sessions:** 12–14 focused work sessions
 
 ---
 
 ## Coordination Checkpoints with Shivam
-
 
 | When                 | What                                                                                  |
 | -------------------- | ------------------------------------------------------------------------------------- |
@@ -806,7 +809,6 @@ These are explicitly deferred:
 | **After Phases 5-6** | Shivam reviews your chart components; you review his chart components                 |
 | **Before Phase 9**   | Coordinate presentation HTML structure and design theme                               |
 | **End of each day**  | Joint `npm run dev` walkthrough on one machine                                        |
-
 
 ---
 
@@ -822,4 +824,4 @@ Add the following to `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md`:
 
 ---
 
-*End of Kartavya Singh's Final Sprint Plan*
+_End of Kartavya Singh's Final Sprint Plan_
