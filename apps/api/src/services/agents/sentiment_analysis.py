@@ -25,16 +25,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "{\n"
         '  "sentiments": [{"text_id": "...", "label": "positive|negative|neutral|mixed", '
         '"confidence": 0.0-1.0, "key_phrases": ["..."]}],\n'
-        '  "trend_summary": {"positive_pct": N, "negative_pct": N, "neutral_pct": N, '
-        '"overall_direction": "improving|declining|stable"}\n'
+        '  "trend_summary": {"positive_pct": N, "negative_pct": N, "neutral_pct": N, "mixed_pct": N, '
+        '"overall_direction": "improving|declining|stable"},\n'
+        '  "sentiment_distribution": [{"label": "positive|negative|neutral|mixed", "count": N, "pct": N}],\n'
+        '  "chart_suggestions": ["sentiment_donut", "sentiment_trend_line", "channel_sentiment_bar"]\n'
         "}\n\n"
         "Track source channel metadata when available."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["sentiments", "trend_summary"],
-    "optional": ["chart_payloads", "source_channels", "sample_quotes"],
+    "required": ["sentiments", "trend_summary", "sentiment_distribution", "chart_suggestions"],
+    "optional": ["source_channels", "sample_quotes"],
 }
 
 
@@ -52,9 +54,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
     return Task(
         description=(
             "Classify sentiment for each text segment and summarize overall trends. "
+            "Include sentiment distribution arrays and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: sentiments, trend_summary',
+        expected_output="JSON object with keys: sentiments, trend_summary, sentiment_distribution, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

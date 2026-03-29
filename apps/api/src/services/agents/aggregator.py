@@ -25,16 +25,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "Retain low-value data but deprioritize it.\n\n"
         "Output schema:\n"
         "{\n"
-        '  "corpus": [{"item_id": "...", "content_summary": "...", "source": "...", "relevance_score": 0-100}],\n'
+        '  "corpus": [{"item_id": "...", "content_summary": "...", "source": "...", "category": "financial|operations|customer|market|risk", "relevance_score": 0-100}],\n'
         '  "usefulness_scores": {"high": N, "medium": N, "low": N},\n'
-        '  "storyline_hypotheses": ["Hypothesis 1: ...", "Hypothesis 2: ..."]\n'
+        '  "storyline_hypotheses": ["Hypothesis 1: ...", "Hypothesis 2: ..."],\n'
+        '  "categorized_signals": {"financial": N, "operations": N, "customer": N, "market": N, "risk": N},\n'
+        '  "chart_suggestions": ["signal_distribution_bar", "evidence_priority_histogram"]\n'
         "}\n\n"
         "Ground all hypotheses in cited evidence items."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["corpus", "usefulness_scores", "storyline_hypotheses"],
+    "required": ["corpus", "usefulness_scores", "storyline_hypotheses", "categorized_signals", "chart_suggestions"],
     "optional": ["low_value_retained", "source_distribution"],
 }
 
@@ -53,10 +55,11 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
     return Task(
         description=(
             "Aggregate the cleaned and categorized data with scraper artifacts. "
-            "Prioritize evidence, score usefulness, and generate storyline hypotheses. "
+            "Prioritize evidence, score usefulness, generate storyline hypotheses, and "
+            "return categorized signals with chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: corpus, usefulness_scores, storyline_hypotheses',
+        expected_output="JSON object with keys: corpus, usefulness_scores, storyline_hypotheses, categorized_signals, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

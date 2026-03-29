@@ -24,17 +24,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "specific data points or insights.\n\n"
         "Output schema:\n"
         "{\n"
-        '  "strengths": [{"item": "...", "evidence": "...", "confidence": "high|medium|low"}],\n'
-        '  "weaknesses": [{"item": "...", "evidence": "...", "confidence": "high|medium|low"}],\n'
-        '  "opportunities": [{"item": "...", "evidence": "...", "confidence": "high|medium|low"}],\n'
-        '  "threats": [{"item": "...", "evidence": "...", "confidence": "high|medium|low"}]\n'
+        '  "strengths": [{"item": "string", "evidence": "string", "confidence": 0.0-1.0, "impact_score": 0.0-1.0}],\n'
+        '  "weaknesses": [{"item": "string", "evidence": "string", "confidence": 0.0-1.0, "impact_score": 0.0-1.0}],\n'
+        '  "opportunities": [{"item": "string", "evidence": "string", "confidence": 0.0-1.0, "impact_score": 0.0-1.0}],\n'
+        '  "threats": [{"item": "string", "evidence": "string", "confidence": 0.0-1.0, "impact_score": 0.0-1.0}],\n'
+        '  "chart_suggestions": ["swot_quadrant", "swot_impact_bar"]\n'
         "}\n\n"
         "Ground every SWOT item in cited evidence. No unsupported claims."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["strengths", "weaknesses", "opportunities", "threats"],
+    "required": ["strengths", "weaknesses", "opportunities", "threats", "chart_suggestions"],
     "optional": ["evidence_citations", "priority_scores"],
 }
 
@@ -53,9 +54,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
     return Task(
         description=(
             "Produce a SWOT analysis with 2-5 evidence-grounded items per quadrant. "
+            "Include chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: strengths, weaknesses, opportunities, threats',
+        expected_output="JSON object with keys: strengths, weaknesses, opportunities, threats, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

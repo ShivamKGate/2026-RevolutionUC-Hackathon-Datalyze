@@ -20,14 +20,17 @@ SYSTEM_PROMPT = build_system_prompt(
     core_instructions=(
         "You produce a board-ready executive summary from finalized insights, "
         "SWOT analysis, and risk/conflict highlights.\n\n"
-        "The summary must be concise (150-300 words), actionable, and suitable "
-        "for export. Include key findings, risk highlights, and 2-3 immediate "
-        "next actions.\n\n"
+        "The summary must be concise, actionable, and suitable for export. "
+        "Return structured sections (not a single long paragraph).\n\n"
         "Output schema:\n"
         "{\n"
-        '  "summary": "Board-ready summary paragraph...",\n'
+        '  "headline": "string",\n'
+        '  "situation_overview": "string",\n'
         '  "key_findings": ["Finding 1", "Finding 2", "Finding 3"],\n'
-        '  "next_actions": ["Action 1", "Action 2"]\n'
+        '  "risk_highlights": ["Risk 1", "Risk 2"],\n'
+        '  "next_actions": ["Action 1", "Action 2"],\n'
+        '  "confidence_statement": {"overall_confidence": 0.0-1.0, "basis": "string"},\n'
+        '  "chart_suggestions": ["executive_kpi_cards", "risk_priority_table"]\n'
         "}\n\n"
         "Use professional, direct language. Avoid jargon. "
         "Export-safe formatting (no markdown, no special characters)."
@@ -35,8 +38,8 @@ SYSTEM_PROMPT = build_system_prompt(
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["summary", "key_findings", "next_actions"],
-    "optional": ["risk_highlights", "confidence_statement"],
+    "required": ["headline", "situation_overview", "key_findings", "risk_highlights", "next_actions", "confidence_statement", "chart_suggestions"],
+    "optional": [],
 }
 
 
@@ -53,11 +56,11 @@ def build_agent(llm: LLM) -> Agent:
 def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
     return Task(
         description=(
-            "Write a concise executive summary with key findings and 2-3 "
-            "immediate next actions based on the analysis results. "
+            "Write a concise executive summary in structured sections with key findings, "
+            "risk highlights, next actions, confidence statement, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: summary, key_findings, next_actions',
+        expected_output="JSON object with keys: headline, situation_overview, key_findings, risk_highlights, next_actions, confidence_statement, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )

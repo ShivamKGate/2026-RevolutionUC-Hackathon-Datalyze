@@ -25,15 +25,18 @@ SYSTEM_PROMPT = build_system_prompt(
         "Output schema:\n"
         "{\n"
         '  "rows_summary": {"total_rows": N, "sample_rows": [[...], ...]},\n'
-        '  "inferred_schema": [{"column": "name", "type": "string|numeric|date|boolean", "nullable": true|false}],\n'
-        '  "stats": [{"column": "name", "min": ..., "max": ..., "mean": ..., "null_count": N}]\n'
+        '  "column_metadata": [{"column": "name", "type": "string|numeric|date|boolean", "nullable": true|false, "unique_count": N}],\n'
+        '  "data_preview": {"headers": ["col1"], "rows": [[...], [...]]},\n'
+        '  "detected_schema": {"time_columns": ["date_col"], "measure_columns": ["revenue"], "dimension_columns": ["region"]},\n'
+        '  "stats": [{"column": "name", "min": ..., "max": ..., "mean": ..., "null_count": N}],\n'
+        '  "chart_suggestions": ["kpi_card", "bar_chart", "time_series_chart"]\n'
         "}\n\n"
         "Flag header anomalies or delimiter ambiguities in optional fields."
     ),
 )
 
 OUTPUT_SCHEMA = {
-    "required": ["rows_summary", "inferred_schema", "stats"],
+    "required": ["rows_summary", "column_metadata", "data_preview", "detected_schema", "stats", "chart_suggestions"],
     "optional": ["delimiter", "header_anomalies", "encoding"],
 }
 
@@ -53,9 +56,10 @@ def build_task(agent: Agent, context_tasks: list[Task] | None = None) -> Task:
         description=(
             "Parse the provided CSV data, detect schema and delimiter, "
             "compute summary statistics for numeric columns. "
+            "Include column_metadata, data_preview, detected_schema, and chart_suggestions. "
             "Return ONLY a JSON object matching the required schema."
         ),
-        expected_output='JSON object with keys: rows_summary, inferred_schema, stats',
+        expected_output="JSON object with keys: rows_summary, column_metadata, data_preview, detected_schema, stats, chart_suggestions",
         agent=agent,
         context=context_tasks or [],
     )
