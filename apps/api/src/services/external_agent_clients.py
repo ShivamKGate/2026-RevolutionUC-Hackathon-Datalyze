@@ -19,6 +19,22 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+# ``0`` in settings means “abandon Gemini almost immediately” before falling back to LIGHT_MODEL.
+# httpx requires a strictly positive timeout; 10ms is effectively instant for user-perceived latency.
+_GEMINI_MIN_TIMEOUT_SECONDS = 0.01
+
+
+def _gemini_http_timeout() -> httpx.Timeout:
+    """Short Gemini HTTP budget so fallback to Featherless runs right after failure/stall."""
+    sec = float(settings.gemini_primary_timeout_seconds)
+    if sec <= 0:
+        sec = _GEMINI_MIN_TIMEOUT_SECONDS
+    elif sec > 120.0:
+        sec = 120.0
+    return httpx.Timeout(sec)
+
+
 ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 # Default voice (Rachel) — override via ELEVENLABS_VOICE_ID in env if we add it later
 DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
@@ -169,7 +185,7 @@ def gemini_chat_completion(user_message: str, system_instruction: str | None = N
     if system_instruction:
         body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-    with httpx.Client(timeout=60.0) as client:
+    with httpx.Client(timeout=_gemini_http_timeout()) as client:
         resp = client.post(url, params=params, json=body)
         if resp.status_code >= 400:
             raise RuntimeError(
@@ -287,7 +303,7 @@ def gemini_chat_with_messages(
     if system_instruction:
         body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=_gemini_http_timeout()) as client:
         resp = client.post(url, params=params, json=body)
         if resp.status_code >= 400:
             raise RuntimeError(

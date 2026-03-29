@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from core.config import settings
-from services.external_agent_clients import gemini_or_light_chat_completion
+from services.external_agent_clients import gemini_chat_completion, llm_chat_completion
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def _fallback_title(headline: str, overview: str, track: str) -> str:
 
 
 def propose_analysis_title_from_replay_payload(replay_payload: dict[str, Any]) -> str:
-    """One-line title: Gemini when configured, else light model, else headline / heuristic."""
+    """One-line title: light LLM when configured, else Gemini, else headline / heuristic."""
     headline, overview, track = _headline_overview_track(replay_payload)
     user_msg = (
         f"Analysis track: {track or 'unknown'}\n"
@@ -84,13 +84,27 @@ def propose_analysis_title_from_replay_payload(replay_payload: dict[str, Any]) -
     )
     system = "You name business analyses for dashboards. Output only the title, nothing else."
 
-    if settings.gemini_api_key_configured or settings.llm_api_key_configured:
+    if settings.llm_api_key_configured:
         try:
-            raw = gemini_or_light_chat_completion(user_msg, system, max_tokens=64)
+            raw = llm_chat_completion(
+                settings.light_model,
+                user_msg,
+                system,
+                max_tokens=64,
+            )
             t = _strip_title(raw)
             if t and t != "(empty model response)":
                 return t
         except Exception as e:
-            logger.warning("Title LLM (Gemini or light fallback) failed: %s", e)
+            logger.warning("Title LLM (Featherless/light) failed: %s", e)
+
+    if settings.gemini_api_key_configured:
+        try:
+            raw = gemini_chat_completion(user_msg, system)
+            t = _strip_title(raw)
+            if t and t != "(empty model response)":
+                return t
+        except Exception as e:
+            logger.warning("Title LLM (Gemini) failed: %s", e)
 
     return _fallback_title(headline, overview, track)

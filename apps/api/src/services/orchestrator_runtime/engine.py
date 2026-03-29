@@ -550,7 +550,7 @@ def _dispatch_system_agent(
 
 
 def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
-    """Classify track: Gemini when configured (else light), then light-only retry on bad JSON, then rules."""
+    """Use Gemini to classify track, then LIGHT_MODEL, then rule-based fallback."""
     track = context.get("track", "predictive")
     onboarding_path = context.get("onboarding_path", "")
     prompt = (
@@ -589,46 +589,33 @@ def _run_pipeline_classifier(context: dict[str, Any]) -> AgentEnvelope:
             artifacts=[{"type": "classification", "source": source, "result": parsed}],
         )
 
-    primary_raw: str | None = None
-    try:
-        from services.external_agent_clients import gemini_or_light_chat_completion
-
-        primary_raw = gemini_or_light_chat_completion(
-            prompt,
-            "You are a pipeline classification agent.",
-            max_tokens=450,
-        )
-    except ValueError as exc:
-        logger.warning("Classifier: neither Gemini nor LLM API usable: %s", exc)
-    except Exception as exc:
-        logger.warning("Classifier primary (Gemini or light) failed: %s", exc)
-
-    if primary_raw is not None:
-        envelope = _build_llm_envelope(primary_raw, "gemini_or_light")
-        if envelope is not None:
-            return envelope
-        logger.warning("Classifier returned non-JSON payload; trying LIGHT_MODEL-only retry")
-
-    # Second pass: explicit light model when Gemini was used first but returned garbage JSON,
-    # or when the first leg failed before returning text. Skip if we already had light-only
-    # (no Gemini key) and still got non-JSON — rules handle that.
-    retry_light = not (primary_raw is not None and not settings.gemini_api_key_configured)
-    if retry_light:
+    if settings.gemini_api_key_configured:
         try:
-            from services.external_agent_clients import llm_chat_completion
-
-            raw = llm_chat_completion(
-                model=settings.light_model,
-                user_message=prompt,
-                system_instruction="You are a pipeline classification agent.",
-                max_tokens=450,
-            )
-            envelope = _build_llm_envelope(raw, "light_model_fallback")
+            from services.external_agent_clients import gemini_chat_completion
+            raw = gemini_chat_completion(prompt, "You are a pipeline classification agent.")
+            envelope = _build_llm_envelope(raw, "gemini")
             if envelope is not None:
                 return envelope
-            logger.warning("LIGHT_MODEL classifier retry returned non-JSON payload; using rule fallback")
+            logger.warning("Gemini classifier returned non-JSON payload; trying LIGHT_MODEL fallback")
         except Exception as exc:
-            logger.warning("LIGHT_MODEL classifier retry failed, using rule fallback: %s", exc)
+            logger.warning("Gemini classifier failed, trying LIGHT_MODEL fallback: %s", exc)
+
+    # Backup path: run classification on the configured LIGHT_MODEL via Featherless.
+    try:
+        from services.external_agent_clients import llm_chat_completion
+
+        raw = llm_chat_completion(
+            model=settings.light_model,
+            user_message=prompt,
+            system_instruction="You are a pipeline classification agent.",
+            max_tokens=450,
+        )
+        envelope = _build_llm_envelope(raw, "light_model_fallback")
+        if envelope is not None:
+            return envelope
+        logger.warning("LIGHT_MODEL classifier fallback returned non-JSON payload; using rule fallback")
+    except Exception as exc:
+        logger.warning("LIGHT_MODEL classifier fallback failed, using rule fallback: %s", exc)
 
     # Rule-based fallback using onboarding_path
     resolved = resolve_track(onboarding_path)

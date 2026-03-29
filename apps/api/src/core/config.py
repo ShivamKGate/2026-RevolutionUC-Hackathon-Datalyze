@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     orch_heavy_brain_enabled: bool = Field(default=True)
     gemini_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.5-flash")
+    gemini_primary_timeout_seconds: float = Field(
+        default=0.0,
+        description="Seconds to wait on Gemini HTTP (0 = ~instant abandon, then LIGHT_MODEL fallback).",
+    )
     elevenlabs_api_key: str = Field(default="")
     # Optional: custom voice (see ElevenLabs voice library). Empty = default Rachel voice in TTS client.
     elevenlabs_voice_id: str = Field(default="")
@@ -93,6 +97,13 @@ class Settings(BaseSettings):
     def _strip_modelish_strings(cls, v: object) -> object:
         if isinstance(v, str):
             return v.strip()
+        return v
+
+    @field_validator("gemini_primary_timeout_seconds", mode="before")
+    @classmethod
+    def _gemini_primary_timeout(cls, v: object) -> object:
+        if isinstance(v, str) and not v.strip():
+            return 0.0
         return v
 
     @field_validator("jwt_expire_hours", mode="before")
