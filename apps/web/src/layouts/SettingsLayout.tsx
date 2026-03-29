@@ -1,6 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function SettingsLayout() {
+  const { user } = useAuth();
+
   return (
     <div className="settings-shell">
       <aside className="settings-sidebar">
@@ -36,14 +39,16 @@ export default function SettingsLayout() {
         >
           Preferences
         </NavLink>
-        <NavLink
-          to="/settings/developer"
-          className={({ isActive }) =>
-            "sidebar-link" + (isActive ? " active" : "")
-          }
-        >
-          Developer
-        </NavLink>
+        {user?.role === "admin" && (
+          <NavLink
+            to="/settings/developer"
+            className={({ isActive }) =>
+              "sidebar-link" + (isActive ? " active" : "")
+            }
+          >
+            Developer
+          </NavLink>
+        )}
       </aside>
       <div className="settings-content">
         <Outlet />

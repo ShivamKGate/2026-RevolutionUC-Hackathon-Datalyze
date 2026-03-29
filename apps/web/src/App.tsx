@@ -4,6 +4,7 @@ import PublicLayout from "./layouts/PublicLayout";
 import AppLayout from "./layouts/AppLayout";
 import SettingsLayout from "./layouts/SettingsLayout";
 import RequireAuth from "./components/auth/RequireAuth";
+import RequireAdmin from "./components/auth/RequireAdmin";
 import HomePage from "./pages/HomePage";
 import SetupPage from "./pages/SetupPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -44,7 +45,14 @@ export default function App() {
                 <Route path="company" element={<CompanyPage />} />
                 <Route path="files" element={<UploadedFilesPage />} />
                 <Route path="preferences" element={<PreferencesPage />} />
-                <Route path="developer" element={<DeveloperPage />} />
+                <Route
+                  path="developer"
+                  element={
+                    <RequireAdmin>
+                      <DeveloperPage />
+                    </RequireAdmin>
+                  }
+                />
               </Route>
             </Route>
           </Route>
