@@ -1,10 +1,13 @@
 """
 One-time and idempotent startup seeding: SQL migrations, companies, seven users,
-sample uploads, and a completed demo pipeline run for export/UI testing.
+sample uploads, a completed Google demo pipeline run, and E2E demo analyses.
+
+E2E completed runs are upserted every startup from
+`Miscellaneous/data/sources/E2E_Analytics_Co/analyses.json` (see `scripts/export_e2e_analyses.py`).
 
 Bootstrap version is stored in table `datalyze_bootstrap` (created here if missing).
 User/company rows are upserted on every startup so passwords and roles stay aligned.
-Heavy file + run clone runs only until seed version bumps.
+Heavy file + Google run clone runs only until seed version bumps.
 """
 
 from __future__ import annotations
@@ -291,6 +294,157 @@ def _seed_e2e_misc_files(db, e2e_cid: int, uid_demo: int) -> list[int]:
     return ids
 
 
+def _parse_iso_utc_ts(raw: str | None) -> datetime | None:
+    if not raw or not str(raw).strip():
+        return None
+    s = str(raw).strip().replace("Z", "+00:00")
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
+
+def _resolve_e2e_source_file_ids(
+    db, company_id: int, source_files: list[dict]
+) -> list[int]:
+    """Map analyses.json source_files entries to uploaded_files.id for this company."""
+    ids: list[int] = []
+    for sf in source_files:
+        if not isinstance(sf, dict):
+            continue
+        fn = sf.get("original_filename")
+        if not fn:
+            continue
+        tr = sf.get("analysis_track")
+        row = db.execute(
+            text(
+                """
+                SELECT id FROM uploaded_files
+                WHERE company_id = :cid AND original_filename = :fn
+                  AND (analysis_track IS NOT DISTINCT FROM :tr)
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"cid": company_id, "fn": fn, "tr": tr},
+        ).fetchone()
+        if row:
+            ids.append(int(row.id))
+    return ids
+
+
+def _sync_e2e_analyses_from_json(db, e2e_cid: int, uid_demo: int) -> None:
+    """
+    Upsert pipeline_runs for E2E_Analytics_Co from Miscellaneous/.../analyses.json.
+    Idempotent on slug; resolves source_file_ids from seeded uploaded_files rows.
+    """
+    path = (
+        settings.repo_root
+        / "Miscellaneous"
+        / "data"
+        / "sources"
+        / _COMPANY_E2E
+        / "analyses.json"
+    )
+    if not path.is_file():
+        logger.info("E2E analyses.json missing at %s; skip analyses sync", path)
+        return
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        logger.exception("Failed to read E2E analyses.json")
+        return
+    analyses = payload.get("analyses")
+    if not isinstance(analyses, list) or not analyses:
+        logger.warning("E2E analyses.json has no analyses list; skip")
+        return
+
+    synced = 0
+    for a in analyses:
+        if not isinstance(a, dict):
+            continue
+        slug = a.get("slug")
+        if not slug or not str(slug).strip():
+            continue
+        slug = str(slug).strip()
+        source_files = a.get("source_files")
+        if not isinstance(source_files, list):
+            source_files = []
+        fids = _resolve_e2e_source_file_ids(db, e2e_cid, source_files)
+
+        st = _parse_iso_utc_ts(a.get("started_at")) or datetime.now(UTC)
+        en = _parse_iso_utc_ts(a.get("ended_at")) or st
+        summary = a.get("summary")
+        plog = a.get("pipeline_log")
+        agents = a.get("agent_activity")
+        cfg = a.get("config_json") or {}
+        rp = a.get("replay_payload")
+        if not isinstance(rp, dict):
+            rp = {}
+        mem = a.get("memory_json")
+        if mem is not None and not isinstance(mem, dict):
+            mem = {}
+        db.execute(
+            text(
+                """
+                INSERT INTO pipeline_runs (
+                    slug, company_id, user_id, status, started_at, ended_at,
+                    summary, pipeline_log, agent_activity, source_file_ids,
+                    track, config_json, final_status_class, analysis_title,
+                    replay_payload, run_dir_path, input_hash, memory_json
+                )
+                VALUES (
+                    :slug, :cid, :uid, :status, :st, :en,
+                    :summary, CAST(:plog AS jsonb), CAST(:agents AS jsonb), :fids,
+                    :track, CAST(:cfg AS jsonb), :fsc, :atitle,
+                    CAST(:rp AS jsonb), :rdp, :ih, CAST(:mem AS jsonb)
+                )
+                ON CONFLICT (slug) DO UPDATE SET
+                    company_id = EXCLUDED.company_id,
+                    user_id = EXCLUDED.user_id,
+                    status = EXCLUDED.status,
+                    started_at = EXCLUDED.started_at,
+                    ended_at = EXCLUDED.ended_at,
+                    summary = EXCLUDED.summary,
+                    pipeline_log = EXCLUDED.pipeline_log,
+                    agent_activity = EXCLUDED.agent_activity,
+                    source_file_ids = EXCLUDED.source_file_ids,
+                    track = EXCLUDED.track,
+                    config_json = EXCLUDED.config_json,
+                    final_status_class = EXCLUDED.final_status_class,
+                    analysis_title = EXCLUDED.analysis_title,
+                    replay_payload = EXCLUDED.replay_payload,
+                    run_dir_path = EXCLUDED.run_dir_path,
+                    input_hash = EXCLUDED.input_hash,
+                    memory_json = EXCLUDED.memory_json
+                """
+            ),
+            {
+                "slug": slug,
+                "cid": e2e_cid,
+                "uid": uid_demo,
+                "status": str(a.get("status") or "completed"),
+                "st": st,
+                "en": en,
+                "summary": summary,
+                "plog": json.dumps(plog if plog is not None else []),
+                "agents": json.dumps(agents if agents is not None else []),
+                "fids": fids,
+                "track": a.get("track"),
+                "cfg": json.dumps(cfg if isinstance(cfg, dict) else {}),
+                "fsc": a.get("final_status_class"),
+                "atitle": a.get("analysis_title"),
+                "rp": json.dumps(rp),
+                "rdp": a.get("run_dir_path"),
+                "ih": a.get("input_hash"),
+                "mem": json.dumps(mem if mem is not None else {}),
+            },
+        )
+        synced += 1
+    db.commit()
+    logger.info("Synced %s E2E pipeline_runs from analyses.json", synced)
+
+
 def _clone_demo_pipeline_run(
     db,
     company_id: int,
@@ -506,18 +660,19 @@ def run_startup_bootstrap() -> None:
         ver = _current_seed_version(db)
         if ver == SEED_VERSION:
             logger.info("Startup bootstrap: users/companies synced; data seed %s already applied", ver)
-            return
+        else:
+            google_fids = _seed_google_misc_files(
+                db, cids[_COMPANY_GOOGLE], int(uid_google.id)
+            )
+            _seed_e2e_misc_files(db, cids[_COMPANY_E2E], int(uid_demo.id))
+            # Globally unique slug: attach demo run to Google so both Google admins can export.
+            _clone_demo_pipeline_run(
+                db, cids[_COMPANY_GOOGLE], int(uid_google.id), google_fids
+            )
+            _set_seed_version(db, SEED_VERSION)
+            logger.info("Startup bootstrap: applied %s", SEED_VERSION)
 
-        google_fids = _seed_google_misc_files(
-            db, cids[_COMPANY_GOOGLE], int(uid_google.id)
-        )
-        _seed_e2e_misc_files(db, cids[_COMPANY_E2E], int(uid_demo.id))
-        # Globally unique slug: attach demo run to Google so both Google admins can export.
-        _clone_demo_pipeline_run(
-            db, cids[_COMPANY_GOOGLE], int(uid_google.id), google_fids
-        )
-        _set_seed_version(db, SEED_VERSION)
-        logger.info("Startup bootstrap: applied %s", SEED_VERSION)
+        _sync_e2e_analyses_from_json(db, cids[_COMPANY_E2E], int(uid_demo.id))
     except Exception:
         logger.exception("Startup bootstrap failed")
         db.rollback()

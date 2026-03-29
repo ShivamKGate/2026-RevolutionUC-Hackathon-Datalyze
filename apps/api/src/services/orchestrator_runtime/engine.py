@@ -71,7 +71,6 @@ from services.orchestrator_runtime.cancellation import (
 from services.orchestrator_runtime.track_profiles import (
     TrackID,
     get_track_profile,
-    profile_for_run,
     resolve_track,
 )
 from services.run_paths import create_run_directory, run_dir_relative
@@ -817,7 +816,6 @@ class OrchestratorEngine:
         onboarding_path: str | None = None,
         public_scrape_enabled: bool = False,
         skip_input_dedup: bool = False,
-        custom_base_track: str | None = None,
     ):
         self.run_id = run_id
         self.run_slug = run_slug
@@ -830,10 +828,9 @@ class OrchestratorEngine:
         self.public_scrape_enabled = public_scrape_enabled
         self.onboarding_path = onboarding_path or ""
         self.skip_input_dedup = skip_input_dedup
-        self.custom_base_track = (custom_base_track or "").strip() or None
 
         self.track_id = resolve_track(onboarding_path)
-        self.profile = profile_for_run(self.track_id, self.custom_base_track)
+        self.profile = get_track_profile(self.track_id)
         self.dep_map = _build_dependency_map()
 
         self.memory = MemoryState()

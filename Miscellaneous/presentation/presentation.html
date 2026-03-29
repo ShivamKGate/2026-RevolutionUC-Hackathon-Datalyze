@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Datalyze — RevolutionUC 2026 Pitch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0f1e;
+        --surface: #111827;
+        --surface-2: #1e293b;
+        --surface-3: #243044;
+        --accent: #3b82f6;
+        --accent-2: #7c3aed;
+        --accent-3: #06b6d4;
+        --accent-soft: rgba(59, 130, 246, 0.18);
+        --green: #10b981;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --text: #f0f6ff;
+        --text-muted: #8ba3c0;
+        --text-dim: #4d6378;
+        --border: rgba(148, 163, 184, 0.14);
+        --border-accent: rgba(59, 130, 246, 0.4);
+        --grad: linear-gradient(135deg, #3b82f6 0%, #7c3aed 55%, #06b6d4 100%);
+        --grad-soft: linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(124,58,237,0.2) 55%, rgba(6,182,212,0.25) 100%);
+        --slide-pad: clamp(1.25rem, 3.5vw, 2.75rem);
+        --radius: 12px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        height: 100%;
+        overflow: hidden;
+        font-family: "DM Sans", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        background-image:
+          radial-gradient(ellipse 90% 55% at 50% -10%, rgba(59,130,246,0.12), transparent),
+          radial-gradient(ellipse 50% 40% at 95% 60%, rgba(124,58,237,0.07), transparent),
+          radial-gradient(ellipse 40% 35% at 5% 90%, rgba(6,182,212,0.06), transparent);
+      }
+
+      /* ── NAV BAR ─────────────────────────────────────── */
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(10,15,30,0.85);
+        backdrop-filter: blur(10px);
+        flex-shrink: 0;
+        z-index: 10;
+      }
+
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .nav-logo {
+        width: 28px; height: 28px;
+        background: var(--grad);
+        border-radius: 7px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.75rem; color: #fff;
+        flex-shrink: 0;
+      }
+
+      .nav-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        background: var(--grad);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-event {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      .nav-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .nav-btn {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 0.35rem 0.7rem;
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-family: inherit;
+        transition: background 0.15s, border-color 0.15s;
+      }
+
+      .nav-btn:hover { background: var(--surface-3); border-color: var(--border-accent); }
+      .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+      .slide-counter {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+        min-width: 2.5rem;
+        text-align: center;
+      }
+
+      /* ── PROGRESS BAR ─────────────────────────────────── */
+      .progress-bar {
+        height: 2px;
+        background: var(--border);
+        flex-shrink: 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--grad);
+        transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      /* ── DECK ─────────────────────────────────────────── */
+      .deck {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .slides-track {
+        display: flex;
+        height: 100%;
+        width: calc(10 * 100%);
+        transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+      }
+
+      .slide {
+        flex: 0 0 calc(100% / 10);
+        width: calc(100% / 10);
+        height: 100%;
+        padding: var(--slide-pad);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--surface-3) transparent;
+      }
+
+      .slide-inner {
+        max-width: 78rem;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      /* ── TYPOGRAPHY ───────────────────────────────────── */
+      .slide-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--accent);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      h1 {
+        font-size: clamp(2.2rem, 5.5vw, 4rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      h1 .gradient-text {
+        background: var(--grad);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      h2 {
+        font-size: clamp(1.45rem, 3.2vw, 2.1rem);
+        font-weight: 700;
+        margin-bottom: 1.1rem;
+        color: var(--text);
+        border-left: 3px solid var(--accent);
+        padding-left: 0.8rem;
+      }
+
+      h3 {
+        font-size: clamp(0.9rem, 1.6vw, 1.05rem);
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+      }
+
+      p { color: var(--text-muted); line-height: 1.6; font-size: 0.95rem; }
+
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.82em;
+        color: var(--accent-3);
+      }
+
+      /* ── CARDS & GRIDS ────────────────────────────────── */
+      .card-grid {
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+
+      .card-grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+      .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+      @media (max-width: 700px) {
+        .card-grid-3 { grid-template-columns: 1fr; }
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem 1.3rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: var(--grad);
+        opacity: 0.7;
+      }
+
+      .card.accent-green::before { background: linear-gradient(90deg, var(--green), #34d399); }
+      .card.accent-amber::before { background: linear-gradient(90deg, var(--amber), #fbbf24); }
+      .card.accent-red::before { background: linear-gradient(90deg, var(--red), #f87171); }
+      .card.accent-cyan::before { background: linear-gradient(90deg, var(--accent-3), #67e8f9); }
+      .card.accent-purple::before { background: linear-gradient(90deg, var(--accent-2), #a78bfa); }
+
+      .card-icon {
+        font-size: 1.4rem;
+        margin-bottom: 0.55rem;
+        display: block;
+      }
+
+      ul.bullet { list-style: none; margin-top: 0.4rem; }
+      ul.bullet li {
+        padding: 0.3rem 0 0.3rem 1.2rem;
+        position: relative;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+      ul.bullet li::before {
+        content: "▸";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-size: 0.7rem;
+        top: 0.48rem;
+      }
+
+      /* ── SLIDE 1: TITLE ───────────────────────────────── */
+      .title-hero {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .title-tagline {
+        font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+        color: var(--text-muted);
+        font-weight: 300;
+        margin-top: 0.35rem;
+      }
+
+      .title-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      .badge-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+      }
+
+      .badge-dot.green { background: var(--green); }
+      .badge-dot.amber { background: var(--amber); }
+      .badge-dot.purple { background: var(--accent-2); }
+
+      .title-mode-row {
+        display: flex;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+      }
+
+      .mode-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.65rem 1rem;
+        font-size: 0.88rem;
+      }
+
+      .mode-pill .mode-icon { font-size: 1.1rem; }
+      .mode-pill strong { color: var(--text); font-weight: 600; }
+      .mode-pill span { color: var(--text-muted); }
+
+      /* ── ARCH FLOW ────────────────────────────────────── */
+      .arch-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        font-size: clamp(0.72rem, 1.4vw, 0.84rem);
+      }
+
+      .arch-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+      }
+
+      .arch-node {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.4rem 0.65rem;
+        text-align: center;
+        min-width: 4.8rem;
+        line-height: 1.3;
+      }
+
+      .arch-node.primary {
+        border-color: var(--border-accent);
+        background: var(--accent-soft);
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      .arch-node.orchestrator {
+        background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(124,58,237,0.2));
+        border-color: rgba(124,58,237,0.5);
+        font-weight: 700;
+        color: var(--text);
+        min-width: 7rem;
+        padding: 0.55rem 1rem;
+      }
+
+      .arch-node.output {
+        background: rgba(16,185,129,0.12);
+        border-color: rgba(16,185,129,0.35);
+        color: var(--green);
+      }
+
+      .arch-node.infra {
+        background: rgba(6,182,212,0.1);
+        border-color: rgba(6,182,212,0.3);
+        color: var(--accent-3);
+      }
+
+      .arch-node small {
+        display: block;
+        font-size: 0.75em;
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      .arch-arrow {
+        color: var(--accent);
+        font-weight: 700;
+        user-select: none;
+        font-size: 1.1em;
+      }
+
+      .arch-gate {
+        background: linear-gradient(90deg, transparent, var(--surface-2), transparent);
+        border: 1px dashed rgba(59,130,246,0.45);
+        border-radius: 8px;
+        padding: 0.25rem 0.65rem;
+        color: var(--text-muted);
+        font-size: 0.78em;
+        font-style: italic;
+      }
+
+      /* ── PIPELINE LANE ────────────────────────────────── */
+      .pipeline {
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+      }
+
+      .pipeline-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 5rem;
+        flex: 1;
+      }
+
+      .step-icon {
+        width: 2.4rem; height: 2.4rem;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        background: var(--surface-2);
+        border: 2px solid var(--border);
+        position: relative;
+        z-index: 1;
+      }
+
+      .step-icon.active {
+        background: var(--accent-soft);
+        border-color: var(--border-accent);
+      }
+
+      .step-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.3;
+      }
+
+      .step-connector {
+        flex: 1;
+        height: 2px;
+        background: var(--border);
+        margin-top: 1.2rem;
+        min-width: 1rem;
+      }
+
+      .step-connector.done {
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      }
+
+      /* ── STACK LIST ───────────────────────────────────── */
+      .stack-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .stack-list li {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .stack-list li strong { color: var(--accent); font-weight: 600; min-width: 8rem; flex-shrink: 0; }
+      .stack-list li span { color: var(--text-muted); }
+
+      /* ── DEMO STEPS ───────────────────────────────────── */
+      .demo-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .demo-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.85rem 1.1rem;
+      }
+
+      .demo-step-num {
+        width: 1.8rem; height: 1.8rem;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        border: 1px solid var(--border-accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+
+      .demo-step-content h4 {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.2rem;
+      }
+
+      .demo-step-content p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+      }
+
+      /* ── SPEAKER NOTES ────────────────────────────────── */
+      .notes-toggle {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: inherit;
+        z-index: 100;
+        transition: background 0.15s;
+      }
+
+      .notes-toggle:hover { background: var(--surface-3); }
+
+      .notes-panel {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: rgba(10, 15, 30, 0.96);
+        border-top: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+        padding: 0.75rem 1.5rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        max-height: 8rem;
+        overflow-y: auto;
+        z-index: 99;
+        display: none;
+      }
+
+      .notes-panel.visible { display: block; }
+      .notes-panel strong { color: var(--accent); }
+
+      /* ── HIGHLIGHT BOX ────────────────────────────────── */
+      .highlight-box {
+        background: var(--accent-soft);
+        border: 1px solid var(--border-accent);
+        border-radius: var(--radius);
+        padding: 1rem 1.25rem;
+        margin-top: 0.75rem;
+      }
+
+      .highlight-box p { color: var(--text); font-size: 0.95rem; }
+
+      /* ── AGENT TABLE ──────────────────────────────────── */
+      .agent-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.55rem;
+      }
+
+      .agent-chip {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.82rem;
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.45rem;
+      }
+
+      .agent-chip .agent-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-top: 0.25rem;
+        flex-shrink: 0;
+      }
+
+      .agent-chip .agent-name { color: var(--text); font-weight: 600; display: block; }
+      .agent-chip .agent-role { color: var(--text-muted); font-size: 0.78rem; }
+
+      .heavy { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.3); }
+      .light { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); }
+      .external { background: rgba(6,182,212,0.1); border-color: rgba(6,182,212,0.25); }
+
+      /* ── DIFFERENTIATOR ROW ───────────────────────────── */
+      .diff-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .diff-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.9rem 1.1rem;
+      }
+
+      .diff-item .diff-icon { font-size: 1.5rem; }
+      .diff-item .diff-title { font-weight: 700; font-size: 0.92rem; color: var(--text); }
+      .diff-item .diff-body { font-size: 0.83rem; color: var(--text-muted); line-height: 1.45; }
+
+      /* ── FUTURE ROADMAP ───────────────────────────────── */
+      .roadmap {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .roadmap-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.85rem 1.1rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+
+      .roadmap-tag {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+      }
+
+      .tag-next { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+      .tag-vision { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+      .tag-stretch { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.28); }
+
+      .roadmap-item p { font-size: 0.87rem; color: var(--text-muted); line-height: 1.45; }
+      .roadmap-item strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 0.18rem; }
+
+      /* ── TWO-COL LAYOUT ───────────────────────────────── */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.1rem;
+      }
+
+      @media (max-width: 750px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+
+    <!-- NAV -->
+    <nav class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo">D</div>
+        <div>
+          <div class="nav-title">Datalyze</div>
+          <div class="nav-event">RevolutionUC 2026</div>
+        </div>
+      </div>
+      <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" onclick="go(-1)">← Prev</button>
+        <span class="slide-counter" id="counter">1 / 10</span>
+        <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+      </div>
+    </nav>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <!-- DECK -->
+    <div class="deck">
+      <div class="slides-track" id="track">
+
+        <!-- ══ SLIDE 1: TITLE ══════════════════════════════ -->
+        <div class="slide" data-notes="Introduce Datalyze: a two-person team, RevolutionUC 2026, built in a compressed hackathon window. Lead with the tagline — 'raw data in, AI-driven strategy out' — and explain the two modes briefly.">
+          <div class="slide-inner">
+            <div class="title-hero">
+              <div>
+                <div class="slide-label">RevolutionUC 2026 · Hackathon Pitch</div>
+                <h1><span class="gradient-text">Datalyze</span></h1>
+                <div class="title-tagline">Raw Data ↓ &nbsp;·&nbsp; AI-Driven Strategies ↑</div>
+              </div>
+
+              <div class="title-mode-row">
+                <div class="mode-pill">
+                  <span class="mode-icon">🔒</span>
+                  <div>
+                    <strong>Private Mode</strong>
+                    <span> — company data stays local</span>
+                  </div>
+                </div>
+                <div class="mode-pill">
+                  <span class="mode-icon">🌐</span>
+                  <div>
+                    <strong>Public Mode</strong>
+                    <span> — optional controlled scraping</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="title-meta">
+                <span class="badge"><span class="badge-dot"></span>Kartavya Singh</span>
+                <span class="badge"><span class="badge-dot purple"></span>Shivam Kharangate</span>
+                <span class="badge"><span class="badge-dot green"></span>Multi-Agent BI Platform</span>
+                <span class="badge"><span class="badge-dot amber"></span>Local-First · Near-Zero Cost</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 2: PROBLEM ════════════════════════════ -->
+        <div class="slide" data-notes="The core pain: companies have signal-rich data but it's trapped in disconnected formats and tools. Single LLM approaches break when data is messy or mixed. Traditional BI is either too expensive, too rigid, or requires specialist setup time no lean team has.">
+          <div class="slide-inner">
+            <div class="slide-label">The Problem</div>
+            <h2>Valuable signals, trapped in silos</h2>
+            <div class="card-grid" style="margin-top: 0.9rem;">
+              <div class="card accent-red">
+                <span class="card-icon">📁</span>
+                <h3>Data in every format</h3>
+                <ul class="bullet">
+                  <li>CSVs, Excel, PDFs, JSON, images, plain text — all in different shapes</li>
+                  <li>No consistent schema, no single tool handles all of them reliably</li>
+                </ul>
+              </div>
+              <div class="card accent-amber">
+                <span class="card-icon">💸</span>
+                <h3>BI is expensive &amp; rigid</h3>
+                <ul class="bullet">
+                  <li>Enterprise platforms require long setup, dedicated analysts, big budgets</li>
+                  <li>Startups and lean teams can't justify the cost or time</li>
+                </ul>
+              </div>
+              <div class="card accent-purple">
+                <span class="card-icon">🤖</span>
+                <h3>Single-LLM approaches break</h3>
+                <ul class="bullet">
+                  <li>Generic prompting misses domain-specific signals and contradictions</li>
+                  <li>No specialization = brittle reasoning on messy, mixed-format data</li>
+                </ul>
+              </div>
+              <div class="card">
+                <span class="card-icon">⏱️</span>
+                <h3>Decisions wait for data</h3>
+                <ul class="bullet">
+                  <li>Analysts manually clean and normalize before any insight can be drawn</li>
+                  <li>Strategic questions are answered days or weeks too late</li>
+                </ul>
+              </div>
+            </div>
+            <div class="highlight-box" style="margin-top: 1rem;">
+              <p><strong>The question we set out to answer:</strong> What if you could drop in your data exactly as-is and get clear, reliable strategic recommendations without any setup process?</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 3: SOLUTION ═══════════════════════════ -->
+        <div class="slide" data-notes="Datalyze solves this with a multi-agent orchestrated pipeline. Each agent has a specialized role; the central orchestrator ensures coherence. Emphasize the track selection at onboarding — the pipeline is configured to the problem the company actually cares about.">
+          <div class="slide-inner">
+            <div class="slide-label">The Solution</div>
+            <h2>Multi-agent orchestration, built for real data</h2>
+
+            <div class="arch-flow" style="margin: 1rem 0 1.1rem;">
+              <!-- Inputs -->
+              <div class="arch-row">
+                <div class="arch-node primary">CSV / Excel</div>
+                <div class="arch-node primary">PDF / Images</div>
+                <div class="arch-node primary">JSON / TXT</div>
+                <div class="arch-node infra">Public Scraper<small>optional</small></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <!-- Orchestrator -->
+              <div class="arch-row">
+                <div class="arch-gate">Stage Gate: classify</div>
+                <div class="arch-arrow" style="margin: 0 0.5rem;">→</div>
+                <div class="arch-node orchestrator">Orchestrator + Brain</div>
+                <div class="arch-arrow" style="margin: 0 0.5rem;">→</div>
+                <div class="arch-gate">Stage Gate: ingest</div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <!-- Agents row 1 -->
+              <div class="arch-row">
+                <div class="arch-node">File Type<br>Classifier</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Format<br>Processors</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Data<br>Cleaning</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Aggregator</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Conflict<br>Detection</div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <!-- Agents row 2 -->
+              <div class="arch-row">
+                <div class="arch-node">Trend<br>Forecasting</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Sentiment<br>Analysis</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Knowledge<br>Graph</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">Insight<br>Generation</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node">SWOT<br>Synthesis</div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <!-- Outputs -->
+              <div class="arch-row">
+                <div class="arch-node output">Executive<br>Summary</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node output">PDF / CSV<br>Export</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node output">Narrated<br>Audio</div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-node output">Interactive<br>Dashboard</div>
+              </div>
+            </div>
+
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+              <div class="card accent-cyan">
+                <h3>Track Selection</h3>
+                <ul class="bullet">
+                  <li>Predictive Forecasting</li>
+                  <li>Automation Strategy</li>
+                  <li>Business Optimization</li>
+                  <li>Supply-Chain / Ops</li>
+                </ul>
+              </div>
+              <div class="card accent-green">
+                <h3>Every insight tagged with</h3>
+                <ul class="bullet">
+                  <li>Confidence score</li>
+                  <li>Source provenance</li>
+                  <li>Supporting evidence</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 4: USER JOURNEY ═══════════════════════ -->
+        <div class="slide" data-notes="Walk judges through the actual user flow. Each step maps to a real route in the app. Emphasize that a judge can follow this exact path in 5 minutes during the demo.">
+          <div class="slide-inner">
+            <div class="slide-label">User Journey</div>
+            <h2>From sign-up to strategic insight in minutes</h2>
+
+            <div class="pipeline" style="margin: 1.1rem 0 1.25rem; gap: 0.15rem;">
+              <div class="pipeline-step">
+                <div class="step-icon active">🔐</div>
+                <div class="step-label">Register<br>/ Login</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">🏢</div>
+                <div class="step-label">Company<br>Setup</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">🎯</div>
+                <div class="step-label">Choose<br>Track</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">📤</div>
+                <div class="step-label">Upload<br>Files</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">▶️</div>
+                <div class="step-label">Start<br>Analysis</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">📡</div>
+                <div class="step-label">Live<br>Pipeline</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">📊</div>
+                <div class="step-label">View<br>Insights</div>
+              </div>
+              <div class="step-connector done"></div>
+              <div class="pipeline-step">
+                <div class="step-icon active">📥</div>
+                <div class="step-label">Export<br>/ Share</div>
+              </div>
+            </div>
+
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+              <div class="card">
+                <h3>Onboarding</h3>
+                <ul class="bullet">
+                  <li>Create account or use seeded demo credentials</li>
+                  <li>Set company name, industry context, public scraping toggle</li>
+                  <li>Select the analysis track that matches your business goal</li>
+                </ul>
+              </div>
+              <div class="card accent-cyan">
+                <h3>Analysis Detail Page</h3>
+                <ul class="bullet">
+                  <li>Live polling of run status and per-step pipeline logs</li>
+                  <li>Track-specific charts (forecasts, SWOT, KPIs, knowledge graph)</li>
+                  <li>Orchestration model visualization of agent execution</li>
+                  <li>Confidence strip + provenance on every insight card</li>
+                </ul>
+              </div>
+              <div class="card accent-green">
+                <h3>Outputs</h3>
+                <ul class="bullet">
+                  <li>PDF and CSV export of findings and raw data</li>
+                  <li>Podcast-style narrated executive summary via ElevenLabs</li>
+                  <li>Shareable local run link</li>
+                  <li>Conversational follow-up via AI chat interface</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 5: ARCHITECTURE ═══════════════════════ -->
+        <div class="slide" data-notes="Monorepo, single npm run dev command. Featherless is the primary LLM provider via OpenAI-compatible API — no VRAM required in the Featherless path. Gemini handles classification and OCR/vision. ElevenLabs is optional for narration. Postgres handles both relational state and artifact provenance.">
+          <div class="slide-inner">
+            <div class="slide-label">Architecture</div>
+            <h2>Monorepo · one command · real persistence</h2>
+
+            <div class="arch-flow" style="margin: 1rem 0 1.1rem;">
+              <div class="arch-row">
+                <div class="arch-node primary">React + TS + Vite<small>apps/web · :5173</small></div>
+                <div class="arch-arrow" style="font-size: 1.3em;">⇌</div>
+                <div class="arch-node orchestrator">FastAPI<small>apps/api · :8000</small></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-node infra">PostgreSQL<small>users · runs · logs · artifacts</small></div>
+                <div class="arch-arrow"></div>
+                <div class="arch-node infra">Disk Artifacts<small>data/pipeline_runs/</small></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-arrow">↓</div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-node">Featherless<small>primary LLM · OpenAI API compat.</small></div>
+                <div class="arch-node">Gemini<small>classifier + OCR/vision</small></div>
+                <div class="arch-node">ElevenLabs<small>narrated summary · optional</small></div>
+              </div>
+            </div>
+
+            <ul class="stack-list">
+              <li>
+                <strong>Frontend</strong>
+                <span>React + TypeScript + Vite · feature-oriented <span class="mono">src/features/</span> layout · dev proxy <span class="mono">/api/v1/*</span> → FastAPI · track-specific chart components (D3, Chart.js, Plotly)</span>
+              </li>
+              <li>
+                <strong>Backend</strong>
+                <span>FastAPI · versioned routes under <span class="mono">/api/v1</span> · agent registry boots on startup · migrations auto-applied via <span class="mono">npm run dev</span></span>
+              </li>
+              <li>
+                <strong>Persistence</strong>
+                <span>PostgreSQL stores users, companies, file metadata, pipeline runs, per-step logs, and binary artifacts for full run replay. File artifacts additionally persisted to disk.</span>
+              </li>
+              <li>
+                <strong>Dev workflow</strong>
+                <span><span class="mono">npm run dev</span> starts Vite + FastAPI concurrently, applies migrations, registers agents. Seed demo users: <span class="mono">scripts/seed_demo_users.py</span></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 6: ORCHESTRATOR DEEP DIVE ════════════ -->
+        <div class="slide" data-notes="This is the technical differentiator. The orchestrator is not a loop — every agent step returns to it. The brain runs once after classification to configure the pipeline, including suppressing agents that aren't needed for the selected track. The decision ledger provides auditability.">
+          <div class="slide-inner">
+            <div class="slide-label">Technical Deep Dive</div>
+            <h2>Orchestrator runtime — how agents stay coherent</h2>
+
+            <div class="two-col" style="margin-top: 0.9rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+                <div class="card accent-purple">
+                  <h3>Agent Registry</h3>
+                  <ul class="bullet">
+                    <li>Each agent declared as an <span class="mono">AgentSpec</span>: id, model tier, dependencies, responsibilities</li>
+                    <li>Registry resolves CrewAI Agent objects at startup; exposes <span class="mono">/agents/boot-status</span></li>
+                  </ul>
+                </div>
+                <div class="card">
+                  <h3>Orchestrator Brain</h3>
+                  <ul class="bullet">
+                    <li>Runs once after track classification using a heavy model</li>
+                    <li>Emits a shared orchestrator brief and refines <span class="mono">skip_agents</span></li>
+                    <li>Core path agents (cleaning, aggregator, insights, exec summary) can never be skipped</li>
+                  </ul>
+                </div>
+                <div class="card accent-cyan">
+                  <h3>Policy Engine</h3>
+                  <ul class="bullet">
+                    <li>Retries with extra tolerance for rate limits</li>
+                    <li>Time budget enforcement per stage</li>
+                    <li>Stage gates (classify → ingest → process → aggregate → analyze → synthesize)</li>
+                    <li>Adaptive behavior flags: sequential vs parallel execution</li>
+                  </ul>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+                <div class="card">
+                  <h3>Agent Envelope Adapter</h3>
+                  <ul class="bullet">
+                    <li>Every agent output normalized to a shared <span class="mono">AgentEnvelope</span></li>
+                    <li>Downstream agents consume structured envelopes, never raw LLM text</li>
+                    <li>Enables swap of any agent without breaking the pipeline</li>
+                  </ul>
+                </div>
+                <div class="card accent-green">
+                  <h3>Persistence &amp; Replay</h3>
+                  <ul class="bullet">
+                    <li><span class="mono">memory.json</span> — cross-agent shared state</li>
+                    <li><span class="mono">decision_ledger.jsonl</span> — audit trail of every orchestrator decision</li>
+                    <li><span class="mono">run_manifest.json</span> — full run metadata and stage outcomes</li>
+                    <li><span class="mono">pipeline_run_artifacts</span> in Postgres for DB-level replay</li>
+                  </ul>
+                </div>
+                <div class="card">
+                  <h3>Track Profiles</h3>
+                  <ul class="bullet">
+                    <li>Each track defines an ordered stage pipeline resolved at run start</li>
+                    <li>Agents not relevant to the track are cleanly excluded by the brain</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 7: DIFFERENTIATORS ═══════════════════ -->
+        <div class="slide" data-notes="Hit each differentiator with one concrete claim. Local-first means near-zero cost for a hackathon team. Structured registry means the system is auditable and extensible, not just a prompt chain. Explainability is a product feature, not an afterthought.">
+          <div class="slide-inner">
+            <div class="slide-label">Why Datalyze</div>
+            <h2>What sets it apart</h2>
+
+            <div class="diff-row" style="margin-top: 0.9rem;">
+              <div class="diff-item">
+                <span class="diff-icon">🏠</span>
+                <span class="diff-title">Local-First</span>
+                <span class="diff-body">Private data never leaves your machine. Featherless API for LLM inference; Gemini used selectively. Runs on standard hardware at near-zero cost.</span>
+              </div>
+              <div class="diff-item">
+                <span class="diff-icon">🧩</span>
+                <span class="diff-title">Structured Agent Registry</span>
+                <span class="diff-body">Agents aren't ad-hoc — each is declared with id, model tier, dependencies, and responsibilities. The registry is queryable and the boot status is observable.</span>
+              </div>
+              <div class="diff-item">
+                <span class="diff-icon">🔍</span>
+                <span class="diff-title">Explainability by Design</span>
+                <span class="diff-body">Every insight card carries a confidence score and source provenance. The decision ledger audits every orchestrator action. Nothing is a black box.</span>
+              </div>
+              <div class="diff-item">
+                <span class="diff-icon">📂</span>
+                <span class="diff-title">Broad Format Support</span>
+                <span class="diff-body">CSV, Excel, PDF, JSON, plain text, and images — each routed to a specialized processor with shared normalization so downstream agents receive consistent input.</span>
+              </div>
+              <div class="diff-item">
+                <span class="diff-icon">🎯</span>
+                <span class="diff-title">Track-Biased Pipeline</span>
+                <span class="diff-body">Onboarding selects a problem track (predictive, automation, optimization, supply-chain) that configures agent skipping and stage prioritization for the entire run.</span>
+              </div>
+              <div class="diff-item">
+                <span class="diff-icon">⚡</span>
+                <span class="diff-title">Hackathon-Practical Dev</span>
+                <span class="diff-body">One command to start. Migrations auto-applied. Seed users ready. Developer page exposes health, agent status, and clear-analyses for fast iteration.</span>
+              </div>
+            </div>
+
+            <div class="agent-grid" style="margin-top: 1rem;">
+              <div class="agent-chip heavy"><span class="agent-dot" style="background: #a78bfa;"></span><div><span class="agent-name">Heavy tier</span><span class="agent-role">reasoning, synthesis, brain · Featherless</span></div></div>
+              <div class="agent-chip light"><span class="agent-dot" style="background: var(--accent);"></span><div><span class="agent-name">Light tier</span><span class="agent-role">cleaning, categorization, throughput</span></div></div>
+              <div class="agent-chip external"><span class="agent-dot" style="background: var(--accent-3);"></span><div><span class="agent-name">Gemini</span><span class="agent-role">classifier + vision / OCR</span></div></div>
+              <div class="agent-chip external"><span class="agent-dot" style="background: var(--green);"></span><div><span class="agent-name">ElevenLabs</span><span class="agent-role">podcast-style narration · optional</span></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 8: CHALLENGES ═════════════════════════ -->
+        <div class="slide" data-notes="Be honest here — judges respect real engineering challenges. Coordination and deadlock avoidance led to the explicit DAG + stage gates design. VRAM constraints drove the heavy/light model split. Zero-cost constraint is a feature, not a compromise.">
+          <div class="slide-inner">
+            <div class="slide-label">Engineering Challenges</div>
+            <h2>What was hard — and how we solved it</h2>
+
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 0.9rem;">
+              <div class="card accent-red">
+                <span class="card-icon">🔀</span>
+                <h3>Multi-agent coordination</h3>
+                <ul class="bullet">
+                  <li>Strict dependency ordering to prevent circular waits and stalls</li>
+                  <li>Explicit handoff contracts via the AgentEnvelope adapter</li>
+                  <li>Orchestrator detects and recovers from stalled agent states</li>
+                </ul>
+              </div>
+              <div class="card accent-purple">
+                <span class="card-icon">💾</span>
+                <h3>VRAM-aware model selection</h3>
+                <ul class="bullet">
+                  <li>12 GB VRAM floor across both dev machines</li>
+                  <li>Heavy-tier vs light-tier split with explicit model assignment per agent</li>
+                  <li>Featherless API as zero-VRAM alternative for remote inference</li>
+                </ul>
+              </div>
+              <div class="card accent-amber">
+                <span class="card-icon">📄</span>
+                <h3>Multi-format reliability</h3>
+                <ul class="bullet">
+                  <li>Six file types must normalize to a shared envelope before synthesis</li>
+                  <li>Specialized processors per type with edge-case extraction handling</li>
+                  <li>Gemini vision fallback for chart/table extraction from PDFs and images</li>
+                </ul>
+              </div>
+              <div class="card accent-cyan">
+                <span class="card-icon">📡</span>
+                <h3>Real-time activity streaming</h3>
+                <ul class="bullet">
+                  <li>Pipeline logs must feel live without blocking heavy compute steps</li>
+                  <li>Decoupled stream updates from core processing via per-step DB writes</li>
+                  <li>Frontend polls run status and log tail; SSE is a planned upgrade</li>
+                </ul>
+              </div>
+              <div class="card">
+                <span class="card-icon">💰</span>
+                <h3>Zero-cost constraint</h3>
+                <ul class="bullet">
+                  <li>External APIs used only where they provide outsized value (Gemini for OCR, ElevenLabs for audio)</li>
+                  <li>Featherless for primary LLM traffic; Ollama for full local fallback</li>
+                </ul>
+              </div>
+              <div class="card">
+                <span class="card-icon">⏰</span>
+                <h3>Two people, compressed timeline</h3>
+                <ul class="bullet">
+                  <li>Ruthless MVP scoping: core pipeline, optional stretch, future roadmap kept separate</li>
+                  <li>Cross-domain pairing to maintain frontend + backend + agent coherence</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 9: DEMO SCRIPT ════════════════════════ -->
+        <div class="slide" data-notes="Give judges a reproducible path. Everything listed here works with npm run dev. Demo user password is Demo@123. If running live, pre-seed the DB and have a sample file ready to drop in. The developer page is a good bonus step for technical judges.">
+          <div class="slide-inner">
+            <div class="slide-label">Live Demo</div>
+            <h2>5-step judge walkthrough</h2>
+
+            <div class="demo-steps" style="margin-top: 0.9rem;">
+              <div class="demo-step">
+                <div class="demo-step-num">1</div>
+                <div class="demo-step-content">
+                  <h4>Open the app</h4>
+                  <p>Navigate to <span class="mono">http://localhost:5173</span>. Log in with <span class="mono">demo@datalyze.ai</span> / <span class="mono">Demo@123</span>. API docs available at <span class="mono">http://localhost:8000/docs</span>.</p>
+                </div>
+              </div>
+              <div class="demo-step">
+                <div class="demo-step-num">2</div>
+                <div class="demo-step-content">
+                  <h4>Configure company &amp; track</h4>
+                  <p>Settings → Company: set company name, enable or disable public data scraping, choose the analysis track (e.g. <strong>Predictive Forecasting</strong>).</p>
+                </div>
+              </div>
+              <div class="demo-step">
+                <div class="demo-step-num">3</div>
+                <div class="demo-step-content">
+                  <h4>Upload data files</h4>
+                  <p>Upload → drop in a CSV, Excel, or PDF. Multiple files accepted. The file manager shows upload status, type detection, and size. Files are stored under a company-scoped path.</p>
+                </div>
+              </div>
+              <div class="demo-step">
+                <div class="demo-step-num">4</div>
+                <div class="demo-step-content">
+                  <h4>Start analysis &amp; watch the pipeline</h4>
+                  <p>Dashboard → Start Analysis. Watch the live pipeline log as agents execute: classify → ingest → process → aggregate → analyze → synthesize → executive summary.</p>
+                </div>
+              </div>
+              <div class="demo-step">
+                <div class="demo-step-num">5</div>
+                <div class="demo-step-content">
+                  <h4>Explore the analysis detail page</h4>
+                  <p>View insight cards, SWOT analysis, trend charts, knowledge graph, orchestration diagram, and confidence indicators. Export PDF / CSV, or play the narrated summary. Use the AI chat for follow-up questions.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="highlight-box">
+              <p><strong>Bonus for technical judges:</strong> Settings → Developer — view agent boot status, DB health, run orchestrator smoke tests, and clear all analyses for a fresh demo run.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SLIDE 10: FUTURE WORK ═══════════════════════ -->
+        <div class="slide" data-notes="Honest roadmap: separate what's coming soon from what's a vision. SSE is the highest-impact near-term improvement. pgvector semantic chat and chart generation are already partially wired. Solana/Presage are genuinely optional stretch.">
+          <div class="slide-inner">
+            <div class="slide-label">What's Next</div>
+            <h2>Roadmap &amp; vision</h2>
+
+            <div class="roadmap" style="margin-top: 0.9rem;">
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-next">Next</span>
+                <div>
+                  <strong>SSE streaming for agent feed</strong>
+                  <p>Replace polling with Server-Sent Events for true real-time pipeline progress and live orchestration updates.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-next">Next</span>
+                <div>
+                  <strong>ElevenLabs narration in full pipeline</strong>
+                  <p>Wire the narrated executive summary handoff into the production pipeline path for every analysis run.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-next">Next</span>
+                <div>
+                  <strong>File routing fidelity</strong>
+                  <p>Improve edge-case handling in mixed-format documents and deeply nested JSON structures.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-next">Next</span>
+                <div>
+                  <strong>CI smoke tests for orchestrator</strong>
+                  <p>Automated end-to-end run validation on each commit so regressions in agent coordination are caught early.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-vision">Vision</span>
+                <div>
+                  <strong>Run replay parity</strong>
+                  <p>Full artifact restoration from DB so any historical run can be re-opened with complete state, charts, and exports.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-vision">Vision</span>
+                <div>
+                  <strong>pgvector semantic chat + chart gen</strong>
+                  <p>Embed processed chunks for semantic retrieval; trigger chart generation directly from natural-language prompts in the chat interface.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-vision">Vision</span>
+                <div>
+                  <strong>Multi-company collaboration</strong>
+                  <p>Role-based sharing of analysis runs across teams, with per-agent permission scoping for sensitive data.</p>
+                </div>
+              </div>
+              <div class="roadmap-item">
+                <span class="roadmap-tag tag-stretch">Stretch</span>
+                <div>
+                  <strong>Solana / Presage integration</strong>
+                  <p>Optional on-chain data feeds and prediction market signals as additional context sources for financial analysis tracks.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 1rem;">
+              <p style="text-align: center; font-size: 1rem;">
+                <strong style="background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 1.15rem;">Datalyze</strong>
+                &nbsp;—&nbsp; Raw Data ↓, AI-Driven Strategies ↑ &nbsp;·&nbsp; Kartavya Singh &amp; Shivam Kharangate
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /slides-track -->
+    </div><!-- /deck -->
+
+    <!-- SPEAKER NOTES PANEL -->
+    <div class="notes-panel" id="notesPanel"></div>
+    <button class="notes-toggle" id="notesToggle" onclick="toggleNotes()">Speaker Notes</button>
+
+    <script>
+      const TOTAL = 10;
+      let current = 0;
+      let notesVisible = false;
+
+      const track = document.getElementById('track');
+      const counter = document.getElementById('counter');
+      const progress = document.getElementById('progress');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const notesPanel = document.getElementById('notesPanel');
+      const notesToggle = document.getElementById('notesToggle');
+
+      const slides = Array.from(document.querySelectorAll('.slide'));
+
+      function updateNotes() {
+        const note = slides[current].dataset.notes || '';
+        notesPanel.innerHTML = note
+          ? `<strong>Notes (${current + 1}/${TOTAL}):</strong> ${note}`
+          : `<em style="color: var(--text-dim)">No speaker notes for this slide.</em>`;
+      }
+
+      function render() {
+        track.style.transform = `translateX(-${current * (100 / TOTAL)}%)`;
+        counter.textContent = `${current + 1} / ${TOTAL}`;
+        progress.style.width = `${((current + 1) / TOTAL) * 100}%`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === TOTAL - 1;
+        updateNotes();
+      }
+
+      function go(dir) {
+        const next = current + dir;
+        if (next >= 0 && next < TOTAL) {
+          current = next;
+          render();
+        }
+      }
+
+      function toggleNotes() {
+        notesVisible = !notesVisible;
+        notesPanel.classList.toggle('visible', notesVisible);
+        notesToggle.textContent = notesVisible ? 'Hide Notes' : 'Speaker Notes';
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(-1); }
+        if (e.key === 'n' || e.key === 'N') toggleNotes();
+        if (e.key === 'Home') { current = 0; render(); }
+        if (e.key === 'End') { current = TOTAL - 1; render(); }
+      });
+
+      // Touch swipe support
+      let touchStartX = 0;
+      document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      document.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+      });
+
+      render();
+    </script>
+  </body>
+</html>

@@ -44,8 +44,8 @@ class StartPipelineRunRequest(BaseModel):
     """When set, overrides the user's company default for this run only (e.g. Datalyze Chat toggle)."""
     public_scrape_enabled: bool | None = None
     """
-    For Datalyze Chat (`onboarding_path` → custom analysis): which standard track's agent/stage
-    pack to use (predictive, automation, optimization, supply_chain). Ignored for normal runs.
+    Datalyze Chat only: canonical base id (predictive, automation, optimization, supply_chain).
+    Stored in config_json; the API maps this to a normal onboarding_path for the orchestrator.
     """
     custom_base_track: str | None = None
     pipeline_selection_rationale: str | None = Field(
@@ -57,6 +57,10 @@ class StartPipelineRunRequest(BaseModel):
         default=None,
         max_length=4000,
         description="Latest user goal from Datalyze Chat (config_json).",
+    )
+    relax_file_track_validation: bool = Field(
+        default=False,
+        description="Datalyze Chat: accept any company uploads regardless of analysis_track.",
     )
 
 

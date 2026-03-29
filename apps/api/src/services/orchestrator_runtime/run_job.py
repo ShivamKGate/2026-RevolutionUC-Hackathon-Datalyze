@@ -33,7 +33,6 @@ def run_orchestrator_job(
     onboarding_path: str | None,
     public_scrape_enabled: bool,
     skip_input_dedup: bool = False,
-    custom_base_track: str | None = None,
 ) -> None:
     """Execute one pipeline run (blocking until completion or process termination)."""
     try:
@@ -49,7 +48,6 @@ def run_orchestrator_job(
             onboarding_path=onboarding_path,
             public_scrape_enabled=public_scrape_enabled,
             skip_input_dedup=skip_input_dedup,
-            custom_base_track=custom_base_track,
         )
         engine.execute()
     except Exception:

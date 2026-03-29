@@ -15,6 +15,7 @@ from schemas.files_runs import (
     PipelineRunOut,
     StartPipelineRunRequest,
 )
+from services.custom_analysis_run import onboarding_path_for_custom_base
 from services.datalyze_pipeline_pick import pick_custom_base_track
 from services.external_agent_clients import gemini_or_light_chat_completion
 
@@ -137,12 +138,13 @@ def datalyze_turn(
             user,
             StartPipelineRunRequest(
                 uploaded_file_ids=ids,
-                onboarding_path="Datalyze Chat",
+                onboarding_path=onboarding_path_for_custom_base(base),
                 force_new=True,
                 public_scrape_enabled=scrape,
                 custom_base_track=base,
                 pipeline_selection_rationale=pipeline_rationale,
                 datalyze_user_instruction=user_instruction or None,
+                relax_file_track_validation=True,
             ),
         )
     except Exception as e:

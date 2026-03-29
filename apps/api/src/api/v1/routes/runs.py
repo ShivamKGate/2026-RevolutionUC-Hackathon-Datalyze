@@ -274,7 +274,7 @@ def execute_pipeline_start(user: dict, body: StartPipelineRunRequest) -> Pipelin
     try:
         track = resolve_track(onboarding_path).value
         if file_ids:
-            if track == "custom_analysis":
+            if bool(body.relax_file_track_validation):
                 _validate_file_ids(db, company_id, file_ids, track=None)
             else:
                 _validate_file_ids(db, company_id, file_ids, track=track)
@@ -351,7 +351,6 @@ def execute_pipeline_start(user: dict, body: StartPipelineRunRequest) -> Pipelin
             onboarding_path,
             scrape,
             bool(body.force_new),
-            custom_base,
         ),
         name=f"run-{row.slug[:12]}",
         daemon=True,
