@@ -1,0 +1,346 @@
+{
+  "state": "completed",
+  "current_stage": "finalize",
+  "current_agent": "elevenlabs_narration",
+  "step_count": 20,
+  "events": [
+    {
+      "timestamp": "2026-03-29T06:24:39.440992+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "classify"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:39.442496+00:00",
+      "type": "agent_started",
+      "agent": "pipeline_classifier",
+      "detail": "Step 1"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:54.012664+00:00",
+      "type": "agent_completed",
+      "agent": "pipeline_classifier",
+      "detail": "Track classified (light_model_fallback): predictive"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:54.032741+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "ingest"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:54.034745+00:00",
+      "type": "agent_started",
+      "agent": "file_type_classifier",
+      "detail": "Step 2"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:57.243794+00:00",
+      "type": "agent_completed",
+      "agent": "file_type_classifier",
+      "detail": "file_type_classifier completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:24:57.252793+00:00",
+      "type": "agent_started",
+      "agent": "pdf_processor",
+      "detail": "Step 3"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:05.618272+00:00",
+      "type": "agent_completed",
+      "agent": "pdf_processor",
+      "detail": "pdf_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:05.629035+00:00",
+      "type": "agent_started",
+      "agent": "csv_processor",
+      "detail": "Step 4"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:26.019059+00:00",
+      "type": "agent_completed",
+      "agent": "csv_processor",
+      "detail": "csv_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:26.030312+00:00",
+      "type": "agent_started",
+      "agent": "excel_processor",
+      "detail": "Step 5"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:48.321981+00:00",
+      "type": "agent_completed",
+      "agent": "excel_processor",
+      "detail": "excel_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:25:48.333946+00:00",
+      "type": "agent_started",
+      "agent": "json_processor",
+      "detail": "Step 6"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:09.051265+00:00",
+      "type": "agent_completed",
+      "agent": "json_processor",
+      "detail": "json_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:09.062146+00:00",
+      "type": "agent_started",
+      "agent": "plain_text_processor",
+      "detail": "Step 7"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.476007+00:00",
+      "type": "agent_completed",
+      "agent": "plain_text_processor",
+      "detail": "plain_text_processor completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.485962+00:00",
+      "type": "agent_started",
+      "agent": "image_multimodal_processor",
+      "detail": "Step 8"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.487464+00:00",
+      "type": "agent_retry",
+      "agent": "image_multimodal_processor",
+      "detail": "Low confidence (0.30) \u2014 retrying with additional context"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.487464+00:00",
+      "type": "agent_completed",
+      "agent": "image_multimodal_processor",
+      "detail": "image_multimodal_processor: vision processing deferred (no image inputs in context)"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.490970+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "process"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:23.491974+00:00",
+      "type": "agent_started",
+      "agent": "data_cleaning",
+      "detail": "Step 9"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:36.306708+00:00",
+      "type": "agent_completed",
+      "agent": "data_cleaning",
+      "detail": "data_cleaning completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:36.318903+00:00",
+      "type": "agent_started",
+      "agent": "smart_categorizer_metadata",
+      "detail": "Step 10"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:42.533122+00:00",
+      "type": "agent_completed",
+      "agent": "smart_categorizer_metadata",
+      "detail": "smart_categorizer_metadata completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:42.545941+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "aggregate"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:42.546945+00:00",
+      "type": "agent_started",
+      "agent": "public_data_scraper",
+      "detail": "Step 11"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:56.925343+00:00",
+      "type": "agent_completed",
+      "agent": "public_data_scraper",
+      "detail": "public_data_scraper completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:26:56.936953+00:00",
+      "type": "agent_started",
+      "agent": "aggregator",
+      "detail": "Step 12"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:14.056614+00:00",
+      "type": "agent_completed",
+      "agent": "aggregator",
+      "detail": "aggregator completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:14.069640+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "analyze"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:14.071143+00:00",
+      "type": "agent_started",
+      "agent": "conflict_detection",
+      "detail": "Step 13"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:22.193853+00:00",
+      "type": "agent_completed",
+      "agent": "conflict_detection",
+      "detail": "conflict_detection completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:22.208549+00:00",
+      "type": "agent_started",
+      "agent": "trend_forecasting",
+      "detail": "Step 14"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:58.455188+00:00",
+      "type": "agent_completed",
+      "agent": "trend_forecasting",
+      "detail": "```json\n{\n  \"forecasts\": [\n    {\n      \"metric\": \"Revenue Trend\",\n      \"historical\": [\n        {\"date\": \"2023-01\", \"value\": 100000},\n        {\"date\": \"2023-02\", \"value\": 110000},\n        {\"date\": \"20"
+    },
+    {
+      "timestamp": "2026-03-29T06:27:58.457632+00:00",
+      "type": "agent_started",
+      "agent": "sentiment_analysis",
+      "detail": "Step 15"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:08.683809+00:00",
+      "type": "agent_completed",
+      "agent": "sentiment_analysis",
+      "detail": "sentiment_analysis completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:08.697352+00:00",
+      "type": "agent_started",
+      "agent": "knowledge_graph_builder",
+      "detail": "Step 16"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:29.630283+00:00",
+      "type": "agent_completed",
+      "agent": "knowledge_graph_builder",
+      "detail": "knowledge_graph_builder completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:29.643887+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "synthesize"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:29.645391+00:00",
+      "type": "agent_started",
+      "agent": "insight_generation",
+      "detail": "Step 17"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:39.833917+00:00",
+      "type": "agent_completed",
+      "agent": "insight_generation",
+      "detail": "insight_generation completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:39.845960+00:00",
+      "type": "agent_started",
+      "agent": "swot_analysis",
+      "detail": "Step 18"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:54.761371+00:00",
+      "type": "agent_completed",
+      "agent": "swot_analysis",
+      "detail": "swot_analysis completed"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:54.773749+00:00",
+      "type": "stage_started",
+      "agent": "orchestrator",
+      "detail": "finalize"
+    },
+    {
+      "timestamp": "2026-03-29T06:28:54.774752+00:00",
+      "type": "agent_started",
+      "agent": "executive_summary",
+      "detail": "Step 19"
+    },
+    {
+      "timestamp": "2026-03-29T06:29:05.972293+00:00",
+      "type": "agent_completed",
+      "agent": "executive_summary",
+      "detail": "```json\n{\n    \"headline\": \"Google's Q4 Strategic Outlook: Strong Revenue Momentum Meets Heightened Regulatory Risks\",\n    \"situation_overview\": \"Analysis reveals steady revenue growth (averaging 5.8% "
+    },
+    {
+      "timestamp": "2026-03-29T06:29:05.974862+00:00",
+      "type": "agent_started",
+      "agent": "elevenlabs_narration",
+      "detail": "Step 20"
+    },
+    {
+      "timestamp": "2026-03-29T06:29:06.069539+00:00",
+      "type": "agent_retry",
+      "agent": "elevenlabs_narration",
+      "detail": "Low confidence (0.30) \u2014 retrying with additional context"
+    },
+    {
+      "timestamp": "2026-03-29T06:29:06.069539+00:00",
+      "type": "agent_completed",
+      "agent": "elevenlabs_narration",
+      "detail": "No executive summary available for narration"
+    },
+    {
+      "timestamp": "2026-03-29T06:29:06.073209+00:00",
+      "type": "run_completed",
+      "agent": "orchestrator",
+      "detail": "completed"
+    }
+  ],
+  "completed": [
+    "pipeline_classifier",
+    "file_type_classifier",
+    "pdf_processor",
+    "csv_processor",
+    "excel_processor",
+    "json_processor",
+    "plain_text_processor",
+    "image_multimodal_processor",
+    "data_cleaning",
+    "smart_categorizer_metadata",
+    "public_data_scraper",
+    "aggregator",
+    "conflict_detection",
+    "trend_forecasting",
+    "sentiment_analysis",
+    "knowledge_graph_builder",
+    "insight_generation",
+    "swot_analysis",
+    "executive_summary",
+    "elevenlabs_narration"
+  ],
+  "pending": [],
+  "failed": [],
+  "skipped": [],
+  "retries": {},
+  "next_candidates": [],
+  "timing_budget": {
+    "elapsed_seconds": 266.7,
+    "max_seconds": 420,
+    "remaining_seconds": 153.3,
+    "budget_exceeded": false,
+    "in_wrap_up_phase": false,
+    "wrap_up_started_at": 300
+  },
+  "warnings": [],
+  "fix_suggestions": [],
+  "done": true
+}

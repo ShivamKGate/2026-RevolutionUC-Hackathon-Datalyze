@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "summary": "```json\n{\n  \"forecasts\": [\n    {\n      \"metric\": \"Revenue Trend\",\n      \"historical\": [\n        {\"date\": \"2023-01\", \"value\": 100000},\n        {\"date\": \"2023-02\", \"value\": 110000},\n        {\"date\": \"2023-03\", \"value\": 115000},\n        {\"date\": \"2023-04\", \"value\": 120000},\n        {\"date\": \"2023-05\", \"value\": 125000},\n        {\"date\": \"2023-06\", \"value\": 130000},\n        {\"date\": \"2023-07\", \"value\": 135000},\n        {\"date\": \"2023-08\", \"value\": 140000},\n        {\"date\": \"2023-09\", \"value\": 145000}",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.5,
+  "errors": []
+}

@@ -1,0 +1,71 @@
+{
+  "status": "ok",
+  "summary": "sentiment_analysis completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "sentiments": [
+          {
+            "text_id": "1",
+            "label": "positive",
+            "confidence": 0.85,
+            "key_phrases": [
+              "great service",
+              "highly recommend"
+            ]
+          },
+          {
+            "text_id": "2",
+            "label": "neutral",
+            "confidence": 0.75,
+            "key_phrases": [
+              "okay experience",
+              "nothing special"
+            ]
+          },
+          {
+            "text_id": "3",
+            "label": "negative",
+            "confidence": 0.9,
+            "key_phrases": [
+              "poor quality",
+              "very disappointed"
+            ]
+          }
+        ],
+        "trend_summary": {
+          "positive_pct": 33.33,
+          "negative_pct": 33.33,
+          "neutral_pct": 33.33,
+          "overall_direction": "stable"
+        },
+        "sentiment_distribution": [
+          {
+            "label": "positive",
+            "count": 1,
+            "pct": 33.33
+          },
+          {
+            "label": "negative",
+            "count": 1,
+            "pct": 33.33
+          },
+          {
+            "label": "neutral",
+            "count": 1,
+            "pct": 33.33
+          }
+        ],
+        "chart_suggestions": [
+          "sentiment_donut",
+          "sentiment_trend_line",
+          "channel_sentiment_bar"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

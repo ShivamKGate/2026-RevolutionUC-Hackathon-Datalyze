@@ -1,0 +1,101 @@
+{
+  "status": "ok",
+  "summary": "plain_text_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "chunks": [
+          {
+            "chunk_id": "1",
+            "content": "Current Task: You are the Plain Text Processor Agent for the Datalyze platform.",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "2",
+            "content": "Role: Direct text extraction",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "3",
+            "content": "Company: Google",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "4",
+            "content": "Analysis track: predictive",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "5",
+            "content": "Input files: 1",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "6",
+            "content": "Prior agent results:",
+            "tag": "narrative"
+          },
+          {
+            "chunk_id": "7",
+            "content": "- pipeline_classifier: Track classified (light_model_fallback): predictive",
+            "tag": "log_entry"
+          },
+          {
+            "chunk_id": "8",
+            "content": "- file_type_classifier: file_type_classifier completed",
+            "tag": "log_entry"
+          },
+          {
+            "chunk_id": "9",
+            "content": "- pdf_processor: pdf_processor completed",
+            "tag": "log_entry"
+          },
+          {
+            "chunk_id": "10",
+            "content": "- csv_processor: csv_processor completed",
+            "tag": "log_entry"
+          },
+          {
+            "chunk_id": "11",
+            "content": "- excel_processor: excel_processor completed",
+            "tag": "log_entry"
+          },
+          {
+            "chunk_id": "12",
+            "content": "- json_processor: json_processor completed",
+            "tag": "log_entry"
+          }
+        ],
+        "column_metadata": [],
+        "data_preview": {
+          "sample_chunks": [
+            {
+              "chunk_id": "1",
+              "tag": "narrative",
+              "content": "Current Task: You are the Plain Text Processor Agent for the Datalyze platform."
+            }
+          ]
+        },
+        "detected_schema": {
+          "document_type": "mixed",
+          "semantic_tag_counts": {
+            "narrative": 7,
+            "log_entry": 5
+          }
+        },
+        "semantic_tags": [
+          "narrative",
+          "log_entry"
+        ],
+        "chart_suggestions": [
+          "tag_distribution_bar",
+          "kpi_card"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

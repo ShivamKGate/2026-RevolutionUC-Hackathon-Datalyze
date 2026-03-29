@@ -1,0 +1,156 @@
+{
+  "status": "ok",
+  "summary": "json_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "records": [
+          {
+            "path": "root.users.id",
+            "value": "12345",
+            "type": "string"
+          },
+          {
+            "path": "root.users.name",
+            "value": "John Doe",
+            "type": "string"
+          },
+          {
+            "path": "root.users.email",
+            "value": "john.doe@example.com",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.street",
+            "value": "123 Elm St",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.city",
+            "value": "Springfield",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.state",
+            "value": "IL",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.zip",
+            "value": "62704",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.order_id",
+            "value": "ORD123456",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.product",
+            "value": "Widget",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.quantity",
+            "value": 5,
+            "type": "number"
+          },
+          {
+            "path": "root.orders.price",
+            "value": 29.99,
+            "type": "number"
+          },
+          {
+            "path": "root.orders.date",
+            "value": "2023-03-15T14:48:00Z",
+            "type": "string"
+          }
+        ],
+        "column_metadata": [
+          {
+            "path": "root.users.id",
+            "type": "string"
+          },
+          {
+            "path": "root.users.name",
+            "type": "string"
+          },
+          {
+            "path": "root.users.email",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.street",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.city",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.state",
+            "type": "string"
+          },
+          {
+            "path": "root.users.address.zip",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.order_id",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.product",
+            "type": "string"
+          },
+          {
+            "path": "root.orders.quantity",
+            "type": "number"
+          },
+          {
+            "path": "root.orders.price",
+            "type": "number"
+          },
+          {
+            "path": "root.orders.date",
+            "type": "string"
+          }
+        ],
+        "data_preview": {
+          "sample_records": [
+            {
+              "path": "root.users.id",
+              "value": "12345"
+            }
+          ]
+        },
+        "detected_schema": {
+          "max_depth": 2,
+          "time_fields": [
+            "root.orders.date"
+          ],
+          "measure_fields": [
+            "root.orders.price"
+          ]
+        },
+        "nested_map": {
+          "max_depth": 2,
+          "paths": [
+            "root.users",
+            "root.users.address",
+            "root.orders"
+          ]
+        },
+        "chart_suggestions": [
+          "kpi_card",
+          "bar_chart",
+          "time_series_chart"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

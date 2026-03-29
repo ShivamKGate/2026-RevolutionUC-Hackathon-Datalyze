@@ -804,17 +804,17 @@ These are explicitly deferred:
 
 ## Execution Order & Priority
 
-| Priority | Phase                              | Est. Effort  | Dependencies                                 | Notes (post-Shivam) |
-| -------- | ---------------------------------- | ------------ | -------------------------------------------- | ------------------- |
-| **P0**   | Phase 1: Smart Orchestrator Fix    | 2 sessions   | None — start immediately                     | Still fully open |
-| **P0**   | Phase 2: Database & Infrastructure | 1 session    | None — can parallel with Phase 1             | Still fully open |
-| **P0**   | Phase 7 (below): Opt/SC Synthetic Data | 1 session | Needed for your track testing              | Predictive/automation data **done** (Shivam) |
-| **P1**   | Phase 3: Dashboard & Admin         | 2 sessions   | Phase 2 (DB migrations)                      | Open |
-| **P1**   | Phase 4: Analysis Detail Page      | 2 sessions   | `TrackRenderer` + export route exist         | **Integration only** — you wire data |
-| **P1**   | Phase 5: Optimization Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives | Open |
-| **P1**   | Phase 6: Supply Chain Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives | Open |
-| **P2**   | Phase 8: Testing                   | 1–2 sessions | Phases 1-7 complete                          | Open |
-| **P3**   | Phase 9: Presentation              | 1 session    | After all testing passes                     | HTML file exists — add your slides |
+| Priority | Phase                                  | Est. Effort  | Dependencies                                 | Notes (post-Shivam)                          |
+| -------- | -------------------------------------- | ------------ | -------------------------------------------- | -------------------------------------------- |
+| **P0**   | Phase 1: Smart Orchestrator Fix        | 2 sessions   | None — start immediately                     | Still fully open                             |
+| **P0**   | Phase 2: Database & Infrastructure     | 1 session    | None — can parallel with Phase 1             | Still fully open                             |
+| **P0**   | Phase 7 (below): Opt/SC Synthetic Data | 1 session    | Needed for your track testing                | Predictive/automation data **done** (Shivam) |
+| **P1**   | Phase 3: Dashboard & Admin             | 2 sessions   | Phase 2 (DB migrations)                      | Open                                         |
+| **P1**   | Phase 4: Analysis Detail Page          | 2 sessions   | `TrackRenderer` + export route exist         | **Integration only** — you wire data         |
+| **P1**   | Phase 5: Optimization Visuals          | 1 session    | Phase 4 structure, Shivam's chart primitives | Open                                         |
+| **P1**   | Phase 6: Supply Chain Visuals          | 1 session    | Phase 4 structure, Shivam's chart primitives | Open                                         |
+| **P2**   | Phase 8: Testing                       | 1–2 sessions | Phases 1-7 complete                          | Open                                         |
+| **P3**   | Phase 9: Presentation                  | 1 session    | After all testing passes                     | HTML file exists — add your slides           |
 
 **Total estimated sessions:** 12–14 focused work sessions (unchanged; UI prefactor may shave Phase 4 slightly)
 
@@ -822,15 +822,15 @@ These are explicitly deferred:
 
 ## Coordination Checkpoints with Shivam
 
-| When                 | What                                                                                  | Status |
-| -------------------- | ------------------------------------------------------------------------------------- | ------ |
-| **Before Phase 1**   | Agree on `pipeline_classifier` output schema (recommended_agents, skip_agents fields) | **Done** (schema in agents + contracts) |
-| **Before Phase 4**   | `TrackRenderer` + props (`track`, `agentResults`, `visualizationPlan`, `slug`)       | **Done** — integrate in `AnalysisDetailPage` |
-| **Before Phase 4**   | `visualization_plan` JSON (output_evaluator contract)                                 | **Done** — wire persistence + pass-through |
-| **After Phase 2**    | bcrypt hash for demo password in seed SQL                                           | Open if seed still has placeholder |
-| **After Phases 5-6** | Optimization/supply-chain templates use Shivam’s **chart** primitives only          | Open (your Phase 5–6) |
-| **Before Phase 9**   | Add your slides to `datalyze_demo.html` (business + demo script)                      | Open |
-| **End of each day**  | Joint `npm run dev` walkthrough                                                     | Ongoing |
+| When                 | What                                                                                  | Status                                       |
+| -------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **Before Phase 1**   | Agree on `pipeline_classifier` output schema (recommended_agents, skip_agents fields) | **Done** (schema in agents + contracts)      |
+| **Before Phase 4**   | `TrackRenderer` + props (`track`, `agentResults`, `visualizationPlan`, `slug`)        | **Done** — integrate in `AnalysisDetailPage` |
+| **Before Phase 4**   | `visualization_plan` JSON (output_evaluator contract)                                 | **Done** — wire persistence + pass-through   |
+| **After Phase 2**    | bcrypt hash for demo password in seed SQL                                             | Open if seed still has placeholder           |
+| **After Phases 5-6** | Optimization/supply-chain templates use Shivam’s **chart** primitives only            | Open (your Phase 5–6)                        |
+| **Before Phase 9**   | Add your slides to `datalyze_demo.html` (business + demo script)                      | Open                                         |
+| **End of each day**  | Joint `npm run dev` walkthrough                                                       | Ongoing                                      |
 
 ---
 
@@ -857,7 +857,7 @@ Still add when you implement the corresponding features:
 
 3. **PDF export:** Route is live at `GET /api/v1/runs/{slug}/export/pdf`. Ensure API venv has `reportlab` (`pip install -r apps/api/requirements.txt`). Frontend already has `exportRunPDF`; `ExportButton` inside `TrackRenderer` uses the download path—keep CORS/cookies consistent with other `/api/v1/runs/*` calls.
 
-4. **Synthetic data:** Shivam added **predictive/** and **automation/** CSV+JSON. Your Phase **7** in *this* plan is **optimization/** and **supply_chain/** datasets only (still open).
+4. **Synthetic data:** Shivam added **predictive/** and **automation/** CSV+JSON. Your Phase **7** in _this_ plan is **optimization/** and **supply_chain/** datasets only (still open).
 
 5. **Presentation:** `Miscellaneous/presentation/datalyze_demo.html` exists with tech/architecture slides. Add your **Phase 9** sections (business strategy, scripted demo, roadmap) in the same file or a linked deck—coordinate styling with Shivam.
 

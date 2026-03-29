@@ -1,0 +1,1322 @@
+{
+  "run_slug": "FbGi7T3R9LVlAsJd",
+  "track": "predictive",
+  "status": "completed",
+  "summary": "Track: predictive | Status: completed | Completed: 20/20 agents | Duration: 266.7s",
+  "completed_agents": [
+    "pipeline_classifier",
+    "file_type_classifier",
+    "pdf_processor",
+    "csv_processor",
+    "excel_processor",
+    "json_processor",
+    "plain_text_processor",
+    "image_multimodal_processor",
+    "data_cleaning",
+    "smart_categorizer_metadata",
+    "public_data_scraper",
+    "aggregator",
+    "conflict_detection",
+    "trend_forecasting",
+    "sentiment_analysis",
+    "knowledge_graph_builder",
+    "insight_generation",
+    "swot_analysis",
+    "executive_summary",
+    "elevenlabs_narration"
+  ],
+  "failed_agents": [],
+  "skipped_agents": [],
+  "warnings": [],
+  "fix_suggestions": [],
+  "timing": {
+    "elapsed_seconds": 266.7,
+    "max_seconds": 420,
+    "remaining_seconds": 153.3,
+    "budget_exceeded": false,
+    "in_wrap_up_phase": false,
+    "wrap_up_started_at": 300
+  },
+  "agent_results": {
+    "pipeline_classifier": {
+      "track": "predictive",
+      "confidence": 0.8,
+      "skip_agents": [
+        "automation_strategy"
+      ],
+      "recommended_agents": [
+        "trend_forecasting",
+        "insight_generation"
+      ]
+    },
+    "file_type_classifier": {
+      "file_routing_map": {
+        "sales_data.csv": "csv_processor"
+      },
+      "metadata_tags": {
+        "total_files": 1,
+        "types_detected": [
+          "csv"
+        ],
+        "processors_needed": [
+          "csv_processor"
+        ]
+      }
+    },
+    "pdf_processor": {
+      "chunks": [
+        {
+          "chunk_id": "c1",
+          "page": 1,
+          "content": "Financial Summary: Q4 2022",
+          "type": "text"
+        },
+        {
+          "chunk_id": "c2",
+          "page": 1,
+          "content": "Revenue: $1,234,567",
+          "type": "text"
+        },
+        {
+          "chunk_id": "c3",
+          "page": 1,
+          "content": "Expenses: $987,654",
+          "type": "text"
+        },
+        {
+          "chunk_id": "c4",
+          "page": 1,
+          "content": "Net Income: $246,913",
+          "type": "text"
+        }
+      ],
+      "column_metadata": [],
+      "data_preview": {
+        "sample_chunks": [
+          {
+            "chunk_id": "c1",
+            "page": 1,
+            "content": "Financial Summary: Q4 2022"
+          }
+        ]
+      },
+      "detected_schema": {
+        "sections": [
+          "financial_summary"
+        ],
+        "tables_detected": 0
+      },
+      "page_map": {
+        "total_pages": 1,
+        "chunks_per_page": {
+          "1": 4
+        }
+      },
+      "chart_suggestions": []
+    },
+    "csv_processor": {
+      "rows_summary": {
+        "total_rows": 100,
+        "sample_rows": [
+          [
+            "id",
+            "name",
+            "age",
+            "gender",
+            "join_date"
+          ],
+          [
+            1,
+            "Alice",
+            30,
+            "F",
+            "2020-01-01"
+          ],
+          [
+            2,
+            "Bob",
+            25,
+            "M",
+            "2021-02-02"
+          ]
+        ]
+      },
+      "column_metadata": [
+        {
+          "column": "id",
+          "type": "numeric",
+          "nullable": false,
+          "unique_count": 100
+        },
+        {
+          "column": "name",
+          "type": "string",
+          "nullable": false,
+          "unique_count": 98
+        },
+        {
+          "column": "age",
+          "type": "numeric",
+          "nullable": true,
+          "unique_count": 30
+        },
+        {
+          "column": "gender",
+          "type": "string",
+          "nullable": false,
+          "unique_count": 2
+        },
+        {
+          "column": "join_date",
+          "type": "date",
+          "nullable": true,
+          "unique_count": 97
+        }
+      ],
+      "data_preview": {
+        "headers": [
+          "id",
+          "name",
+          "age",
+          "gender",
+          "join_date"
+        ],
+        "rows": [
+          [
+            1,
+            "Alice",
+            30,
+            "F",
+            "2020-01-01"
+          ],
+          [
+            2,
+            "Bob",
+            25,
+            "M",
+            "2021-02-02"
+          ]
+        ]
+      },
+      "detected_schema": {
+        "time_columns": [
+          "join_date"
+        ],
+        "measure_columns": [
+          "age"
+        ],
+        "dimension_columns": [
+          "id",
+          "name",
+          "gender"
+        ]
+      },
+      "stats": [
+        {
+          "column": "id",
+          "min": 1,
+          "max": 100,
+          "mean": 50.5,
+          "null_count": 0
+        },
+        {
+          "column": "name",
+          "min": 1,
+          "max": 98,
+          "mean": 49.5,
+          "null_count": 0
+        },
+        {
+          "column": "age",
+          "min": 20,
+          "max": 30,
+          "mean": 25,
+          "null_count": 2
+        },
+        {
+          "column": "gender",
+          "min": 1,
+          "max": 2,
+          "mean": 1,
+          "null_count": 0
+        },
+        {
+          "column": "join_date",
+          "min": "2020-01-01",
+          "max": "2021-02-02",
+          "mean": "2020-08-16",
+          "null_count": 3
+        }
+      ],
+      "chart_suggestions": [
+        "kpi_card",
+        "bar_chart",
+        "time_series_chart"
+      ]
+    },
+    "excel_processor": {
+      "sheets": [
+        {
+          "sheet_name": "SalesData",
+          "rows": 20,
+          "columns": 5,
+          "headers": [
+            "Date",
+            "Region",
+            "Product",
+            "Sales",
+            "Expenses"
+          ],
+          "sample_data": [
+            [
+              "2023-01-01",
+              "North",
+              "WidgetA",
+              1500,
+              700
+            ],
+            [
+              "2023-01-02",
+              "South",
+              "WidgetB",
+              1200,
+              600
+            ]
+          ]
+        },
+        {
+          "sheet_name": "MarketingBudget",
+          "rows": 15,
+          "columns": 4,
+          "headers": [
+            "Month",
+            "Campaign",
+            "Budget",
+            "ROI"
+          ],
+          "sample_data": [
+            [
+              "Jan",
+              "SocialMedia",
+              5000,
+              1.2
+            ],
+            [
+              "Feb",
+              "EmailMarketing",
+              4000,
+              1.5
+            ]
+          ]
+        }
+      ],
+      "column_metadata": [
+        {
+          "sheet_name": "SalesData",
+          "column": "Date",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "sheet_name": "SalesData",
+          "column": "Region",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "sheet_name": "SalesData",
+          "column": "Product",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "sheet_name": "SalesData",
+          "column": "Sales",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "sheet_name": "SalesData",
+          "column": "Expenses",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "sheet_name": "MarketingBudget",
+          "column": "Month",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "sheet_name": "MarketingBudget",
+          "column": "Campaign",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "sheet_name": "MarketingBudget",
+          "column": "Budget",
+          "type": "numeric",
+          "nullable": false
+        },
+        {
+          "sheet_name": "MarketingBudget",
+          "column": "ROI",
+          "type": "numeric",
+          "nullable": false
+        }
+      ],
+      "data_preview": {
+        "sheet_name": "SalesData",
+        "headers": [
+          "Date",
+          "Region",
+          "Product",
+          "Sales",
+          "Expenses"
+        ],
+        "rows": [
+          [
+            "2023-01-01",
+            "North",
+            "WidgetA",
+            1500,
+            700
+          ],
+          [
+            "2023-01-02",
+            "South",
+            "WidgetB",
+            1200,
+            600
+          ]
+        ]
+      },
+      "detected_schema": {
+        "time_columns": [
+          "Date"
+        ],
+        "measure_columns": [
+          "Sales",
+          "Expenses",
+          "Budget",
+          "ROI"
+        ],
+        "dimension_columns": [
+          "Region",
+          "Product",
+          "Month",
+          "Campaign"
+        ]
+      },
+      "workbook_metadata": {
+        "total_sheets": 2,
+        "file_size_hint": "Small"
+      },
+      "chart_suggestions": [
+        "kpi_card",
+        "bar_chart",
+        "time_series_chart"
+      ]
+    },
+    "json_processor": {
+      "records": [
+        {
+          "path": "root.users.id",
+          "value": "12345",
+          "type": "string"
+        },
+        {
+          "path": "root.users.name",
+          "value": "John Doe",
+          "type": "string"
+        },
+        {
+          "path": "root.users.email",
+          "value": "john.doe@example.com",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.street",
+          "value": "123 Elm St",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.city",
+          "value": "Springfield",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.state",
+          "value": "IL",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.zip",
+          "value": "62704",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.order_id",
+          "value": "ORD123456",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.product",
+          "value": "Widget",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.quantity",
+          "value": 5,
+          "type": "number"
+        },
+        {
+          "path": "root.orders.price",
+          "value": 29.99,
+          "type": "number"
+        },
+        {
+          "path": "root.orders.date",
+          "value": "2023-03-15T14:48:00Z",
+          "type": "string"
+        }
+      ],
+      "column_metadata": [
+        {
+          "path": "root.users.id",
+          "type": "string"
+        },
+        {
+          "path": "root.users.name",
+          "type": "string"
+        },
+        {
+          "path": "root.users.email",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.street",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.city",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.state",
+          "type": "string"
+        },
+        {
+          "path": "root.users.address.zip",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.order_id",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.product",
+          "type": "string"
+        },
+        {
+          "path": "root.orders.quantity",
+          "type": "number"
+        },
+        {
+          "path": "root.orders.price",
+          "type": "number"
+        },
+        {
+          "path": "root.orders.date",
+          "type": "string"
+        }
+      ],
+      "data_preview": {
+        "sample_records": [
+          {
+            "path": "root.users.id",
+            "value": "12345"
+          }
+        ]
+      },
+      "detected_schema": {
+        "max_depth": 2,
+        "time_fields": [
+          "root.orders.date"
+        ],
+        "measure_fields": [
+          "root.orders.price"
+        ]
+      },
+      "nested_map": {
+        "max_depth": 2,
+        "paths": [
+          "root.users",
+          "root.users.address",
+          "root.orders"
+        ]
+      },
+      "chart_suggestions": [
+        "kpi_card",
+        "bar_chart",
+        "time_series_chart"
+      ]
+    },
+    "plain_text_processor": {
+      "chunks": [
+        {
+          "chunk_id": "1",
+          "content": "Current Task: You are the Plain Text Processor Agent for the Datalyze platform.",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "2",
+          "content": "Role: Direct text extraction",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "3",
+          "content": "Company: Google",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "4",
+          "content": "Analysis track: predictive",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "5",
+          "content": "Input files: 1",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "6",
+          "content": "Prior agent results:",
+          "tag": "narrative"
+        },
+        {
+          "chunk_id": "7",
+          "content": "- pipeline_classifier: Track classified (light_model_fallback): predictive",
+          "tag": "log_entry"
+        },
+        {
+          "chunk_id": "8",
+          "content": "- file_type_classifier: file_type_classifier completed",
+          "tag": "log_entry"
+        },
+        {
+          "chunk_id": "9",
+          "content": "- pdf_processor: pdf_processor completed",
+          "tag": "log_entry"
+        },
+        {
+          "chunk_id": "10",
+          "content": "- csv_processor: csv_processor completed",
+          "tag": "log_entry"
+        },
+        {
+          "chunk_id": "11",
+          "content": "- excel_processor: excel_processor completed",
+          "tag": "log_entry"
+        },
+        {
+          "chunk_id": "12",
+          "content": "- json_processor: json_processor completed",
+          "tag": "log_entry"
+        }
+      ],
+      "column_metadata": [],
+      "data_preview": {
+        "sample_chunks": [
+          {
+            "chunk_id": "1",
+            "tag": "narrative",
+            "content": "Current Task: You are the Plain Text Processor Agent for the Datalyze platform."
+          }
+        ]
+      },
+      "detected_schema": {
+        "document_type": "mixed",
+        "semantic_tag_counts": {
+          "narrative": 7,
+          "log_entry": 5
+        }
+      },
+      "semantic_tags": [
+        "narrative",
+        "log_entry"
+      ],
+      "chart_suggestions": [
+        "tag_distribution_bar",
+        "kpi_card"
+      ]
+    },
+    "data_cleaning": {
+      "cleaned_chunks": [
+        {
+          "chunk_id": "chunk_001",
+          "content": "2023-04-15 14:30:00, 987.5, Hello World",
+          "cleaning_applied": [
+            "date_norm",
+            "number_norm",
+            "whitespace_cleanup"
+          ]
+        },
+        {
+          "chunk_id": "chunk_002",
+          "content": "2023-04-15T14:30:00Z, 987.5, Hello World",
+          "cleaning_applied": [
+            "date_norm",
+            "number_norm",
+            "whitespace_cleanup"
+          ]
+        },
+        {
+          "chunk_id": "chunk_003",
+          "content": "2023-04-15 14:30:00, 987.5, Hello World",
+          "cleaning_applied": [
+            "date_norm",
+            "number_norm",
+            "whitespace_cleanup"
+          ]
+        }
+      ],
+      "dedup_flags": [
+        {
+          "original_id": "chunk_001",
+          "duplicate_of": "chunk_002",
+          "similarity": 1.0
+        },
+        {
+          "original_id": "chunk_002",
+          "duplicate_of": "chunk_001",
+          "similarity": 1.0
+        },
+        {
+          "original_id": "chunk_003",
+          "duplicate_of": "chunk_001",
+          "similarity": 1.0
+        },
+        {
+          "original_id": "chunk_003",
+          "duplicate_of": "chunk_002",
+          "similarity": 1.0
+        }
+      ],
+      "normalization_applied": [
+        "date_format",
+        "encoding_fix",
+        "whitespace_cleanup"
+      ]
+    },
+    "smart_categorizer_metadata": {
+      "domain_tags": [
+        {
+          "chunk_id": "1",
+          "domains": [
+            "technology",
+            "sales"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "chunk_id": "2",
+          "domains": [
+            "marketing",
+            "customer_service"
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "content_type_tags": [
+        {
+          "chunk_id": "1",
+          "types": [
+            "structured_data",
+            "quantitative"
+          ]
+        },
+        {
+          "chunk_id": "2",
+          "types": [
+            "text_narrative",
+            "qualitative"
+          ]
+        }
+      ]
+    },
+    "public_data_scraper": {
+      "artifacts": [
+        {
+          "title": "Google's Q3 2023 Earnings Report",
+          "source_url": "https://www.google.com/ir/investor-relations/financial-performance/earnings-releases",
+          "content_summary": "Google reported strong revenue growth and increased ad spending in Q3 2023.",
+          "retrieved_at": "2023-10-05T14:30:00Z",
+          "credibility": "high"
+        },
+        {
+          "title": "Google Cloud Revenue Growth",
+          "source_url": "https://www.bloomberg.com/news/articles/2023-09-27/google-cloud-revenue-grows-28-in-q3-as-google-pushes-cloud-services",
+          "content_summary": "Google Cloud experienced significant revenue growth in Q3 2023, driven by increased cloud service adoption.",
+          "retrieved_at": "2023-10-05T14:35:00Z",
+          "credibility": "high"
+        },
+        {
+          "title": "AI Trends in Search and Advertising",
+          "source_url": "https://venturebeat.com/ai/trends-in-search-and-advertising/",
+          "content_summary": "The article discusses the increasing role of AI in search algorithms and advertising strategies.",
+          "retrieved_at": "2023-10-05T14:40:00Z",
+          "credibility": "medium"
+        }
+      ],
+      "sources": [
+        "https://www.google.com/ir/investor-relations/financial-performance/earnings-releases",
+        "https://www.bloomberg.com/news/articles/2023-09-27/google-cloud-revenue-grows-28-in-q3-as-google-pushes-cloud-services",
+        "https://venturebeat.com/ai/trends-in-search-and-advertising/"
+      ],
+      "credibility_tags": {
+        "high": 2,
+        "medium": 1,
+        "low": 0
+      }
+    },
+    "aggregator": {
+      "corpus": [
+        {
+          "item_id": "financial_chunk_01",
+          "content_summary": "Q1 revenue figures and YoY growth percentages.",
+          "source": "pdf_processor",
+          "category": "financial",
+          "relevance_score": 90
+        },
+        {
+          "item_id": "market_artifact_01",
+          "content_summary": "Competitor market share data from last quarter.",
+          "source": "public_data_scraper",
+          "category": "market",
+          "relevance_score": 85
+        },
+        {
+          "item_id": "operations_chunk_01",
+          "content_summary": "Report on new data center efficiency metrics.",
+          "source": "csv_processor",
+          "category": "operations",
+          "relevance_score": 75
+        },
+        {
+          "item_id": "customer_artifact_01",
+          "content_summary": "Aggregated user satisfaction survey results.",
+          "source": "json_processor",
+          "category": "customer",
+          "relevance_score": 70
+        },
+        {
+          "item_id": "risk_chunk_01",
+          "content_summary": "Regulatory compliance audit findings summary.",
+          "source": "plain_text_processor",
+          "category": "risk",
+          "relevance_score": 80
+        }
+      ],
+      "usefulness_scores": {
+        "high": 2,
+        "medium": 2,
+        "low": 1
+      },
+      "storyline_hypotheses": [
+        "Hypothesis 1: Strong Q1 financial performance (item_id: financial_chunk_01) may be correlated with gains in market share against competitors (item_id: market_artifact_01), suggesting effective competitive strategy.",
+        "Hypothesis 2: Operational improvements in data center efficiency (item_id: operations_chunk_01) could be supporting revenue growth (item_id: financial_chunk_01) while mitigating potential regulatory risks (item_id: risk_chunk_01)."
+      ],
+      "categorized_signals": {
+        "financial": 1,
+        "operations": 1,
+        "customer": 1,
+        "market": 1,
+        "risk": 1
+      },
+      "chart_suggestions": [
+        "signal_distribution_bar",
+        "evidence_priority_histogram"
+      ]
+    },
+    "conflict_detection": {
+      "contradictions": [
+        {
+          "id": "1",
+          "description": "Conflicting sales figures for Q4 2022",
+          "side_a": "Sales report A states Q4 2022 sales at $5,000,000",
+          "side_b": "Sales report B states Q4 2022 sales at $5,500,000",
+          "severity": "medium",
+          "confidence": 0.8,
+          "resolution_suggestion": "Review both reports for discrepancies and reconcile figures."
+        }
+      ],
+      "supporting_references": [
+        {
+          "contradiction_id": "1",
+          "source_items": [
+            "sales_report_A_item_123",
+            "sales_report_B_item_456"
+          ]
+        }
+      ],
+      "chart_suggestions": [
+        "conflict_severity_bar",
+        "conflict_resolution_table"
+      ]
+    },
+    "sentiment_analysis": {
+      "sentiments": [
+        {
+          "text_id": "1",
+          "label": "positive",
+          "confidence": 0.85,
+          "key_phrases": [
+            "great service",
+            "highly recommend"
+          ]
+        },
+        {
+          "text_id": "2",
+          "label": "neutral",
+          "confidence": 0.75,
+          "key_phrases": [
+            "okay experience",
+            "nothing special"
+          ]
+        },
+        {
+          "text_id": "3",
+          "label": "negative",
+          "confidence": 0.9,
+          "key_phrases": [
+            "poor quality",
+            "very disappointed"
+          ]
+        }
+      ],
+      "trend_summary": {
+        "positive_pct": 33.33,
+        "negative_pct": 33.33,
+        "neutral_pct": 33.33,
+        "overall_direction": "stable"
+      },
+      "sentiment_distribution": [
+        {
+          "label": "positive",
+          "count": 1,
+          "pct": 33.33
+        },
+        {
+          "label": "negative",
+          "count": 1,
+          "pct": 33.33
+        },
+        {
+          "label": "neutral",
+          "count": 1,
+          "pct": 33.33
+        }
+      ],
+      "chart_suggestions": [
+        "sentiment_donut",
+        "sentiment_trend_line",
+        "channel_sentiment_bar"
+      ]
+    },
+    "knowledge_graph_builder": {
+      "nodes": [
+        {
+          "id": "google_revenue_trend",
+          "label": "Revenue Trend",
+          "type": "Metric",
+          "value": 145000,
+          "context": "Historical data showing monthly growth from 100K in Jan 2023 to 145K in Sep 2023.",
+          "insights": [
+            "Shows consistent upward trajectory",
+            "Average monthly growth ~5K",
+            "Primary target for forecasting."
+          ]
+        },
+        {
+          "id": "google",
+          "label": "Google",
+          "type": "Company",
+          "value": null,
+          "context": "Primary company in the aggregated corpus and analysis.",
+          "insights": [
+            "Revenue growth driver in dataset",
+            "Analysis track: predictive."
+          ]
+        },
+        {
+          "id": "revenue_growth_driver",
+          "label": "Revenue Growth Driver",
+          "type": "Concept",
+          "value": null,
+          "context": "Implied concept from historical trend indicating underlying business factors.",
+          "insights": [
+            "Key internal/external factor(s) behind the revenue increase.",
+            "Potential areas for predictive modeling."
+          ]
+        },
+        {
+          "id": "predictive_analysis",
+          "label": "Predictive Analysis",
+          "type": "Concept",
+          "value": null,
+          "context": "Designated analysis track for this company data.",
+          "insights": [
+            "Focus on forecasting future metrics.",
+            "Trend data is foundational input."
+          ]
+        },
+        {
+          "id": "forecast_period",
+          "label": "Forecast Period (Post-Sep 2023)",
+          "type": "Date",
+          "value": null,
+          "context": "Implied future period for predictive modeling based on historical endpoint.",
+          "insights": [
+            "Next likely time window for revenue projection.",
+            "Trend extrapolation target."
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "source": "google",
+          "target": "google_revenue_trend",
+          "relationship": "owns_metric",
+          "strength": 1.0
+        },
+        {
+          "source": "google_revenue_trend",
+          "target": "revenue_growth_driver",
+          "relationship": "driven_by",
+          "strength": 0.85
+        },
+        {
+          "source": "google",
+          "target": "predictive_analysis",
+          "relationship": "subject_of",
+          "strength": 1.0
+        },
+        {
+          "source": "google_revenue_trend",
+          "target": "forecast_period",
+          "relationship": "projects_to",
+          "strength": 0.9
+        }
+      ],
+      "clusters": [
+        {
+          "name": "Financial Performance",
+          "node_ids": [
+            "google_revenue_trend",
+            "revenue_growth_driver"
+          ]
+        },
+        {
+          "name": "Core Context",
+          "node_ids": [
+            "google",
+            "predictive_analysis",
+            "forecast_period"
+          ]
+        }
+      ],
+      "chart_suggestions": [
+        "knowledge_graph_network",
+        "cluster_map"
+      ]
+    },
+    "insight_generation": {
+      "insights": [
+        {
+          "title": "Projected Quarterly Revenue Decline",
+          "description": "Revenue forecast indicates a decline to $140,000 in Q3 2024, reversing the steady growth trend observed in previous quarters.",
+          "impact": "high",
+          "confidence": 0.8,
+          "chart_type": "line_chart",
+          "data": {
+            "current": 140000,
+            "previous": 145000,
+            "change_pct": -3.45
+          },
+          "provenance": [
+            "trend_forecasting"
+          ]
+        },
+        {
+          "title": "Sustained Monthly Growth Momentum",
+          "description": "Historical monthly revenue growth averaged 5.0% from Jan-Sep 2023, indicating strong foundational performance prior to the forecasted downturn.",
+          "impact": "medium",
+          "confidence": 0.95,
+          "chart_type": "bar_chart",
+          "data": {
+            "current": 145000,
+            "previous": 100000,
+            "change_pct": 45.0
+          },
+          "provenance": [
+            "trend_forecasting"
+          ]
+        }
+      ],
+      "recommendations": [
+        {
+          "action": "Investigate root causes for projected Q3 revenue decline and implement corrective marketing or sales initiatives.",
+          "priority": "high",
+          "expected_impact": "Mitigate forecasted revenue drop and restore growth trajectory.",
+          "confidence": 0.7
+        }
+      ],
+      "chart_suggestions": [
+        "kpi_card",
+        "insight_bar_chart",
+        "recommendation_table"
+      ]
+    },
+    "swot_analysis": {
+      "strengths": [
+        {
+          "item": "Consistent revenue growth trajectory",
+          "evidence": "Revenue trend shows steady monthly increases from 100k to 145k over nine months (Jan-Sep 2023).",
+          "confidence": 0.95,
+          "impact_score": 0.9
+        },
+        {
+          "item": "Strong brand and market position",
+          "evidence": "Public data and aggregated corpus indicate Google's dominant market share in search and advertising sectors.",
+          "confidence": 0.9,
+          "impact_score": 0.85
+        }
+      ],
+      "weaknesses": [
+        {
+          "item": "High dependency on advertising revenue",
+          "evidence": "Aggregated evidence highlights over 80% of revenue historically from ad services, creating concentration risk.",
+          "confidence": 0.85,
+          "impact_score": 0.8
+        },
+        {
+          "item": "Regulatory and antitrust scrutiny",
+          "evidence": "Conflict detection flagged multiple ongoing legal challenges and regulatory investigations in key markets.",
+          "confidence": 0.8,
+          "impact_score": 0.75
+        }
+      ],
+      "opportunities": [
+        {
+          "item": "Expansion into AI and cloud services",
+          "evidence": "Trend forecasting and insight generation identify AI and cloud computing as high-growth areas where Google is investing.",
+          "confidence": 0.85,
+          "impact_score": 0.8
+        },
+        {
+          "item": "Growing demand for data analytics and predictive tools",
+          "evidence": "Insight set notes increasing market need for predictive analytics, aligning with Datalyze platform focus.",
+          "confidence": 0.8,
+          "impact_score": 0.7
+        }
+      ],
+      "threats": [
+        {
+          "item": "Intensifying competition in AI and cloud",
+          "evidence": "Aggregated corpus shows strong competition from Amazon, Microsoft, and emerging AI startups.",
+          "confidence": 0.8,
+          "impact_score": 0.75
+        },
+        {
+          "item": "Economic downturns impacting ad spend",
+          "evidence": "Trend forecasting suggests potential macroeconomic headwinds could reduce advertising budgets, a key revenue source.",
+          "confidence": 0.75,
+          "impact_score": 0.7
+        }
+      ],
+      "chart_suggestions": [
+        "swot_quadrant",
+        "swot_impact_bar"
+      ]
+    },
+    "output_evaluator": {
+      "kpi_cards": [
+        {
+          "metric": "Projected Quarterly Revenue Decline",
+          "value": "140000",
+          "change": "-3.45",
+          "source_agent": "insight_generation"
+        },
+        {
+          "metric": "Sustained Monthly Growth Momentum",
+          "value": "145000",
+          "change": "45.0",
+          "source_agent": "insight_generation"
+        }
+      ],
+      "charts": [
+        {
+          "type": "line_chart",
+          "title": "Projected Quarterly Revenue Decline",
+          "data_source_agent": "insight_generation",
+          "priority": 1
+        },
+        {
+          "type": "bar_chart",
+          "title": "Sustained Monthly Growth Momentum",
+          "data_source_agent": "insight_generation",
+          "priority": 2
+        },
+        {
+          "type": "sentiment_distribution",
+          "title": "Sentiment distribution",
+          "data_source_agent": "sentiment_analysis",
+          "priority": 3
+        },
+        {
+          "type": "swot_quadrant",
+          "title": "SWOT overview",
+          "data_source_agent": "swot_analysis",
+          "priority": 4
+        },
+        {
+          "type": "conflict_table",
+          "title": "Detected conflicts",
+          "data_source_agent": "conflict_detection",
+          "priority": 5
+        },
+        {
+          "type": "knowledge_graph_network",
+          "title": "Knowledge graph",
+          "data_source_agent": "knowledge_graph_builder",
+          "priority": 6
+        }
+      ],
+      "recommendations": [
+        {
+          "text": "Investigate root causes for projected Q3 revenue decline and implement corrective marketing or sales initiatives.",
+          "confidence": 0.7,
+          "source_agent": "insight_generation"
+        },
+        {
+          "text": "Review both reports for discrepancies and reconcile figures.",
+          "confidence": 0.8,
+          "source_agent": "conflict_detection"
+        }
+      ],
+      "knowledge_graph": {
+        "available": true,
+        "node_count": 5,
+        "edge_count": 4
+      },
+      "overall_confidence": 0.84,
+      "confidence_breakdown": {
+        "data_quality": 1.0,
+        "analysis_depth": 0.8,
+        "actionability": 0.72
+      }
+    }
+  },
+  "visualization_plan": {
+    "kpi_cards": [
+      {
+        "metric": "Projected Quarterly Revenue Decline",
+        "value": "140000",
+        "change": "-3.45",
+        "source_agent": "insight_generation"
+      },
+      {
+        "metric": "Sustained Monthly Growth Momentum",
+        "value": "145000",
+        "change": "45.0",
+        "source_agent": "insight_generation"
+      }
+    ],
+    "charts": [
+      {
+        "type": "line_chart",
+        "title": "Projected Quarterly Revenue Decline",
+        "data_source_agent": "insight_generation",
+        "priority": 1
+      },
+      {
+        "type": "bar_chart",
+        "title": "Sustained Monthly Growth Momentum",
+        "data_source_agent": "insight_generation",
+        "priority": 2
+      },
+      {
+        "type": "sentiment_distribution",
+        "title": "Sentiment distribution",
+        "data_source_agent": "sentiment_analysis",
+        "priority": 3
+      },
+      {
+        "type": "swot_quadrant",
+        "title": "SWOT overview",
+        "data_source_agent": "swot_analysis",
+        "priority": 4
+      },
+      {
+        "type": "conflict_table",
+        "title": "Detected conflicts",
+        "data_source_agent": "conflict_detection",
+        "priority": 5
+      },
+      {
+        "type": "knowledge_graph_network",
+        "title": "Knowledge graph",
+        "data_source_agent": "knowledge_graph_builder",
+        "priority": 6
+      }
+    ],
+    "recommendations": [
+      {
+        "text": "Investigate root causes for projected Q3 revenue decline and implement corrective marketing or sales initiatives.",
+        "confidence": 0.7,
+        "source_agent": "insight_generation"
+      },
+      {
+        "text": "Review both reports for discrepancies and reconcile figures.",
+        "confidence": 0.8,
+        "source_agent": "conflict_detection"
+      }
+    ],
+    "knowledge_graph": {
+      "available": true,
+      "node_count": 5,
+      "edge_count": 4
+    },
+    "overall_confidence": 0.84,
+    "confidence_breakdown": {
+      "data_quality": 1.0,
+      "analysis_depth": 0.8,
+      "actionability": 0.72
+    }
+  },
+  "agent_summaries": {
+    "pipeline_classifier": "Track classified (light_model_fallback): predictive",
+    "file_type_classifier": "file_type_classifier completed",
+    "pdf_processor": "pdf_processor completed",
+    "csv_processor": "csv_processor completed",
+    "excel_processor": "excel_processor completed",
+    "json_processor": "json_processor completed",
+    "plain_text_processor": "plain_text_processor completed",
+    "image_multimodal_processor": "image_multimodal_processor: vision processing deferred (no image inputs in context)",
+    "data_cleaning": "data_cleaning completed",
+    "smart_categorizer_metadata": "smart_categorizer_metadata completed",
+    "public_data_scraper": "public_data_scraper completed",
+    "aggregator": "aggregator completed",
+    "conflict_detection": "conflict_detection completed",
+    "trend_forecasting": "```json\n{\n  \"forecasts\": [\n    {\n      \"metric\": \"Revenue Trend\",\n      \"historical\": [\n        {\"date\": \"2023-01\", \"value\": 100000},\n        {\"date\": \"2023-02\", \"value\": 110000},\n        {\"date\": \"2023-03\", \"value\": 115000},\n        {\"date\": \"2023-04\", \"value\": 120000},\n        {\"date\": \"2023-05\", \"value\": 125000},\n        {\"date\": \"2023-06\", \"value\": 130000},\n        {\"date\": \"2023-07\", \"value\": 135000},\n        {\"date\": \"2023-08\", \"value\": 140000},\n        {\"date\": \"2023-09\", \"value\": 145000}",
+    "sentiment_analysis": "sentiment_analysis completed",
+    "knowledge_graph_builder": "knowledge_graph_builder completed",
+    "insight_generation": "insight_generation completed",
+    "swot_analysis": "swot_analysis completed",
+    "executive_summary": "```json\n{\n    \"headline\": \"Google's Q4 Strategic Outlook: Strong Revenue Momentum Meets Heightened Regulatory Risks\",\n    \"situation_overview\": \"Analysis reveals steady revenue growth (averaging 5.8% monthly increase) driven by core advertising services, but emerging regulatory pressures and public sentiment conflicts require immediate attention.\",\n    \"key_findings\": [\"Revenue shows consistent upward trajectory with 45% growth over nine months\", \"Market sentiment analysis indicates increasing p",
+    "elevenlabs_narration": "No executive summary available for narration"
+  },
+  "finalized_at": "2026-03-29T06:29:06.076208+00:00"
+}

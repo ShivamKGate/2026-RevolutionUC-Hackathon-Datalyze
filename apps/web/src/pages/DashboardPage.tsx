@@ -5,6 +5,7 @@ import {
   listPipelineRuns,
   listUploadedFiles,
   startPipelineRun,
+  stopActiveRuns,
   type PipelineRun,
 } from "../lib/api";
 
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [trackFilter, setTrackFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -97,6 +99,21 @@ export default function DashboardPage() {
       setError(e instanceof Error ? e.message : "Could not start analysis");
     } finally {
       setStarting(false);
+    }
+  }
+
+  async function handleStopActiveAnalyses() {
+    setStopping(true);
+    setError(null);
+    try {
+      await stopActiveRuns();
+      await refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Could not stop active analyses",
+      );
+    } finally {
+      setStopping(false);
     }
   }
 
@@ -231,6 +248,19 @@ export default function DashboardPage() {
             <option value="supply_chain">Supply chain</option>
           </select>
         </label>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={stopping}
+          title="Immediately terminates running pipeline workers (including in-flight model calls), then marks those runs cancelled in the database. Use before starting a new analysis or clearing history."
+          onClick={() => void handleStopActiveAnalyses()}
+          style={{
+            borderColor: "rgba(248, 113, 113, 0.55)",
+            color: "#fca5a5",
+          }}
+        >
+          {stopping ? "Force stopping…" : "Force stop active analyses"}
+        </button>
       </div>
 
       <h2 className="section-title">Your analyses</h2>

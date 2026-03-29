@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "stage": "aggregate",
+  "checks": [
+    {
+      "check": "aggregator_completed",
+      "passed": true
+    },
+    {
+      "check": "aggregator_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "aggregator_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

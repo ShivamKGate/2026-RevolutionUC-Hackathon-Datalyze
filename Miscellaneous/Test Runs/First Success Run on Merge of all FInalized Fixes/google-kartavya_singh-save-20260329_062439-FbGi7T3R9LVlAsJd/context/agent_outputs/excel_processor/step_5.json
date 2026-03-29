@@ -1,0 +1,177 @@
+{
+  "status": "ok",
+  "summary": "excel_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "sheets": [
+          {
+            "sheet_name": "SalesData",
+            "rows": 20,
+            "columns": 5,
+            "headers": [
+              "Date",
+              "Region",
+              "Product",
+              "Sales",
+              "Expenses"
+            ],
+            "sample_data": [
+              [
+                "2023-01-01",
+                "North",
+                "WidgetA",
+                1500,
+                700
+              ],
+              [
+                "2023-01-02",
+                "South",
+                "WidgetB",
+                1200,
+                600
+              ]
+            ]
+          },
+          {
+            "sheet_name": "MarketingBudget",
+            "rows": 15,
+            "columns": 4,
+            "headers": [
+              "Month",
+              "Campaign",
+              "Budget",
+              "ROI"
+            ],
+            "sample_data": [
+              [
+                "Jan",
+                "SocialMedia",
+                5000,
+                1.2
+              ],
+              [
+                "Feb",
+                "EmailMarketing",
+                4000,
+                1.5
+              ]
+            ]
+          }
+        ],
+        "column_metadata": [
+          {
+            "sheet_name": "SalesData",
+            "column": "Date",
+            "type": "date",
+            "nullable": false
+          },
+          {
+            "sheet_name": "SalesData",
+            "column": "Region",
+            "type": "string",
+            "nullable": false
+          },
+          {
+            "sheet_name": "SalesData",
+            "column": "Product",
+            "type": "string",
+            "nullable": false
+          },
+          {
+            "sheet_name": "SalesData",
+            "column": "Sales",
+            "type": "numeric",
+            "nullable": false
+          },
+          {
+            "sheet_name": "SalesData",
+            "column": "Expenses",
+            "type": "numeric",
+            "nullable": false
+          },
+          {
+            "sheet_name": "MarketingBudget",
+            "column": "Month",
+            "type": "string",
+            "nullable": false
+          },
+          {
+            "sheet_name": "MarketingBudget",
+            "column": "Campaign",
+            "type": "string",
+            "nullable": false
+          },
+          {
+            "sheet_name": "MarketingBudget",
+            "column": "Budget",
+            "type": "numeric",
+            "nullable": false
+          },
+          {
+            "sheet_name": "MarketingBudget",
+            "column": "ROI",
+            "type": "numeric",
+            "nullable": false
+          }
+        ],
+        "data_preview": {
+          "sheet_name": "SalesData",
+          "headers": [
+            "Date",
+            "Region",
+            "Product",
+            "Sales",
+            "Expenses"
+          ],
+          "rows": [
+            [
+              "2023-01-01",
+              "North",
+              "WidgetA",
+              1500,
+              700
+            ],
+            [
+              "2023-01-02",
+              "South",
+              "WidgetB",
+              1200,
+              600
+            ]
+          ]
+        },
+        "detected_schema": {
+          "time_columns": [
+            "Date"
+          ],
+          "measure_columns": [
+            "Sales",
+            "Expenses",
+            "Budget",
+            "ROI"
+          ],
+          "dimension_columns": [
+            "Region",
+            "Product",
+            "Month",
+            "Campaign"
+          ]
+        },
+        "workbook_metadata": {
+          "total_sheets": 2,
+          "file_size_hint": "Small"
+        },
+        "chart_suggestions": [
+          "kpi_card",
+          "bar_chart",
+          "time_series_chart"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

@@ -1,0 +1,74 @@
+{
+  "status": "ok",
+  "summary": "swot_analysis completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "strengths": [
+          {
+            "item": "Consistent revenue growth trajectory",
+            "evidence": "Revenue trend shows steady monthly increases from 100k to 145k over nine months (Jan-Sep 2023).",
+            "confidence": 0.95,
+            "impact_score": 0.9
+          },
+          {
+            "item": "Strong brand and market position",
+            "evidence": "Public data and aggregated corpus indicate Google's dominant market share in search and advertising sectors.",
+            "confidence": 0.9,
+            "impact_score": 0.85
+          }
+        ],
+        "weaknesses": [
+          {
+            "item": "High dependency on advertising revenue",
+            "evidence": "Aggregated evidence highlights over 80% of revenue historically from ad services, creating concentration risk.",
+            "confidence": 0.85,
+            "impact_score": 0.8
+          },
+          {
+            "item": "Regulatory and antitrust scrutiny",
+            "evidence": "Conflict detection flagged multiple ongoing legal challenges and regulatory investigations in key markets.",
+            "confidence": 0.8,
+            "impact_score": 0.75
+          }
+        ],
+        "opportunities": [
+          {
+            "item": "Expansion into AI and cloud services",
+            "evidence": "Trend forecasting and insight generation identify AI and cloud computing as high-growth areas where Google is investing.",
+            "confidence": 0.85,
+            "impact_score": 0.8
+          },
+          {
+            "item": "Growing demand for data analytics and predictive tools",
+            "evidence": "Insight set notes increasing market need for predictive analytics, aligning with Datalyze platform focus.",
+            "confidence": 0.8,
+            "impact_score": 0.7
+          }
+        ],
+        "threats": [
+          {
+            "item": "Intensifying competition in AI and cloud",
+            "evidence": "Aggregated corpus shows strong competition from Amazon, Microsoft, and emerging AI startups.",
+            "confidence": 0.8,
+            "impact_score": 0.75
+          },
+          {
+            "item": "Economic downturns impacting ad spend",
+            "evidence": "Trend forecasting suggests potential macroeconomic headwinds could reduce advertising budgets, a key revenue source.",
+            "confidence": 0.75,
+            "impact_score": 0.7
+          }
+        ],
+        "chart_suggestions": [
+          "swot_quadrant",
+          "swot_impact_bar"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

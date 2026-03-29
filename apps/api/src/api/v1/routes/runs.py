@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import multiprocessing
 import secrets
 import shutil
 import threading
@@ -15,14 +16,18 @@ from sqlalchemy import text
 from api.v1.routes.auth import get_current_user
 from db.session import SessionLocal
 from schemas.files_runs import PipelineRunLogOut, PipelineRunOut, StartPipelineRunRequest
-from services.orchestrator_runtime.engine import OrchestratorEngine
+from services.orchestrator_runtime.cancellation import request_cancel_run
 from services.orchestrator_runtime.persistence import db_get_run_logs
+from services.orchestrator_runtime.run_job import run_orchestrator_job
 from services.orchestrator_runtime.track_profiles import resolve_track
 
 router = APIRouter()
 logger = logging.getLogger("runs")
-_RUN_THREADS: dict[str, threading.Thread] = {}
-_RUN_THREADS_LOCK = threading.Lock()
+
+# Spawn (not fork) so the worker is a clean interpreter — safe with DB drivers; can be terminate()d.
+_MP_CTX = multiprocessing.get_context("spawn")
+_RUN_PROCESSES: dict[str, multiprocessing.Process] = {}
+_RUN_PROCESSES_LOCK = threading.Lock()
 
 
 def _require_company(user: dict) -> tuple[int, str]:
@@ -174,39 +179,28 @@ def _fetch_source_file_meta(db, company_id: int, file_ids: list[int]) -> list[di
     ]
 
 
-def _run_orchestrator_in_background(
-    run_id: int,
-    run_slug: str,
-    company_id: int,
-    company_name: str,
-    user_id: int,
-    user_name: str,
-    source_file_ids: list[int],
-    source_files_meta: list[dict[str, Any]],
-    onboarding_path: str | None,
-    public_scrape_enabled: bool,
-    skip_input_dedup: bool = False,
-) -> None:
-    try:
-        engine = OrchestratorEngine(
-            run_id=run_id,
-            run_slug=run_slug,
-            company_id=company_id,
-            company_name=company_name,
-            user_id=user_id,
-            user_name=user_name,
-            source_file_ids=source_file_ids,
-            source_files_meta=source_files_meta,
-            onboarding_path=onboarding_path,
-            public_scrape_enabled=public_scrape_enabled,
-            skip_input_dedup=skip_input_dedup,
-        )
-        engine.execute()
-    except Exception:
-        logger.exception("Background orchestrator failed for run %s", run_slug)
-    finally:
-        with _RUN_THREADS_LOCK:
-            _RUN_THREADS.pop(run_slug, None)
+def _reap_run_process(slug: str, proc: multiprocessing.Process) -> None:
+    """Join finished worker and drop registry entry (normal completion)."""
+    proc.join()
+    with _RUN_PROCESSES_LOCK:
+        _RUN_PROCESSES.pop(slug, None)
+
+
+def _terminate_run_process(slug: str) -> None:
+    """Hard-stop a worker: terminate() then kill() if needed (stops in-flight LLM calls)."""
+    with _RUN_PROCESSES_LOCK:
+        proc = _RUN_PROCESSES.pop(slug, None)
+    if proc is None:
+        return
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=4)
+    if proc.is_alive():
+        logger.warning("Run %s: worker still alive after terminate; sending kill", slug)
+        proc.kill()
+        proc.join(timeout=3)
+    if proc.is_alive():
+        logger.error("Run %s: worker process could not be stopped", slug)
 
 
 @router.post("/start", response_model=PipelineRunOut)
@@ -278,8 +272,8 @@ def start_run(request: Request, body: StartPipelineRunRequest):
     finally:
         db.close()
 
-    thread = threading.Thread(
-        target=_run_orchestrator_in_background,
+    proc = _MP_CTX.Process(
+        target=run_orchestrator_job,
         args=(
             int(row.id),
             row.slug,
@@ -291,16 +285,67 @@ def start_run(request: Request, body: StartPipelineRunRequest):
             source_files_meta,
             onboarding_path,
             scrape,
-            bool(body.force_new),
+            bool(body.force_new),  # skip_input_dedup: "force new" bypasses 24h duplicate short-circuit
         ),
-        name=f"run-{row.slug[:8]}",
+        name=f"run-{row.slug[:12]}",
         daemon=True,
     )
-    with _RUN_THREADS_LOCK:
-        _RUN_THREADS[row.slug] = thread
-    thread.start()
+    with _RUN_PROCESSES_LOCK:
+        _RUN_PROCESSES[row.slug] = proc
+    proc.start()
+    threading.Thread(
+        target=_reap_run_process,
+        args=(row.slug, proc),
+        name=f"reap-{row.slug[:8]}",
+        daemon=True,
+    ).start()
 
     return _row_to_out(row)
+
+
+@router.post("/stop-active")
+def stop_active_runs(request: Request):
+    """
+    Force-stop all pending/running analyses: terminate worker subprocesses immediately
+    (in-flight LLM calls are interrupted), then mark rows cancelled in the database.
+    """
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            text(
+                "SELECT slug FROM pipeline_runs "
+                "WHERE company_id=:cid AND status IN ('pending', 'running')"
+            ),
+            {"cid": company_id},
+        ).fetchall()
+        slugs = [str(r.slug) for r in rows]
+        for slug in slugs:
+            _terminate_run_process(slug)
+            request_cancel_run(slug)
+
+        db.execute(
+            text(
+                "UPDATE pipeline_runs SET status='cancelled', ended_at=NOW(), "
+                "summary='Analysis stopped by user.' "
+                "WHERE company_id=:cid AND status IN ('pending', 'running')"
+            ),
+            {"cid": company_id},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+    return {
+        "status": "ok",
+        "stopped_count": len(slugs),
+        "slugs": slugs,
+    }
 
 
 @router.get("", response_model=list[PipelineRunOut])

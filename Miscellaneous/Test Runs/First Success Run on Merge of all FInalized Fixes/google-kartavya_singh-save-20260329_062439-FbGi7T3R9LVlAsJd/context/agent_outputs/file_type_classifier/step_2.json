@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "summary": "file_type_classifier completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "file_routing_map": {
+          "sales_data.csv": "csv_processor"
+        },
+        "metadata_tags": {
+          "total_files": 1,
+          "types_detected": [
+            "csv"
+          ],
+          "processors_needed": [
+            "csv_processor"
+          ]
+        }
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

@@ -1,0 +1,63 @@
+{
+  "status": "ok",
+  "summary": "pdf_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "chunks": [
+          {
+            "chunk_id": "c1",
+            "page": 1,
+            "content": "Financial Summary: Q4 2022",
+            "type": "text"
+          },
+          {
+            "chunk_id": "c2",
+            "page": 1,
+            "content": "Revenue: $1,234,567",
+            "type": "text"
+          },
+          {
+            "chunk_id": "c3",
+            "page": 1,
+            "content": "Expenses: $987,654",
+            "type": "text"
+          },
+          {
+            "chunk_id": "c4",
+            "page": 1,
+            "content": "Net Income: $246,913",
+            "type": "text"
+          }
+        ],
+        "column_metadata": [],
+        "data_preview": {
+          "sample_chunks": [
+            {
+              "chunk_id": "c1",
+              "page": 1,
+              "content": "Financial Summary: Q4 2022"
+            }
+          ]
+        },
+        "detected_schema": {
+          "sections": [
+            "financial_summary"
+          ],
+          "tables_detected": 0
+        },
+        "page_map": {
+          "total_pages": 1,
+          "chunks_per_page": {
+            "1": 4
+          }
+        },
+        "chart_suggestions": []
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

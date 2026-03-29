@@ -1,0 +1,152 @@
+{
+  "status": "ok",
+  "summary": "csv_processor completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "rows_summary": {
+          "total_rows": 100,
+          "sample_rows": [
+            [
+              "id",
+              "name",
+              "age",
+              "gender",
+              "join_date"
+            ],
+            [
+              1,
+              "Alice",
+              30,
+              "F",
+              "2020-01-01"
+            ],
+            [
+              2,
+              "Bob",
+              25,
+              "M",
+              "2021-02-02"
+            ]
+          ]
+        },
+        "column_metadata": [
+          {
+            "column": "id",
+            "type": "numeric",
+            "nullable": false,
+            "unique_count": 100
+          },
+          {
+            "column": "name",
+            "type": "string",
+            "nullable": false,
+            "unique_count": 98
+          },
+          {
+            "column": "age",
+            "type": "numeric",
+            "nullable": true,
+            "unique_count": 30
+          },
+          {
+            "column": "gender",
+            "type": "string",
+            "nullable": false,
+            "unique_count": 2
+          },
+          {
+            "column": "join_date",
+            "type": "date",
+            "nullable": true,
+            "unique_count": 97
+          }
+        ],
+        "data_preview": {
+          "headers": [
+            "id",
+            "name",
+            "age",
+            "gender",
+            "join_date"
+          ],
+          "rows": [
+            [
+              1,
+              "Alice",
+              30,
+              "F",
+              "2020-01-01"
+            ],
+            [
+              2,
+              "Bob",
+              25,
+              "M",
+              "2021-02-02"
+            ]
+          ]
+        },
+        "detected_schema": {
+          "time_columns": [
+            "join_date"
+          ],
+          "measure_columns": [
+            "age"
+          ],
+          "dimension_columns": [
+            "id",
+            "name",
+            "gender"
+          ]
+        },
+        "stats": [
+          {
+            "column": "id",
+            "min": 1,
+            "max": 100,
+            "mean": 50.5,
+            "null_count": 0
+          },
+          {
+            "column": "name",
+            "min": 1,
+            "max": 98,
+            "mean": 49.5,
+            "null_count": 0
+          },
+          {
+            "column": "age",
+            "min": 20,
+            "max": 30,
+            "mean": 25,
+            "null_count": 2
+          },
+          {
+            "column": "gender",
+            "min": 1,
+            "max": 2,
+            "mean": 1,
+            "null_count": 0
+          },
+          {
+            "column": "join_date",
+            "min": "2020-01-01",
+            "max": "2021-02-02",
+            "mean": "2020-08-16",
+            "null_count": 3
+          }
+        ],
+        "chart_suggestions": [
+          "kpi_card",
+          "bar_chart",
+          "time_series_chart"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

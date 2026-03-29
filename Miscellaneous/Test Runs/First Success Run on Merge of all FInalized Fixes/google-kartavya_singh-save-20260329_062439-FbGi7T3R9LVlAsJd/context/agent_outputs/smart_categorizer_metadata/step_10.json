@@ -1,0 +1,48 @@
+{
+  "status": "ok",
+  "summary": "smart_categorizer_metadata completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "domain_tags": [
+          {
+            "chunk_id": "1",
+            "domains": [
+              "technology",
+              "sales"
+            ],
+            "confidence": 0.8
+          },
+          {
+            "chunk_id": "2",
+            "domains": [
+              "marketing",
+              "customer_service"
+            ],
+            "confidence": 0.9
+          }
+        ],
+        "content_type_tags": [
+          {
+            "chunk_id": "1",
+            "types": [
+              "structured_data",
+              "quantitative"
+            ]
+          },
+          {
+            "chunk_id": "2",
+            "types": [
+              "text_narrative",
+              "qualitative"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

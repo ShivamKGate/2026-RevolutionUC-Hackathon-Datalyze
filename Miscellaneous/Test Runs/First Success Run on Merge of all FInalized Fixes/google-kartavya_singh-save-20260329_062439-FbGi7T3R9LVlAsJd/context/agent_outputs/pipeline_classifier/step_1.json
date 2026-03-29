@@ -1,0 +1,24 @@
+{
+  "status": "ok",
+  "summary": "Track classified (light_model_fallback): predictive",
+  "artifacts": [
+    {
+      "type": "classification",
+      "source": "light_model_fallback",
+      "result": {
+        "track": "predictive",
+        "confidence": 0.8,
+        "skip_agents": [
+          "automation_strategy"
+        ],
+        "recommended_agents": [
+          "trend_forecasting",
+          "insight_generation"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.8,
+  "errors": []
+}

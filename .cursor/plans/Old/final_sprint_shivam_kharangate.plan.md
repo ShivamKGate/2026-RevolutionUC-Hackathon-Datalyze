@@ -21,7 +21,6 @@ isProject: false
 
 ## E2E_Analytics_Co — Demo Company Profile
 
-
 | Field                    | Value                                                                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **Display Name**         | End-to-End Analytics Co.                                                                                                              |
@@ -35,7 +34,6 @@ isProject: false
 | **Data Characteristics** | Multi-department, multi-regional (US East, US West, EU), seasonal patterns, realistic anomalies, growth trajectory with 2 dip periods |
 | **Demo Goal**            | Every analysis track produces rich insights, meaningful charts, and actionable recommendations from this company's data               |
 
-
 This company profile must be referenced in all synthetic data generation, seed scripts, and testing. The demo user (`demo@revuc.com`) is provisioned into this company with admin role.
 
 ---
@@ -43,7 +41,6 @@ This company profile must be referenced in all synthetic data generation, seed s
 ## Ownership & Merge-Safety
 
 ### Files You Own (Exclusive — No Merge Conflicts)
-
 
 | Layer                    | Files / Directories                                                                                                     |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
@@ -54,7 +51,6 @@ This company profile must be referenced in all synthetic data generation, seed s
 | **Knowledge Graph**      | `apps/web/src/components/knowledge-graph/` (NEW — interactive graph viewer)                                             |
 | **Export Service**       | `apps/api/src/services/export_pdf.py` (NEW)                                                                             |
 | **Synthetic Data**       | `Miscellaneous/data/sources/E2E_Analytics_Co/predictive/` and `Miscellaneous/data/sources/E2E_Analytics_Co/automation/` |
-
 
 ### Files You Must NOT Edit (Kartavya Owns)
 
@@ -86,7 +82,7 @@ For every agent in `apps/api/src/services/agents/`, rewrite the system prompts a
 
 **Agents to update (in priority order):**
 
-1. `**trend_forecasting.py`** — Must return time-series arrays with confidence bands:
+1. `**trend_forecasting.py`\*\* — Must return time-series arrays with confidence bands:
 
 ```json
    {
@@ -103,53 +99,54 @@ For every agent in `apps/api/src/services/agents/`, rewrite the system prompts a
      "drivers": [{"factor": "seasonal_demand", "impact_pct": 35}, ...],
      "anomalies": [{"date": "2024-08", "metric": "revenue", "expected": 200000, "actual": 145000, "root_cause": "supply disruption"}]
    }
-   
+
 
 ```
 
 1. `**insight_generation.py**` — Must return insight cards with chart-type hints:
 
 ```json
-   {
-     "insights": [
-       {
-         "title": "Revenue Growth Accelerating",
-         "description": "...",
-         "impact": "high",
-         "confidence": 0.85,
-         "chart_type": "kpi_card",
-         "data": {"current": 3200000, "previous": 2800000, "change_pct": 14.3}
-       }
-     ],
-     "recommendations": [
-       {"action": "...", "priority": "high", "expected_impact": "...", "confidence": 0.78}
-     ]
-   }
-   
-
+{
+  "insights": [
+    {
+      "title": "Revenue Growth Accelerating",
+      "description": "...",
+      "impact": "high",
+      "confidence": 0.85,
+      "chart_type": "kpi_card",
+      "data": { "current": 3200000, "previous": 2800000, "change_pct": 14.3 }
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "...",
+      "priority": "high",
+      "expected_impact": "...",
+      "confidence": 0.78
+    }
+  ]
+}
 ```
 
 1. `**automation_strategy.py**` — Must return process analysis with bottleneck data:
 
 ```json
-   {
-     "processes": [
-       {
-         "name": "Invoice Processing",
-         "current_time_hours": 4.5,
-         "automated_time_hours": 0.5,
-         "cost_current": 15000,
-         "cost_automated": 2000,
-         "roi_months": 3,
-         "implementation_effort": "medium",
-         "impact_score": 0.9
-       }
-     ],
-     "bottlenecks": [{"stage": "...", "time_pct": 35, "cost_pct": 28}],
-     "sop_draft": {"steps": ["...", "..."], "estimated_savings_annual": 156000}
-   }
-   
-
+{
+  "processes": [
+    {
+      "name": "Invoice Processing",
+      "current_time_hours": 4.5,
+      "automated_time_hours": 0.5,
+      "cost_current": 15000,
+      "cost_automated": 2000,
+      "roi_months": 3,
+      "implementation_effort": "medium",
+      "impact_score": 0.9
+    }
+  ],
+  "bottlenecks": [{ "stage": "...", "time_pct": 35, "cost_pct": 28 }],
+  "sop_draft": { "steps": ["...", "..."], "estimated_savings_annual": 156000 }
+}
 ```
 
 1. `**swot_analysis.py**` — Must return structured quadrant data
@@ -189,18 +186,20 @@ For every agent in `apps/api/src/services/agents/`, rewrite the system prompts a
 - Return additional classification metadata:
 
 ```json
-  {
-    "track": "predictive",
-    "confidence": 0.92,
-    "reasoning": "Sales and revenue data with temporal columns suggest forecasting use case",
-    "secondary_track": "optimization",
-    "file_types_detected": ["excel"],
-    "data_domains_detected": ["sales", "finance"],
-    "recommended_agents": ["trend_forecasting", "insight_generation", "sentiment_analysis"],
-    "skip_agents": ["automation_strategy"]
-  }
-  
-
+{
+  "track": "predictive",
+  "confidence": 0.92,
+  "reasoning": "Sales and revenue data with temporal columns suggest forecasting use case",
+  "secondary_track": "optimization",
+  "file_types_detected": ["excel"],
+  "data_domains_detected": ["sales", "finance"],
+  "recommended_agents": [
+    "trend_forecasting",
+    "insight_generation",
+    "sentiment_analysis"
+  ],
+  "skip_agents": ["automation_strategy"]
+}
 ```
 
 - The `recommended_agents` and `skip_agents` fields will be consumed by Kartavya's orchestrator to make smarter agent selection decisions
@@ -212,17 +211,29 @@ For every agent in `apps/api/src/services/agents/`, rewrite the system prompts a
 - Output must be Neo4j-compatible with nodes and edges:
 
 ```json
-  {
-    "nodes": [
-      {"id": "revenue_q1", "label": "Q1 Revenue", "type": "metric", "value": 820000, "context": "...", "insights": ["..."]}
-    ],
-    "edges": [
-      {"source": "revenue_q1", "target": "marketing_spend", "relationship": "correlated_with", "strength": 0.78}
-    ],
-    "clusters": [{"name": "Financial Metrics", "node_ids": ["revenue_q1", "..."]}]
-  }
-  
-
+{
+  "nodes": [
+    {
+      "id": "revenue_q1",
+      "label": "Q1 Revenue",
+      "type": "metric",
+      "value": 820000,
+      "context": "...",
+      "insights": ["..."]
+    }
+  ],
+  "edges": [
+    {
+      "source": "revenue_q1",
+      "target": "marketing_spend",
+      "relationship": "correlated_with",
+      "strength": 0.78
+    }
+  ],
+  "clusters": [
+    { "name": "Financial Metrics", "node_ids": ["revenue_q1", "..."] }
+  ]
+}
 ```
 
 - Each node must have a `context` field (what the aggregator provided) and an `insights` field (what was generated about this node)
@@ -236,16 +247,34 @@ Add a new utility in `apps/api/src/services/agents/output_evaluator.py`:
 - Return a `visualization_plan`:
 
 ```json
-  {
-    "kpi_cards": [{"metric": "...", "value": "...", "change": "...", "source_agent": "insight_generation"}],
-    "charts": [{"type": "time_series", "title": "...", "data_source_agent": "trend_forecasting", "priority": 1}],
-    "recommendations": [{"text": "...", "confidence": 0.85, "source_agent": "..."}],
-    "knowledge_graph": {"available": true, "node_count": 15},
-    "overall_confidence": 0.78,
-    "confidence_breakdown": {"data_quality": 0.82, "analysis_depth": 0.75, "actionability": 0.79}
+{
+  "kpi_cards": [
+    {
+      "metric": "...",
+      "value": "...",
+      "change": "...",
+      "source_agent": "insight_generation"
+    }
+  ],
+  "charts": [
+    {
+      "type": "time_series",
+      "title": "...",
+      "data_source_agent": "trend_forecasting",
+      "priority": 1
+    }
+  ],
+  "recommendations": [
+    { "text": "...", "confidence": 0.85, "source_agent": "..." }
+  ],
+  "knowledge_graph": { "available": true, "node_count": 15 },
+  "overall_confidence": 0.78,
+  "confidence_breakdown": {
+    "data_quality": 0.82,
+    "analysis_depth": 0.75,
+    "actionability": 0.79
   }
-  
-
+}
 ```
 
 - This agent runs as the LAST analysis step before executive_summary
@@ -271,7 +300,6 @@ Add to `apps/web/package.json`:
 
 Build these reusable components in `apps/web/src/components/charts/`:
 
-
 | Component            | Props Interface                                                          | Used By                  |
 | -------------------- | ------------------------------------------------------------------------ | ------------------------ |
 | `TimeSeriesChart`    | `{series: {date, value, lower?, upper?}[], title, showConfidenceBands?}` | Predictive, Supply Chain |
@@ -288,7 +316,6 @@ Build these reusable components in `apps/web/src/components/charts/`:
 | `GanttChart`         | `{tasks: {name, start, end, dependencies?}[], title}`                    | Optimization             |
 | `ConfidenceGauge`    | `{score: number, breakdown?: {label, score}[], title?}`                  | All tracks               |
 | `RecommendationCard` | `{action, priority, impact, confidence, source_agent}`                   | All tracks               |
-
 
 ### 2.3 Track-Specific Template Components
 
@@ -444,7 +471,7 @@ Generate and save data files under `Miscellaneous/data/sources/E2E_Analytics_Co/
 
 Create at least **4 files** with rich, realistic data:
 
-1. `**sales_revenue_24months.csv`** — Monthly revenue, units sold, customer count, avg order value by region (US East, US West, EU) for Jan 2024–Dec 2025. Include seasonal dips (Aug, Dec holiday spike), one anomaly month (supply disruption Aug 2024).
+1. `**sales_revenue_24months.csv`\*\* — Monthly revenue, units sold, customer count, avg order value by region (US East, US West, EU) for Jan 2024–Dec 2025. Include seasonal dips (Aug, Dec holiday spike), one anomaly month (supply disruption Aug 2024).
 2. `**customer_churn_analysis.xlsx**` — Sheet 1: Customer cohort data (signup month, last activity, lifetime value, segment). Sheet 2: Monthly churn rates by segment. Sheet 3: Retention rates by cohort quarter. ~500 customer records.
 3. `**quarterly_kpi_report.pdf**` — Narrative PDF with KPIs: revenue growth, customer acquisition cost, NPS score, employee productivity index, gross margin. Include tables and written analysis for 8 quarters.
 4. `**market_trends_2024_2025.json**` — Industry benchmark data, competitor pricing trends, market size estimates, growth projections. Structured JSON with quarterly data points.
@@ -453,7 +480,7 @@ Create at least **4 files** with rich, realistic data:
 
 Create at least **4 files**:
 
-1. `**workflow_process_logs.csv`** — 2000+ rows of task completion events: task_type, department, start_time, end_time, assigned_to, status, error_count, manual_steps, automatable_flag. Cover invoice processing, report generation, data entry, customer onboarding, inventory updates.
+1. `**workflow_process_logs.csv`\*\* — 2000+ rows of task completion events: task_type, department, start_time, end_time, assigned_to, status, error_count, manual_steps, automatable_flag. Cover invoice processing, report generation, data entry, customer onboarding, inventory updates.
 2. `**department_efficiency_metrics.xlsx**` — Sheet 1: Department-level KPIs (processing time, error rate, throughput, cost per task). Sheet 2: Employee time allocation (manual vs automated vs meetings). Sheet 3: System integration status (what tools each department uses).
 3. `**process_documentation.pdf**` — Current SOPs for 5 key processes with step-by-step descriptions, time estimates, pain points noted by staff.
 4. `**system_audit_results.json**` — Integration audit: which systems are connected, data flow gaps, manual handoff points, API availability, automation readiness scores per process.
@@ -479,15 +506,16 @@ Follow `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md` strictly. For each 
 3. **Select the track** (via onboarding path or track selector)
 4. **Start analysis** and monitor in real-time
 5. **Verify**:
-  - Only relevant agents run (not all 21)
-  - Only matching file processors run (Excel file → only excel_processor)
-  - Agent outputs are structured JSON with chart-ready data
-  - Analysis completes within 5-7 minute budget
-  - Confidence scores are above 0.6
-  - At least 3 KPI cards can be rendered
-  - At least 2-3 charts can be rendered
-  - At least 3-4 recommendations are generated
-  - Knowledge graph has meaningful nodes/edges
+
+- Only relevant agents run (not all 21)
+- Only matching file processors run (Excel file → only excel_processor)
+- Agent outputs are structured JSON with chart-ready data
+- Analysis completes within 5-7 minute budget
+- Confidence scores are above 0.6
+- At least 3 KPI cards can be rendered
+- At least 2-3 charts can be rendered
+- At least 3-4 recommendations are generated
+- Knowledge graph has meaningful nodes/edges
 
 ### 6.2 Predictive Track Test Campaign
 
@@ -621,7 +649,6 @@ These are explicitly deferred and should be documented in the plan but NOT imple
 
 ## Execution Order & Priority
 
-
 | Priority | Phase                         | Est. Effort  | Dependencies             |
 | -------- | ----------------------------- | ------------ | ------------------------ |
 | **P0**   | Phase 1: Agent Output Quality | 2–3 sessions | None — start immediately |
@@ -633,7 +660,6 @@ These are explicitly deferred and should be documented in the plan but NOT imple
 | **P2**   | Phase 7: Export to PDF        | 1 session    | Phase 2 components       |
 | **P3**   | Phase 8: Presentation         | 1 session    | After all testing passes |
 
-
 **Total estimated sessions:** 10–12 focused work sessions
 
 ---
@@ -643,7 +669,12 @@ These are explicitly deferred and should be documented in the plan but NOT imple
 When changing agent prompts, log changes in `Miscellaneous/tests/agent_prompt_versions.jsonl`:
 
 ```json
-{"timestamp": "2026-03-29T...", "agent_id": "trend_forecasting", "change": "Added chart-ready JSON schema", "version": 2}
+{
+  "timestamp": "2026-03-29T...",
+  "agent_id": "trend_forecasting",
+  "change": "Added chart-ready JSON schema",
+  "version": 2
+}
 ```
 
 This enables comparing run-to-run quality improvements.
@@ -660,4 +691,4 @@ Add the following to `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md`:
 
 ---
 
-*End of Shivam Kharangate's Final Sprint Plan*
+_End of Shivam Kharangate's Final Sprint Plan_

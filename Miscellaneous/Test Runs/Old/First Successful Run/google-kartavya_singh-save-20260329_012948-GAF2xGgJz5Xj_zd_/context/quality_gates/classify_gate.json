@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "stage": "classify",
+  "checks": [
+    {
+      "check": "pipeline_classifier_completed",
+      "passed": true
+    },
+    {
+      "check": "pipeline_classifier_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "pipeline_classifier_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

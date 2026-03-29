@@ -1,0 +1,8 @@
+{
+  "status": "warning",
+  "summary": "image_multimodal_processor: vision processing deferred (no image inputs in context)",
+  "artifacts": [],
+  "next_hints": [],
+  "confidence": 0.3,
+  "errors": []
+}

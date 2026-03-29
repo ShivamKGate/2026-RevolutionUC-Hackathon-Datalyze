@@ -1,0 +1,185 @@
+{
+  "audit_date": "2025-12-15",
+  "company": "E2E_Analytics_Co",
+  "auditor": "Internal IT & Operations Review Board",
+  "systems": [
+    {
+      "name": "Salesforce CRM",
+      "department": "Sales",
+      "version": "Enterprise Edition",
+      "connected": true,
+      "api_available": true,
+      "data_flow_gaps": [
+        "manual export to finance quarterly reports"
+      ],
+      "automation_readiness_score": 0.82,
+      "monthly_cost": 4500,
+      "users": 18
+    },
+    {
+      "name": "QuickBooks Enterprise",
+      "department": "Finance",
+      "version": "2024.R3",
+      "connected": true,
+      "api_available": true,
+      "data_flow_gaps": [
+        "invoice data manually re-entered from CRM",
+        "expense reports uploaded via CSV"
+      ],
+      "automation_readiness_score": 0.68,
+      "monthly_cost": 1800,
+      "users": 8
+    },
+    {
+      "name": "BambooHR",
+      "department": "HR",
+      "version": "Standard",
+      "connected": true,
+      "api_available": true,
+      "data_flow_gaps": [
+        "payroll sync requires manual trigger"
+      ],
+      "automation_readiness_score": 0.75,
+      "monthly_cost": 1200,
+      "users": 12
+    },
+    {
+      "name": "Jira Service Management",
+      "department": "Operations",
+      "version": "Cloud Premium",
+      "connected": true,
+      "api_available": true,
+      "data_flow_gaps": [
+        "SLA reports exported manually to leadership dashboard"
+      ],
+      "automation_readiness_score": 0.79,
+      "monthly_cost": 2100,
+      "users": 25
+    },
+    {
+      "name": "ShipStation",
+      "department": "Logistics",
+      "version": "Enterprise",
+      "connected": false,
+      "api_available": true,
+      "data_flow_gaps": [
+        "order data copied from CRM via spreadsheet",
+        "tracking updates emailed manually to customers"
+      ],
+      "automation_readiness_score": 0.52,
+      "monthly_cost": 900,
+      "users": 6
+    },
+    {
+      "name": "Google Workspace",
+      "department": "All",
+      "version": "Business Standard",
+      "connected": true,
+      "api_available": true,
+      "data_flow_gaps": [
+        "shared drives not indexed for analytics"
+      ],
+      "automation_readiness_score": 0.7,
+      "monthly_cost": 1600,
+      "users": 75
+    },
+    {
+      "name": "Custom Analytics Dashboard",
+      "department": "Operations",
+      "version": "v2.4.1",
+      "connected": false,
+      "api_available": false,
+      "data_flow_gaps": [
+        "data refreshed manually from multiple sources daily",
+        "no webhook or scheduling support"
+      ],
+      "automation_readiness_score": 0.31,
+      "monthly_cost": 500,
+      "users": 15
+    },
+    {
+      "name": "Slack",
+      "department": "All",
+      "version": "Business+",
+      "connected": false,
+      "api_available": true,
+      "data_flow_gaps": [
+        "alert routing configured ad-hoc per channel"
+      ],
+      "automation_readiness_score": 0.6,
+      "monthly_cost": 950,
+      "users": 75
+    }
+  ],
+  "manual_handoff_points": [
+    {
+      "from": "Sales",
+      "to": "Finance",
+      "process": "invoice generation",
+      "frequency": "daily",
+      "avg_time_minutes": 25,
+      "error_rate": 0.08,
+      "notes": "CRM deal-close triggers email; finance manually creates invoice in QuickBooks"
+    },
+    {
+      "from": "Finance",
+      "to": "HR",
+      "process": "payroll data reconciliation",
+      "frequency": "bi-weekly",
+      "avg_time_minutes": 90,
+      "error_rate": 0.04,
+      "notes": "Expense data exported from QuickBooks, reformatted, uploaded to BambooHR"
+    },
+    {
+      "from": "Sales",
+      "to": "Logistics",
+      "process": "order fulfillment handoff",
+      "frequency": "daily",
+      "avg_time_minutes": 35,
+      "error_rate": 0.12,
+      "notes": "Order details copied from Salesforce to ShipStation spreadsheet template"
+    },
+    {
+      "from": "Operations",
+      "to": "Sales",
+      "process": "monthly performance report distribution",
+      "frequency": "monthly",
+      "avg_time_minutes": 120,
+      "error_rate": 0.06,
+      "notes": "Dashboard screenshots and CSV exports compiled into slide deck"
+    },
+    {
+      "from": "HR",
+      "to": "Operations",
+      "process": "new hire system provisioning",
+      "frequency": "as needed (~3/month)",
+      "avg_time_minutes": 45,
+      "error_rate": 0.1,
+      "notes": "Account creation requests sent via email; no centralized provisioning"
+    },
+    {
+      "from": "Logistics",
+      "to": "Finance",
+      "process": "shipping cost reconciliation",
+      "frequency": "weekly",
+      "avg_time_minutes": 55,
+      "error_rate": 0.07,
+      "notes": "ShipStation invoices cross-referenced with carrier bills manually"
+    }
+  ],
+  "integration_summary": {
+    "total_systems": 8,
+    "connected": 5,
+    "api_ready": 6,
+    "fully_automated_workflows": 2,
+    "partially_automated_workflows": 4,
+    "manual_only_workflows": 3,
+    "overall_readiness": 0.65,
+    "estimated_hours_saved_with_full_automation": 320,
+    "priority_integrations": [
+      "ShipStation <-> Salesforce CRM (order fulfillment)",
+      "QuickBooks <-> Salesforce CRM (invoice generation)",
+      "Custom Dashboard -> automated data pipeline"
+    ]
+  }
+}

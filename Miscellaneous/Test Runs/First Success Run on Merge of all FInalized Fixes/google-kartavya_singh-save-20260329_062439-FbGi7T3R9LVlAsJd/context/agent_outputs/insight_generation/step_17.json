@@ -1,0 +1,59 @@
+{
+  "status": "ok",
+  "summary": "insight_generation completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "insights": [
+          {
+            "title": "Projected Quarterly Revenue Decline",
+            "description": "Revenue forecast indicates a decline to $140,000 in Q3 2024, reversing the steady growth trend observed in previous quarters.",
+            "impact": "high",
+            "confidence": 0.8,
+            "chart_type": "line_chart",
+            "data": {
+              "current": 140000,
+              "previous": 145000,
+              "change_pct": -3.45
+            },
+            "provenance": [
+              "trend_forecasting"
+            ]
+          },
+          {
+            "title": "Sustained Monthly Growth Momentum",
+            "description": "Historical monthly revenue growth averaged 5.0% from Jan-Sep 2023, indicating strong foundational performance prior to the forecasted downturn.",
+            "impact": "medium",
+            "confidence": 0.95,
+            "chart_type": "bar_chart",
+            "data": {
+              "current": 145000,
+              "previous": 100000,
+              "change_pct": 45.0
+            },
+            "provenance": [
+              "trend_forecasting"
+            ]
+          }
+        ],
+        "recommendations": [
+          {
+            "action": "Investigate root causes for projected Q3 revenue decline and implement corrective marketing or sales initiatives.",
+            "priority": "high",
+            "expected_impact": "Mitigate forecasted revenue drop and restore growth trajectory.",
+            "confidence": 0.7
+          }
+        ],
+        "chart_suggestions": [
+          "kpi_card",
+          "insight_bar_chart",
+          "recommendation_table"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

@@ -51,6 +51,7 @@ async function setupSchema() {
       "002_auth_schema.sql",
       "003_uploads_pipeline.sql",
       "004_orchestrator_runtime.sql",
+      "005_demo_replay_admin.sql",
     ]) {
       const sql = readFileSync(path.join(migrationsDir, file), "utf8");
       await client.query(sql);

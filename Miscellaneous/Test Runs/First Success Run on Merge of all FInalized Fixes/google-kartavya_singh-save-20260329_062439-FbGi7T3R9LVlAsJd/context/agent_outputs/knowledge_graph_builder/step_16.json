@@ -1,0 +1,119 @@
+{
+  "status": "ok",
+  "summary": "knowledge_graph_builder completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "nodes": [
+          {
+            "id": "google_revenue_trend",
+            "label": "Revenue Trend",
+            "type": "Metric",
+            "value": 145000,
+            "context": "Historical data showing monthly growth from 100K in Jan 2023 to 145K in Sep 2023.",
+            "insights": [
+              "Shows consistent upward trajectory",
+              "Average monthly growth ~5K",
+              "Primary target for forecasting."
+            ]
+          },
+          {
+            "id": "google",
+            "label": "Google",
+            "type": "Company",
+            "value": null,
+            "context": "Primary company in the aggregated corpus and analysis.",
+            "insights": [
+              "Revenue growth driver in dataset",
+              "Analysis track: predictive."
+            ]
+          },
+          {
+            "id": "revenue_growth_driver",
+            "label": "Revenue Growth Driver",
+            "type": "Concept",
+            "value": null,
+            "context": "Implied concept from historical trend indicating underlying business factors.",
+            "insights": [
+              "Key internal/external factor(s) behind the revenue increase.",
+              "Potential areas for predictive modeling."
+            ]
+          },
+          {
+            "id": "predictive_analysis",
+            "label": "Predictive Analysis",
+            "type": "Concept",
+            "value": null,
+            "context": "Designated analysis track for this company data.",
+            "insights": [
+              "Focus on forecasting future metrics.",
+              "Trend data is foundational input."
+            ]
+          },
+          {
+            "id": "forecast_period",
+            "label": "Forecast Period (Post-Sep 2023)",
+            "type": "Date",
+            "value": null,
+            "context": "Implied future period for predictive modeling based on historical endpoint.",
+            "insights": [
+              "Next likely time window for revenue projection.",
+              "Trend extrapolation target."
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "source": "google",
+            "target": "google_revenue_trend",
+            "relationship": "owns_metric",
+            "strength": 1.0
+          },
+          {
+            "source": "google_revenue_trend",
+            "target": "revenue_growth_driver",
+            "relationship": "driven_by",
+            "strength": 0.85
+          },
+          {
+            "source": "google",
+            "target": "predictive_analysis",
+            "relationship": "subject_of",
+            "strength": 1.0
+          },
+          {
+            "source": "google_revenue_trend",
+            "target": "forecast_period",
+            "relationship": "projects_to",
+            "strength": 0.9
+          }
+        ],
+        "clusters": [
+          {
+            "name": "Financial Performance",
+            "node_ids": [
+              "google_revenue_trend",
+              "revenue_growth_driver"
+            ]
+          },
+          {
+            "name": "Core Context",
+            "node_ids": [
+              "google",
+              "predictive_analysis",
+              "forecast_period"
+            ]
+          }
+        ],
+        "chart_suggestions": [
+          "knowledge_graph_network",
+          "cluster_map"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

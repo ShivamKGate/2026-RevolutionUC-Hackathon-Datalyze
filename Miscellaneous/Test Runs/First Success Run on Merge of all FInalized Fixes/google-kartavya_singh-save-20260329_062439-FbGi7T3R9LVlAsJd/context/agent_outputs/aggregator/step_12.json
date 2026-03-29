@@ -1,0 +1,71 @@
+{
+  "status": "ok",
+  "summary": "aggregator completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "corpus": [
+          {
+            "item_id": "financial_chunk_01",
+            "content_summary": "Q1 revenue figures and YoY growth percentages.",
+            "source": "pdf_processor",
+            "category": "financial",
+            "relevance_score": 90
+          },
+          {
+            "item_id": "market_artifact_01",
+            "content_summary": "Competitor market share data from last quarter.",
+            "source": "public_data_scraper",
+            "category": "market",
+            "relevance_score": 85
+          },
+          {
+            "item_id": "operations_chunk_01",
+            "content_summary": "Report on new data center efficiency metrics.",
+            "source": "csv_processor",
+            "category": "operations",
+            "relevance_score": 75
+          },
+          {
+            "item_id": "customer_artifact_01",
+            "content_summary": "Aggregated user satisfaction survey results.",
+            "source": "json_processor",
+            "category": "customer",
+            "relevance_score": 70
+          },
+          {
+            "item_id": "risk_chunk_01",
+            "content_summary": "Regulatory compliance audit findings summary.",
+            "source": "plain_text_processor",
+            "category": "risk",
+            "relevance_score": 80
+          }
+        ],
+        "usefulness_scores": {
+          "high": 2,
+          "medium": 2,
+          "low": 1
+        },
+        "storyline_hypotheses": [
+          "Hypothesis 1: Strong Q1 financial performance (item_id: financial_chunk_01) may be correlated with gains in market share against competitors (item_id: market_artifact_01), suggesting effective competitive strategy.",
+          "Hypothesis 2: Operational improvements in data center efficiency (item_id: operations_chunk_01) could be supporting revenue growth (item_id: financial_chunk_01) while mitigating potential regulatory risks (item_id: risk_chunk_01)."
+        ],
+        "categorized_signals": {
+          "financial": 1,
+          "operations": 1,
+          "customer": 1,
+          "market": 1,
+          "risk": 1
+        },
+        "chart_suggestions": [
+          "signal_distribution_bar",
+          "evidence_priority_histogram"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

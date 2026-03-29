@@ -1,0 +1,38 @@
+{
+  "status": "ok",
+  "summary": "conflict_detection completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "contradictions": [
+          {
+            "id": "1",
+            "description": "Conflicting sales figures for Q4 2022",
+            "side_a": "Sales report A states Q4 2022 sales at $5,000,000",
+            "side_b": "Sales report B states Q4 2022 sales at $5,500,000",
+            "severity": "medium",
+            "confidence": 0.8,
+            "resolution_suggestion": "Review both reports for discrepancies and reconcile figures."
+          }
+        ],
+        "supporting_references": [
+          {
+            "contradiction_id": "1",
+            "source_items": [
+              "sales_report_A_item_123",
+              "sales_report_B_item_456"
+            ]
+          }
+        ],
+        "chart_suggestions": [
+          "conflict_severity_bar",
+          "conflict_resolution_table"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

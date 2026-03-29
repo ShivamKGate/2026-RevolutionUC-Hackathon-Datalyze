@@ -1,0 +1,47 @@
+{
+  "status": "ok",
+  "summary": "public_data_scraper completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "artifacts": [
+          {
+            "title": "Google's Q3 2023 Earnings Report",
+            "source_url": "https://www.google.com/ir/investor-relations/financial-performance/earnings-releases",
+            "content_summary": "Google reported strong revenue growth and increased ad spending in Q3 2023.",
+            "retrieved_at": "2023-10-05T14:30:00Z",
+            "credibility": "high"
+          },
+          {
+            "title": "Google Cloud Revenue Growth",
+            "source_url": "https://www.bloomberg.com/news/articles/2023-09-27/google-cloud-revenue-grows-28-in-q3-as-google-pushes-cloud-services",
+            "content_summary": "Google Cloud experienced significant revenue growth in Q3 2023, driven by increased cloud service adoption.",
+            "retrieved_at": "2023-10-05T14:35:00Z",
+            "credibility": "high"
+          },
+          {
+            "title": "AI Trends in Search and Advertising",
+            "source_url": "https://venturebeat.com/ai/trends-in-search-and-advertising/",
+            "content_summary": "The article discusses the increasing role of AI in search algorithms and advertising strategies.",
+            "retrieved_at": "2023-10-05T14:40:00Z",
+            "credibility": "medium"
+          }
+        ],
+        "sources": [
+          "https://www.google.com/ir/investor-relations/financial-performance/earnings-releases",
+          "https://www.bloomberg.com/news/articles/2023-09-27/google-cloud-revenue-grows-28-in-q3-as-google-pushes-cloud-services",
+          "https://venturebeat.com/ai/trends-in-search-and-advertising/"
+        ],
+        "credibility_tags": {
+          "high": 2,
+          "medium": 1,
+          "low": 0
+        }
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}

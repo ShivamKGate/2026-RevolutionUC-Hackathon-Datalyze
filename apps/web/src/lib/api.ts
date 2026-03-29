@@ -346,6 +346,24 @@ export type ClearRunsResponse = {
   filesystem_errors: string[];
 };
 
+export type StopActiveRunsResponse = {
+  status: string;
+  stopped_count: number;
+  slugs: string[];
+};
+
+export async function stopActiveRuns(): Promise<StopActiveRunsResponse> {
+  const response = await fetch("/api/v1/runs/stop-active", {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Stop active runs failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as StopActiveRunsResponse;
+}
+
 export async function listPipelineRuns(): Promise<PipelineRun[]> {
   const response = await fetch("/api/v1/runs", { credentials: "include" });
   if (!response.ok) throw new Error(`List runs failed (${response.status})`);

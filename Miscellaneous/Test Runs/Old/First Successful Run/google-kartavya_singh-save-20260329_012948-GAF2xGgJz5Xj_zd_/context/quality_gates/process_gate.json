@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "stage": "process",
+  "checks": [
+    {
+      "check": "data_cleaning_completed",
+      "passed": true
+    },
+    {
+      "check": "smart_categorizer_metadata_completed",
+      "passed": true
+    },
+    {
+      "check": "data_cleaning_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "data_cleaning_confidence_min",
+      "passed": true
+    },
+    {
+      "check": "smart_categorizer_metadata_summary_non_empty",
+      "passed": true
+    },
+    {
+      "check": "smart_categorizer_metadata_confidence_min",
+      "passed": true
+    }
+  ],
+  "issues": []
+}

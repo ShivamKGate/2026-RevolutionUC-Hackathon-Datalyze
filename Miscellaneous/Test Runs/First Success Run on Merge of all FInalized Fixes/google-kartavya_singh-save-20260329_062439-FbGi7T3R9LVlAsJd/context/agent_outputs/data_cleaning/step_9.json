@@ -1,0 +1,70 @@
+{
+  "status": "ok",
+  "summary": "data_cleaning completed",
+  "artifacts": [
+    {
+      "type": "agent_output",
+      "data": {
+        "cleaned_chunks": [
+          {
+            "chunk_id": "chunk_001",
+            "content": "2023-04-15 14:30:00, 987.5, Hello World",
+            "cleaning_applied": [
+              "date_norm",
+              "number_norm",
+              "whitespace_cleanup"
+            ]
+          },
+          {
+            "chunk_id": "chunk_002",
+            "content": "2023-04-15T14:30:00Z, 987.5, Hello World",
+            "cleaning_applied": [
+              "date_norm",
+              "number_norm",
+              "whitespace_cleanup"
+            ]
+          },
+          {
+            "chunk_id": "chunk_003",
+            "content": "2023-04-15 14:30:00, 987.5, Hello World",
+            "cleaning_applied": [
+              "date_norm",
+              "number_norm",
+              "whitespace_cleanup"
+            ]
+          }
+        ],
+        "dedup_flags": [
+          {
+            "original_id": "chunk_001",
+            "duplicate_of": "chunk_002",
+            "similarity": 1.0
+          },
+          {
+            "original_id": "chunk_002",
+            "duplicate_of": "chunk_001",
+            "similarity": 1.0
+          },
+          {
+            "original_id": "chunk_003",
+            "duplicate_of": "chunk_001",
+            "similarity": 1.0
+          },
+          {
+            "original_id": "chunk_003",
+            "duplicate_of": "chunk_002",
+            "similarity": 1.0
+          }
+        ],
+        "normalization_applied": [
+          "date_format",
+          "encoding_fix",
+          "whitespace_cleanup"
+        ]
+      }
+    }
+  ],
+  "next_hints": [],
+  "confidence": 0.6,
+  "errors": []
+}
