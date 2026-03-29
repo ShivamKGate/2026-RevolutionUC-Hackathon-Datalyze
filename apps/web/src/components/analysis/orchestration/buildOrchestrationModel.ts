@@ -29,6 +29,63 @@ export type OrchEdge = {
 
 const KG_HUB_ID = "kg:hub";
 
+/** Not runnable agents in `agent_results` — never use as "has completed output" for graph coloring. */
+const NON_PIPELINE_AGENT_RESULT_KEYS = new Set(["output_evaluator"]);
+
+/**
+ * Latest terminal log action per agent: `completed` / `failed` wins over older dispatches.
+ * Used so live 3D nodes turn green as soon as the pipeline log records completion.
+ */
+export function terminalAgentStatusFromLogs(
+  agentKey: string,
+  logs: PipelineRunLog[] | null | undefined,
+): "completed" | "failed" | null {
+  if (!logs?.length) return null;
+  let last: "completed" | "failed" | null = null;
+  for (const l of logs) {
+    if ((l.agent || "").trim() !== agentKey) continue;
+    const act = (l.action || "").trim().toLowerCase();
+    if (act === "completed") last = "completed";
+    else if (act === "failed") last = "failed";
+  }
+  return last;
+}
+
+function wasDispatchedOrRetry(
+  agentKey: string,
+  logs: PipelineRunLog[] | null | undefined,
+): boolean {
+  if (!logs?.length) return false;
+  return logs.some((l) => {
+    if ((l.agent || "").trim() !== agentKey) return false;
+    const act = (l.action || "").trim().toLowerCase();
+    return act === "dispatch" || act === "retry";
+  });
+}
+
+function agentHasResultPayload(
+  agentKey: string,
+  agentResults: AgentResults,
+): boolean {
+  if (!agentKey || NON_PIPELINE_AGENT_RESULT_KEYS.has(agentKey)) return false;
+  const v = (agentResults as Record<string, unknown>)[agentKey];
+  return v != null && typeof v === "object";
+}
+
+function resolveLiveAgentStatus(
+  agentKey: string,
+  fallback: string | undefined,
+  logs: PipelineRunLog[] | null | undefined,
+  agentResults: AgentResults,
+): string {
+  const logArr = logs ?? [];
+  const term = terminalAgentStatusFromLogs(agentKey, logArr);
+  if (term) return term;
+  if (agentHasResultPayload(agentKey, agentResults)) return "completed";
+  if (wasDispatchedOrRetry(agentKey, logArr)) return "running";
+  return fallback ?? "running";
+}
+
 /** First-seen dispatch order per agent (0 = earliest). Parallel batch order follows log order. */
 export function buildDispatchOrderMap(
   logs: PipelineRunLog[],
@@ -210,6 +267,17 @@ export function buildOrchestrationModel(
       edges.push({ from: id, to: KG_HUB_ID, kind: "insight_flow" });
     }
   });
+
+  for (const n of nodes) {
+    if (n.kind === "agent" && n.agentKey) {
+      n.status = resolveLiveAgentStatus(
+        n.agentKey,
+        n.status,
+        liveDispatchLogs,
+        agentResults,
+      );
+    }
+  }
 
   return { nodes, edges };
 }

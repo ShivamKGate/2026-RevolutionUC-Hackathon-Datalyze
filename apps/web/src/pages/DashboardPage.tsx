@@ -31,6 +31,11 @@ function isActiveRunStatus(status: string): boolean {
   return status === "running" || status === "pending";
 }
 
+function runListHeading(r: PipelineRun): string {
+  const t = (r.analysis_title ?? "").trim();
+  return t || r.slug;
+}
+
 function confidenceFromRun(r: PipelineRun): number | null {
   const rp = r.replay_payload;
   if (!rp || typeof rp !== "object") return null;
@@ -189,33 +194,37 @@ export default function DashboardPage() {
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>Welcome back, {user?.name ?? "there"}!</h1>
-      <div className="dashboard-grid">
-        <div className="stat-card">
-          <h3>Total analyses</h3>
-          <div className="stat-value">{runs.length}</div>
-        </div>
-        <div className="stat-card">
-          <h3>Completed</h3>
-          <div className="stat-value">{completed}</div>
-        </div>
-        <div className="stat-card">
-          <h3>In progress</h3>
-          <div
-            className="stat-value"
-            style={{
-              fontSize: "1.25rem",
-              color: running > 0 ? "#fbbf24" : "#4ade80",
-            }}
-          >
-            {running > 0 ? `${running} running` : "Idle"}
+      <div className="dashboard-stat-rows">
+        <div className="dashboard-stat-row">
+          <div className="stat-card">
+            <h3>Total analyses</h3>
+            <div className="stat-value">{runs.length}</div>
+          </div>
+          <div className="stat-card">
+            <h3>Completed</h3>
+            <div className="stat-value">{completed}</div>
           </div>
         </div>
-        <div className="stat-card">
-          <h3>Avg confidence</h3>
-          <div className="stat-value">
-            {avgConfidence != null
-              ? `${(avgConfidence * 100).toFixed(0)}%`
-              : "—"}
+        <div className="dashboard-stat-row">
+          <div className="stat-card">
+            <h3>In progress</h3>
+            <div
+              className="stat-value"
+              style={{
+                fontSize: "1.25rem",
+                color: running > 0 ? "#fbbf24" : "#4ade80",
+              }}
+            >
+              {running > 0 ? `${running} running` : "Idle"}
+            </div>
+          </div>
+          <div className="stat-card">
+            <h3>Avg confidence</h3>
+            <div className="stat-value">
+              {avgConfidence != null
+                ? `${(avgConfidence * 100).toFixed(0)}%`
+                : "—"}
+            </div>
           </div>
         </div>
       </div>
@@ -269,34 +278,22 @@ export default function DashboardPage() {
         >
           New analysis (upload)
         </Link>
-        <Link
-          to="/pipeline"
-          className="btn-secondary"
-          style={{ display: "inline-flex", alignItems: "center" }}
-        >
-          Pipeline status
-        </Link>
-        <label
-          style={{
-            marginLeft: "auto",
-            fontSize: "0.9rem",
-            color: "var(--text-muted)",
-          }}
-        >
-          Filter track:{" "}
+        <div className="dashboard-track-filter">
+          <span id="dashboard-track-filter-label">Filter track</span>
           <select
+            id="dashboard-track-filter"
+            aria-labelledby="dashboard-track-filter-label"
             value={trackFilter}
             onChange={(e) => setTrackFilter(e.target.value)}
-            className="btn-secondary"
-            style={{ padding: "0.35rem 0.5rem", marginLeft: "0.35rem" }}
+            className="dashboard-track-select"
           >
-            <option value="">All</option>
+            <option value="">All tracks</option>
             <option value="predictive">Predictive</option>
             <option value="automation">Automation</option>
             <option value="optimization">Optimization</option>
             <option value="supply_chain">Supply chain</option>
           </select>
-        </label>
+        </div>
         <button
           type="button"
           className="btn-secondary"
@@ -312,7 +309,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      <h2 className="section-title">Your analyses</h2>
+      <h2 className="section-title">Company analyses</h2>
       {loading ? (
         <div className="spinner-page" style={{ minHeight: 120 }}>
           <div className="spinner" />
@@ -352,14 +349,14 @@ export default function DashboardPage() {
                         }}
                         title="This analysis was cancelled"
                       >
-                        {r.slug}
+                        {runListHeading(r)}
                       </span>
                     ) : (
                       <Link
                         to={`/analysis/${r.slug}`}
                         className="analysis-run-link"
                       >
-                        {r.slug}
+                        {runListHeading(r)}
                       </Link>
                     )}
                     {r.track && (
@@ -388,7 +385,25 @@ export default function DashboardPage() {
                       {r.status}
                     </span>
                   </div>
-                  <p className="analysis-run-meta">{r.started_at}</p>
+                  <p className="analysis-run-meta">
+                    {(r.analysis_title ?? "").trim() ? (
+                      <>
+                        <code
+                          className="inline-code"
+                          style={{
+                            opacity: 0.55,
+                            fontSize: "0.78rem",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {r.slug}
+                        </code>
+                        {" · "}
+                      </>
+                    ) : null}
+                    {r.started_by_name ? `${r.started_by_name} · ` : ""}
+                    {r.started_at}
+                  </p>
                   {r.summary && (
                     <p className="analysis-run-summary">
                       {r.summary.length > 140

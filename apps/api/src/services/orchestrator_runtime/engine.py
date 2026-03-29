@@ -55,6 +55,7 @@ from services.orchestrator_runtime.persistence import (
     write_memory,
     write_quality_gate,
 )
+from services.run_title import propose_analysis_title_from_replay_payload
 from services.orchestrator_runtime.policies import (
     check_time_budget,
     classify_completion,
@@ -187,8 +188,8 @@ def _try_parse_executive_json(raw: str) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
-def _format_executive_dict_for_speech(data: dict[str, Any], max_chars: int = 2400) -> str:
-    """Flatten structured executive summary into spoken prose."""
+def _format_executive_dict_for_speech(data: dict[str, Any], max_chars: int = 12000) -> str:
+    """Flatten structured executive summary into spoken prose (podcast / TTS source)."""
     parts: list[str] = []
     if h := data.get("headline"):
         parts.append(str(h).strip())
@@ -197,25 +198,35 @@ def _format_executive_dict_for_speech(data: dict[str, Any], max_chars: int = 240
     kf = data.get("key_findings")
     if isinstance(kf, list) and kf:
         parts.append(
-            "Key findings: " + ". ".join(str(x).strip() for x in kf[:10] if x),
+            "Key findings: " + ". ".join(str(x).strip() for x in kf[:12] if x),
         )
     rh = data.get("risk_highlights")
     if isinstance(rh, list) and rh:
         parts.append(
-            "Risk highlights: " + ". ".join(str(x).strip() for x in rh[:6] if x),
+            "Risk highlights: " + ". ".join(str(x).strip() for x in rh[:8] if x),
         )
     na = data.get("next_actions")
     if isinstance(na, list) and na:
         parts.append(
-            "Next actions: " + ". ".join(str(x).strip() for x in na[:8] if x),
+            "Next actions: " + ". ".join(str(x).strip() for x in na[:10] if x),
         )
     cs = data.get("confidence_statement")
-    if isinstance(cs, dict):
-        oc = cs.get("overall_confidence")
+    if isinstance(cs, str) and cs.strip():
+        parts.append(cs.strip())
+    elif isinstance(cs, dict) and cs:
         basis = (cs.get("basis") or "").strip()
-        if oc is not None or basis:
-            conf_bit = f"Confidence: {oc}." if oc is not None else ""
-            parts.append(f"{conf_bit} {basis}".strip())
+        oc = cs.get("overall_confidence")
+        pct = ""
+        if isinstance(oc, (int, float)) and not isinstance(oc, bool):
+            try:
+                fv = float(oc)
+                p = int(round(fv * 100)) if fv <= 1.0 else int(round(fv))
+                pct = f" ({p}% confidence)"
+            except (TypeError, ValueError):
+                pct = ""
+        line = f"{basis}{pct}".strip() if basis else pct.strip()
+        if line:
+            parts.append(line)
     out = " ".join(p for p in parts if p)
     return out[:max_chars] if len(out) > max_chars else out
 
@@ -235,13 +246,37 @@ def _format_summary_text_for_tts(raw: str) -> str:
     return cleaned.strip()
 
 
+def _executive_structured_from_prior(prior: dict[str, Any]) -> dict[str, Any] | None:
+    """Full executive_summary JSON from artifacts (preferred over envelope summary string)."""
+    env = prior.get("executive_summary")
+    if not isinstance(env, dict):
+        return None
+    arts = env.get("artifacts") or []
+    structured = _artifact_primary_payload(arts) if arts else {}
+    if not isinstance(structured, dict) or not structured:
+        return None
+    if (
+        structured.get("headline")
+        or structured.get("situation_overview")
+        or structured.get("key_findings")
+    ):
+        return structured
+    return None
+
+
 def _resolve_executive_summary_text(context: dict[str, Any]) -> str:
-    """Text for ElevenLabs: explicit field, then prior_outputs executive_summary envelope."""
+    """Text for ElevenLabs: structured artifact first, then explicit field, then envelope summary."""
+    prior = context.get("prior_outputs") or {}
+    structured_exec = _executive_structured_from_prior(prior)
+    if structured_exec:
+        spoken = _format_executive_dict_for_speech(structured_exec)
+        if spoken:
+            return spoken
+
     direct = (context.get("executive_summary") or "").strip()
     if direct:
         return _format_summary_text_for_tts(direct)
 
-    prior = context.get("prior_outputs") or {}
     env = prior.get("executive_summary")
     if not isinstance(env, dict):
         return ""
@@ -345,8 +380,8 @@ def _generate_podcast_script_via_llm(context: dict[str, Any]) -> str:
         "- Output ONLY the words to be read aloud by a text-to-speech voice.\n"
         "- No markdown, no bullet characters, no section headers, no stage directions, "
         "no 'host:', no music cues, no timestamps.\n"
-        "- Length: between 240 and 320 words (about 1 to 1.5 minutes at normal speaking pace). "
-        "Do not exceed 320 words.\n"
+        "- Length: between 200 and 260 words (about 1.5 minutes at typical TTS pace ~140–160 wpm). "
+        "Do not exceed 270 words.\n"
         "- Open with one or two engaging sentences that welcome the listener and name the company "
         f"and that this is the {track} analysis insights.\n"
         "- Weave together the most important findings, tradeoffs, risks, and opportunities from the source.\n"
@@ -364,7 +399,7 @@ def _generate_podcast_script_via_llm(context: dict[str, Any]) -> str:
                 "You write only spoken podcast scripts for business intelligence. "
                 "You never add preamble or commentary outside the script."
             ),
-            max_tokens=1100,
+            max_tokens=1000,
         )
     except Exception as exc:
         logger.warning("Podcast script LLM call failed: %s", exc)
@@ -377,10 +412,10 @@ def _generate_podcast_script_via_llm(context: dict[str, Any]) -> str:
             "Podcast script too short (%s words, need ~120+); will use fallback", wc,
         )
         return ""
-    if wc > 380:
-        # Hard cap so TTS stays ~1.5 min; trim at sentence boundary near 320 words
+    if wc > 290:
+        # Hard cap ~1.5 min TTS; trim near 260 words
         words = script.split()
-        script = " ".join(words[:320])
+        script = " ".join(words[:260])
     return script
 
 
@@ -1250,6 +1285,22 @@ class OrchestratorEngine:
                         return
                     self._dispatch_single(agent_id, stage_id.value)
 
+        # Mark undispatched optional agents as skipped so downstream DAG nodes
+        # (e.g. executive_summary depending on optional swot_analysis) are not blocked
+        # when the stage loop exits early (budget, dead-end readiness, or iteration cap).
+        for a in stage_config.optional_agents:
+            if (a not in self.memory.completed
+                    and a not in self.memory.failed
+                    and a not in self.memory.skipped):
+                self.memory.skipped.append(a)
+                if a in self.memory.pending:
+                    self.memory.pending.remove(a)
+                self.memory.add_event(
+                    "agent_skipped", a, "Optional — not run before stage end",
+                )
+        if self.run_dir:
+            write_memory(self.run_dir, self.memory)
+
         # Stage gate
         if stage_config.quality_gate and settings.orch_enable_stage_gates:
             gate_result = evaluate_stage_gate(
@@ -1592,16 +1643,34 @@ class OrchestratorEngine:
             "visualization_plan": visualization_plan,
         }
 
-        # Update DB
-        db_update_run_status(
-            self.run_id,
-            status=final_status,
-            summary=summary,
-            pipeline_log=pipeline_log,
-            agent_activity=agent_activity,
-            replay_payload=replay_payload,
-            run_dir_path=run_dir_relative(self.run_dir),
-        )
+        auto_title: str | None = None
+        if final_status in ("completed", "completed_with_warnings"):
+            try:
+                raw_t = propose_analysis_title_from_replay_payload(replay_payload)
+                stripped = (raw_t or "").strip()
+                auto_title = stripped[:500] if stripped else None
+            except Exception:
+                logger.warning(
+                    "Auto analysis title failed for run %s",
+                    self.run_slug,
+                    exc_info=True,
+                )
+                auto_title = None
+
+        db_kw: dict[str, Any] = {
+            "run_id": self.run_id,
+            "status": final_status,
+            "summary": summary,
+            "pipeline_log": pipeline_log,
+            "agent_activity": agent_activity,
+            "replay_payload": replay_payload,
+            "run_dir_path": run_dir_relative(self.run_dir),
+            "memory_json": self.memory.to_dict(),
+        }
+        if auto_title:
+            db_kw["analysis_title"] = auto_title
+
+        db_update_run_status(**db_kw)
 
         if final_status in ("completed", "completed_with_warnings"):
             try:

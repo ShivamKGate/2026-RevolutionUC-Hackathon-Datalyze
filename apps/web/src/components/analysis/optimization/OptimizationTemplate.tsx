@@ -11,7 +11,6 @@ import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
 import { ConfidenceStrip } from "../shared/ConfidenceStrip";
-import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
 import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import type { RecommendationCardProps } from "../../charts";
 import "../analysis.css";
@@ -196,6 +195,8 @@ type Props = {
   visualizationPlan?: VisualizationPlan;
   collapseStoragePrefix?: string;
   hideConfidenceStrip?: boolean;
+  runSlug: string;
+  runStatus: string;
 };
 
 export function OptimizationTemplate({
@@ -203,6 +204,8 @@ export function OptimizationTemplate({
   visualizationPlan,
   collapseStoragePrefix = "",
   hideConfidenceStrip = false,
+  runSlug,
+  runStatus,
 }: Props) {
   const tree = useMemo(() => buildProfitTree(agentResults), [agentResults]);
   const constraints = useMemo(
@@ -386,8 +389,6 @@ export function OptimizationTemplate({
           </div>
         </div>
       </section>
-
-      <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );
 }

@@ -120,6 +120,25 @@ export async function updateUserCompany(body: {
   return (await response.json()) as User;
 }
 
+/** Per-user preferences (e.g. default analysis track), not company-wide. */
+export async function updateUserPreferences(body: {
+  onboarding_path: string;
+}): Promise<User> {
+  const response = await fetch("/api/v1/users/me/preferences", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(
+      `Preferences update failed (${response.status}): ${detail}`,
+    );
+  }
+  return (await response.json()) as User;
+}
+
 // ─── Health ───────────────────────────────────────────────────────────────────
 
 export type HealthResponse = {
@@ -324,6 +343,9 @@ export type PipelineRun = {
   final_status_class: string | null;
   replay_payload: Record<string, unknown> | null;
   run_dir_path: string | null;
+  analysis_title?: string | null;
+  memory_json?: Record<string, unknown> | null;
+  started_by_name?: string | null;
 };
 
 export type PipelineRunLog = {
@@ -458,6 +480,43 @@ export async function getPipelineRun(slug: string): Promise<PipelineRun> {
     credentials: "include",
   });
   if (!response.ok) throw new Error(`Run not found (${response.status})`);
+  return (await response.json()) as PipelineRun;
+}
+
+export async function patchRunTitle(
+  slug: string,
+  analysis_title: string | null,
+): Promise<PipelineRun> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/title`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        analysis_title: analysis_title === null ? null : analysis_title,
+      }),
+    },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Title update failed (${response.status}): ${detail}`);
+  }
+  return (await response.json()) as PipelineRun;
+}
+
+export async function generateRunTitle(slug: string): Promise<PipelineRun> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/generate-title`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Generate title failed (${response.status}): ${detail}`);
+  }
   return (await response.json()) as PipelineRun;
 }
 

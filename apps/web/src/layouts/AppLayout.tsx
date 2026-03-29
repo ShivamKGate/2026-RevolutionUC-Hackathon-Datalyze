@@ -2,6 +2,18 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
+/** Up to two words → two capital initials; one word → single initial. */
+function avatarInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = (parts[0]?.charAt(0) ?? "").toUpperCase();
+  if (parts.length >= 2) {
+    const second = (parts[1]?.charAt(0) ?? "").toUpperCase();
+    return `${first}${second}`.slice(0, 2);
+  }
+  return first || "?";
+}
+
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -25,7 +37,7 @@ export default function AppLayout() {
                 onClick={() => setAvatarOpen((o) => !o)}
                 title={user.name}
               >
-                {user.name.charAt(0).toUpperCase()}
+                {avatarInitials(user.name)}
               </button>
               {avatarOpen && (
                 <div className="avatar-dropdown">
@@ -68,22 +80,6 @@ export default function AppLayout() {
             }
           >
             Upload
-          </NavLink>
-          <NavLink
-            to="/pipeline"
-            className={({ isActive }) =>
-              "sidebar-link" + (isActive ? " active" : "")
-            }
-          >
-            Pipeline
-          </NavLink>
-          <NavLink
-            to="/agents"
-            className={({ isActive }) =>
-              "sidebar-link" + (isActive ? " active" : "")
-            }
-          >
-            Agents
           </NavLink>
           <NavLink
             to="/settings"

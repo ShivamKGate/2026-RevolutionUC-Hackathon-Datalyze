@@ -8,9 +8,18 @@ type Props = {
 export function ExecutiveSummarySection({ data }: Props) {
   if (!data) return null;
 
+  const headline = unknownToDisplayText(data.headline as unknown);
+
+  const confidenceLine = data.confidence_statement
+    ? unknownToDisplayText(data.confidence_statement as unknown)
+    : "";
+
   return (
-    <section className="executive-summary">
-      <h2>{unknownToDisplayText(data.headline as unknown)}</h2>
+    <section
+      className="executive-summary"
+      aria-labelledby="executive-summary-headline"
+    >
+      <h2 id="executive-summary-headline">{headline}</h2>
       <p className="executive-summary-overview">
         {unknownToDisplayText(data.situation_overview as unknown)}
       </p>
@@ -48,14 +57,9 @@ export function ExecutiveSummarySection({ data }: Props) {
         </>
       )}
 
-      {(() => {
-        const conf = unknownToDisplayText(
-          data.confidence_statement as unknown,
-        ).trim();
-        return conf ? (
-          <span className="executive-summary-confidence">{conf}</span>
-        ) : null;
-      })()}
+      {confidenceLine ? (
+        <div className="executive-summary-confidence">{confidenceLine}</div>
+      ) : null}
     </section>
   );
 }

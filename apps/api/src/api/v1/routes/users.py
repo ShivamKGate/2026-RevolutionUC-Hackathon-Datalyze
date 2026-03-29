@@ -3,7 +3,13 @@ from sqlalchemy import text
 
 from api.v1.routes.auth import fetch_user_out, get_current_user
 from db.session import SessionLocal
-from schemas.auth import CompanyUpdateRequest, ProfileUpdateRequest, SetupRequest, UserOut
+from schemas.auth import (
+    CompanyUpdateRequest,
+    PreferencesUpdateRequest,
+    ProfileUpdateRequest,
+    SetupRequest,
+    UserOut,
+)
 
 router = APIRouter()
 
@@ -62,7 +68,6 @@ def patch_company(body: CompanyUpdateRequest, request: Request):
         ).fetchone()
         target_company_id = int(target_row.id) if target_row else current_company_id
 
-        onboarding_path = _normalize_optional_str(body.onboarding_path)
         if target_company_id != current_company_id:
             db.execute(
                 text("UPDATE users SET company_id=:cid, updated_at=NOW() WHERE id=:uid"),
@@ -91,14 +96,40 @@ def patch_company(body: CompanyUpdateRequest, request: Request):
                     text("UPDATE companies SET name=:company_name WHERE id=:cid"),
                     {"company_name": company_name, "cid": current_company_id},
                 )
-        if onboarding_path is not None:
+        payload = body.model_dump(exclude_unset=True)
+        if "onboarding_path" in payload:
+            op = _normalize_optional_str(body.onboarding_path)
             db.execute(
                 text(
                     "UPDATE users SET onboarding_path=:onboarding_path, updated_at=NOW() "
                     "WHERE id=:uid"
                 ),
-                {"onboarding_path": onboarding_path, "uid": user_id},
+                {"onboarding_path": op, "uid": user_id},
             )
+        db.commit()
+        return fetch_user_out(db, user_id)
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.patch("/me/preferences", response_model=UserOut)
+def patch_preferences(body: PreferencesUpdateRequest, request: Request):
+    """Persist per-user defaults such as preferred analysis track."""
+    user = get_current_user(request)
+    user_id = user["id"]
+    path = body.onboarding_path.strip()
+    db = SessionLocal()
+    try:
+        db.execute(
+            text(
+                "UPDATE users SET onboarding_path=:onboarding_path, updated_at=NOW() "
+                "WHERE id=:uid"
+            ),
+            {"onboarding_path": path, "uid": user_id},
+        )
         db.commit()
         return fetch_user_out(db, user_id)
     except Exception:

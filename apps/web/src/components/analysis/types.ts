@@ -97,7 +97,8 @@ export type ExecutiveSummaryOutput = {
   key_findings: string[];
   risk_highlights: string[];
   next_actions: string[];
-  confidence_statement: string;
+  /** Model may return a string or `{ overall_confidence, basis }` (see agents/executive_summary.py). */
+  confidence_statement?: string | Record<string, unknown>;
 };
 
 /* ── output_evaluator (VisualizationPlan) ────────────────────────── */

@@ -34,6 +34,24 @@ class PipelineRunOut(BaseModel):
     final_status_class: str | None = None
     replay_payload: dict | None = None
     run_dir_path: str | None = None
+    analysis_title: str | None = Field(
+        default=None,
+        description="Custom dashboard title; empty means UI shows run id.",
+    )
+    memory_json: dict | None = Field(
+        default=None,
+        description="Orchestrator memory snapshot; usually only on GET one run.",
+    )
+    started_by_name: str | None = Field(
+        default=None,
+        description="Run owner for company-wide lists.",
+    )
+
+
+class RunTitlePatchRequest(BaseModel):
+    """`analysis_title`: set a label, or `null` / empty string to clear."""
+
+    analysis_title: str | None = Field(default=None, max_length=500)
 
 
 class PipelineRunLogOut(BaseModel):

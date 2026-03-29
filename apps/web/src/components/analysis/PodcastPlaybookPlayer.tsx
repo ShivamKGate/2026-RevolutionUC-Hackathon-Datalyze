@@ -14,16 +14,20 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+type Variant = "page" | "executive-inline";
+
 /**
- * After the run produces `narration.mp3`, plays the ElevenLabs insight podcast with
- * play / pause / stop. Mute toggles `HTMLAudioElement.muted` so unmute restores sound.
+ * Plays ElevenLabs insight podcast (`narration.mp3`) with play / pause / stop / mute.
+ * `executive-inline`: compact row beside confidence; seek bar expands while audio plays.
  */
 export function PodcastPlaybookPlayer({
   slug,
   runStatus,
+  variant = "page",
 }: {
   slug: string;
   runStatus: string;
+  variant?: Variant;
 }) {
   const [finalReady, setFinalReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,6 +43,9 @@ export function PodcastPlaybookPlayer({
     runStatus === "running" ||
     runStatus === "completed" ||
     runStatus === "completed_with_warnings";
+
+  const expandedChrome = finalReady && !paused;
+  const inline = variant === "executive-inline";
 
   const poll = useCallback(async () => {
     try {
@@ -124,63 +131,36 @@ export function PodcastPlaybookPlayer({
 
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const rootClass = [
+    "podcast-playbook",
+    inline ? "podcast-playbook--executive-inline" : "podcast-playbook--page",
+    inline && expandedChrome ? "podcast-playbook--expanded" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div
-      className="podcast-playbook"
-      style={{
-        marginBottom: "1.25rem",
-        padding: "clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 1.25rem)",
-        borderRadius: 12,
-        background:
-          "linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.88))",
-        border: "1px solid rgba(167, 139, 250, 0.35)",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
-        maxWidth: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: "0.5rem 1rem",
-          marginBottom: "0.75rem",
-        }}
-      >
+    <div className={rootClass}>
+      <div className="podcast-playbook__brand-row">
+        <span className="podcast-playbook__kicker">Insight podcast</span>
         <span
-          style={{
-            fontSize: "0.7rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "#c4b5fd",
-            fontWeight: 600,
-          }}
+          className="podcast-playbook__ad"
+          aria-label="Powered by ElevenLabs"
         >
-          Insight podcast
-        </span>
-        <span style={{ fontSize: "0.9rem", color: "#e2e8f0" }}>
-          ElevenLabs · full analysis summary
+          ElevenLabs
         </span>
       </div>
 
       {!finalReady && (
-        <p
-          style={{
-            margin: "0 0 0.75rem",
-            fontSize: "0.9rem",
-            color: "var(--text-muted)",
-          }}
-        >
+        <p className="podcast-playbook__status">
           {runStatus === "running" || runStatus === "pending"
-            ? "Your audio playbook will appear here when the executive summary is ready."
+            ? "Audio will be ready after the executive summary and narration step complete."
             : "Final narration is not available for this run."}
         </p>
       )}
 
       {loadError && (
-        <p className="status error" style={{ marginBottom: "0.5rem" }}>
-          {loadError}
-        </p>
+        <p className="status error podcast-playbook__error">{loadError}</p>
       )}
 
       {finalReady && (
@@ -203,69 +183,47 @@ export function PodcastPlaybookPlayer({
             onPause={() => setPaused(true)}
           />
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: "0.5rem",
-              marginBottom: "0.65rem",
-            }}
-          >
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ minWidth: "5.5rem" }}
-              onClick={() => void togglePlay()}
-            >
-              {paused ? "Play" : "Pause"}
-            </button>
-            <button type="button" className="btn-secondary" onClick={stop}>
-              Stop
-            </button>
-            <label
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                marginLeft: "0.25rem",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={muted}
-                onChange={(e) => setMuted(e.target.checked)}
-              />
-              Mute
-            </label>
-            <span
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--text-muted)",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {formatTime(currentTime)} / {formatTime(duration)}
+          <div className="podcast-playbook__track-row">
+            <span className="podcast-playbook__track-label">
+              Full analysis summary
             </span>
+            <div className="podcast-playbook__controls">
+              <button
+                type="button"
+                className="btn-primary podcast-playbook__btn-play"
+                onClick={() => void togglePlay()}
+              >
+                {paused ? "Play" : "Pause"}
+              </button>
+              <button type="button" className="btn-secondary" onClick={stop}>
+                Stop
+              </button>
+              <label className="podcast-playbook__mute">
+                <input
+                  type="checkbox"
+                  checked={muted}
+                  onChange={(e) => setMuted(e.target.checked)}
+                />
+                Mute
+              </label>
+              <span className="podcast-playbook__time">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
           </div>
 
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.05}
-            value={pct}
-            onChange={onScrub}
-            aria-label="Playback position"
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              marginBottom: "0.25rem",
-              cursor: "pointer",
-            }}
-          />
+          <div className="podcast-playbook__seek-wrap">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={0.05}
+              value={pct}
+              onChange={onScrub}
+              aria-label="Playback position"
+              className="podcast-playbook__seek"
+            />
+          </div>
         </>
       )}
     </div>

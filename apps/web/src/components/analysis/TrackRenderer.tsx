@@ -10,6 +10,7 @@ type Props = {
   agentResults: AgentResults;
   visualizationPlan?: VisualizationPlan;
   slug: string;
+  runStatus: string;
   /** When true, hide the ConfidenceStrip (e.g. shown in analysis page header). */
   hideConfidenceStrip?: boolean;
 };
@@ -19,6 +20,7 @@ export function TrackRenderer({
   agentResults,
   visualizationPlan,
   slug,
+  runStatus,
   hideConfidenceStrip,
 }: Props) {
   return (
@@ -28,6 +30,8 @@ export function TrackRenderer({
         agentResults={agentResults}
         visualizationPlan={visualizationPlan}
         collapseStoragePrefix={slug}
+        runSlug={slug}
+        runStatus={runStatus}
         hideConfidenceStrip={hideConfidenceStrip}
       />
     </div>
@@ -39,18 +43,24 @@ function TrackContent({
   agentResults,
   visualizationPlan,
   collapseStoragePrefix,
+  runSlug,
+  runStatus,
   hideConfidenceStrip,
 }: {
   track: string;
   agentResults: AgentResults;
   visualizationPlan?: VisualizationPlan;
   collapseStoragePrefix: string;
+  runSlug: string;
+  runStatus: string;
   hideConfidenceStrip?: boolean;
 }) {
   const common = {
     agentResults,
     visualizationPlan,
     collapseStoragePrefix,
+    runSlug,
+    runStatus,
     hideConfidenceStrip,
   };
   switch (track) {

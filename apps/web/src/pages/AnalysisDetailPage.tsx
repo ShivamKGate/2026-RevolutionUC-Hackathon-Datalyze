@@ -10,12 +10,14 @@ import {
 import { AnalysisErrorBoundary } from "../components/analysis/AnalysisErrorBoundary";
 import { Link, useParams } from "react-router-dom";
 import {
+  generateRunTitle,
   getPipelineRun,
   getPipelineRunLogs,
+  patchRunTitle,
   type PipelineRun,
   type PipelineRunLog,
 } from "../lib/api";
-import { PodcastPlaybookPlayer, TrackRenderer } from "../components/analysis";
+import { ExecutiveSummarySection, TrackRenderer } from "../components/analysis";
 import { ExportButton } from "../components/analysis/shared/ExportButton";
 const OrchestrationModeling = lazy(() =>
   import("../components/analysis/orchestration/OrchestrationModeling").then(
@@ -26,8 +28,9 @@ import type {
   AgentResults,
   VisualizationPlan,
 } from "../components/analysis/types";
-import { KnowledgeGraphViewer } from "../components/knowledge-graph/KnowledgeGraphViewer";
+// import { KnowledgeGraphViewer } from "../components/knowledge-graph/KnowledgeGraphViewer";
 import { ConfidenceStrip } from "../components/analysis/shared/ConfidenceStrip";
+import { PodcastPlaybookPlayer } from "../components/analysis/PodcastPlaybookPlayer";
 
 /*
  * Retired: "Agent activity" list (live + completed). Status comes from orchestration + logs.
@@ -68,32 +71,55 @@ function extractVisualizationPlan(
   return undefined;
 }
 
+function readSessionBool(key: string, fallback: boolean): boolean {
+  if (typeof sessionStorage === "undefined") return fallback;
+  const v = sessionStorage.getItem(key);
+  if (v === "1") return true;
+  if (v === "0") return false;
+  return fallback;
+}
+
 function StatusPanel({
   title,
   defaultOpen,
   summaryLine,
   children,
   storageKey,
+  open: openControlled,
+  onOpenChange,
 }: {
   title: string;
   defaultOpen?: boolean;
   summaryLine: string;
   children?: ReactNode;
-  storageKey: string;
+  /** When omitted and panel is uncontrolled, open state is persisted here. */
+  storageKey?: string;
+  /** Controlled open state (e.g. link orchestration + pipeline panels). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(() => {
-    if (typeof sessionStorage !== "undefined") {
-      const v = sessionStorage.getItem(storageKey);
-      if (v === "1") return true;
-      if (v === "0") return false;
+  const controlled = openControlled !== undefined;
+  const [internalOpen, setInternalOpen] = useState(() => {
+    if (controlled) return Boolean(openControlled);
+    if (storageKey && typeof sessionStorage !== "undefined") {
+      return readSessionBool(storageKey, defaultOpen ?? false);
     }
     return defaultOpen ?? false;
   });
 
+  const open = controlled ? Boolean(openControlled) : internalOpen;
+
   useEffect(() => {
-    if (typeof sessionStorage === "undefined") return;
+    if (controlled || !storageKey || typeof sessionStorage === "undefined")
+      return;
     sessionStorage.setItem(storageKey, open ? "1" : "0");
-  }, [open, storageKey]);
+  }, [open, storageKey, controlled]);
+
+  function toggle() {
+    const next = !open;
+    onOpenChange?.(next);
+    if (!controlled) setInternalOpen(next);
+  }
 
   return (
     <div className="analysis-status-panel">
@@ -101,7 +127,7 @@ function StatusPanel({
         type="button"
         className="analysis-status-panel-toggle"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
       >
         <span className="analysis-status-chevron">{open ? "▼" : "▶"}</span>
         <span className="analysis-status-title">{title}</span>
@@ -164,11 +190,32 @@ function LivePipelineLog({
 
 export default function AnalysisDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const linkedExecStorageKey = slug ? `${slug}:exec:linked` : "";
+  const [executionPanelsOpen, setExecutionPanelsOpen] = useState(() =>
+    linkedExecStorageKey ? readSessionBool(linkedExecStorageKey, false) : false,
+  );
+
+  useEffect(() => {
+    if (!linkedExecStorageKey) return;
+    setExecutionPanelsOpen(readSessionBool(linkedExecStorageKey, false));
+  }, [linkedExecStorageKey]);
+
+  useEffect(() => {
+    if (!linkedExecStorageKey || typeof sessionStorage === "undefined") return;
+    sessionStorage.setItem(
+      linkedExecStorageKey,
+      executionPanelsOpen ? "1" : "0",
+    );
+  }, [linkedExecStorageKey, executionPanelsOpen]);
+
   const [run, setRun] = useState<PipelineRun | null>(null);
   const [logs, setLogs] = useState<PipelineRunLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"analysis" | "graph">("analysis");
+  const [titleDraft, setTitleDraft] = useState("");
+  const [titleSaving, setTitleSaving] = useState(false);
+  const [titleGenerating, setTitleGenerating] = useState(false);
+  const [titleError, setTitleError] = useState<string | null>(null);
   const pollRef = useRef<number | undefined>(undefined);
   const liveFeedsAnchorRef = useRef<HTMLDivElement | null>(null);
   const liveScrollForSlugRef = useRef<string | null>(null);
@@ -185,6 +232,7 @@ export default function AnalysisDetailPage() {
         ]);
         if (cancelled) return;
         setRun(r);
+        setTitleDraft(r.analysis_title ?? "");
         setLogs(logRows);
         setError(null);
         if (r.status === "pending" || r.status === "running") {
@@ -245,8 +293,6 @@ export default function AnalysisDetailPage() {
     () => (viewRun ? extractVisualizationPlan(viewRun) : undefined),
     [viewRun],
   );
-  const kg = agentResults.knowledge_graph_builder;
-
   const pipelineSummary = useMemo(() => {
     if (!viewRun) return "";
     if (viewRun.status === "pending" || viewRun.status === "running") {
@@ -300,6 +346,39 @@ export default function AnalysisDetailPage() {
     }
   }
 
+  async function handleSaveTitle() {
+    if (!slug) return;
+    setTitleSaving(true);
+    setTitleError(null);
+    try {
+      const updated = await patchRunTitle(
+        slug,
+        titleDraft.trim() ? titleDraft.trim() : null,
+      );
+      setRun(updated);
+      setTitleDraft(updated.analysis_title ?? "");
+    } catch (e) {
+      setTitleError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setTitleSaving(false);
+    }
+  }
+
+  async function handleGenerateTitle() {
+    if (!slug) return;
+    setTitleGenerating(true);
+    setTitleError(null);
+    try {
+      const updated = await generateRunTitle(slug);
+      setRun(updated);
+      setTitleDraft(updated.analysis_title ?? "");
+    } catch (e) {
+      setTitleError(e instanceof Error ? e.message : "Generation failed");
+    } finally {
+      setTitleGenerating(false);
+    }
+  }
+
   if (error) {
     return (
       <div>
@@ -335,13 +414,11 @@ export default function AnalysisDetailPage() {
 
   const storageBase = viewRun.slug;
 
-  const embedKgInCompletedColumn =
-    showRich && !isLiveRun && Boolean(kg?.nodes && kg.nodes.length > 0);
-  const showKnowledgeGraphTab =
-    Boolean(kg?.nodes && kg.nodes.length > 0) && !embedKgInCompletedColumn;
-
-  const effectiveTab =
-    tab === "graph" && !showKnowledgeGraphTab ? "analysis" : tab;
+  /* Standalone knowledge graph card/tab retired — graph is shown inside 3D orchestration.
+   * Kept for reference:
+   * const embedKgInCompletedColumn = showRich && !isLiveRun && Boolean(kg?.nodes?.length);
+   * const showKnowledgeGraphTab = Boolean(kg?.nodes?.length) && !embedKgInCompletedColumn;
+   */
 
   return (
     <AnalysisErrorBoundary>
@@ -387,31 +464,116 @@ export default function AnalysisDetailPage() {
           </div>
         )}
 
-        <div className="analysis-detail-head-row">
-          <div className="analysis-detail-head-main">
-            <h1 style={{ marginTop: 0 }}>Analysis</h1>
-            <p
-              style={{
-                color: "var(--text-muted)",
-                marginTop: "-0.5rem",
-                marginBottom: 0,
-              }}
-            >
-              Run <code className="inline-code">{viewRun.slug}</code> ·{" "}
-              {viewRun.status}
-              {viewRun.track ? ` · ${viewRun.track}` : ""}
-            </p>
-          </div>
-          {headerConfidence != null && (
-            <div className="analysis-detail-head-confidence">
-              <ConfidenceStrip
-                variant="header"
-                score={headerConfidence}
-                breakdown={agentResults.output_evaluator?.confidence_breakdown}
-              />
-            </div>
-          )}
-        </div>
+        {(() => {
+          const displayTitle = (viewRun.analysis_title ?? "").trim();
+          const canTitleTools =
+            viewRun.status === "completed" ||
+            viewRun.status === "completed_with_warnings";
+          const showInsightPodcast =
+            viewRun.status === "pending" ||
+            viewRun.status === "running" ||
+            viewRun.status === "completed" ||
+            viewRun.status === "completed_with_warnings";
+          return (
+            <>
+              <div className="analysis-detail-head-row">
+                <div className="analysis-detail-head-main">
+                  <h1 style={{ marginTop: 0 }}>{displayTitle || "Analysis"}</h1>
+                  <p
+                    style={{
+                      color: "var(--text-muted)",
+                      marginTop: "-0.35rem",
+                      marginBottom: 0,
+                    }}
+                  >
+                    {displayTitle ? (
+                      <>
+                        <span className="analysis-detail-id-faint">
+                          <code className="inline-code">{viewRun.slug}</code>
+                        </span>
+                        {" · "}
+                      </>
+                    ) : (
+                      <>
+                        Run <code className="inline-code">{viewRun.slug}</code>{" "}
+                        ·{" "}
+                      </>
+                    )}
+                    {viewRun.status}
+                    {viewRun.track ? ` · ${viewRun.track}` : ""}
+                  </p>
+                </div>
+                {showInsightPodcast && (
+                  <div className="analysis-detail-head-insights">
+                    <PodcastPlaybookPlayer
+                      slug={viewRun.slug}
+                      runStatus={viewRun.status}
+                      variant="executive-inline"
+                    />
+                  </div>
+                )}
+                {headerConfidence != null && (
+                  <div className="analysis-detail-head-confidence">
+                    <ConfidenceStrip
+                      variant="header"
+                      score={headerConfidence}
+                      breakdown={
+                        agentResults.output_evaluator?.confidence_breakdown
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+
+              {canTitleTools && (
+                <div className="analysis-title-toolbar">
+                  {titleError && (
+                    <div
+                      className="status error"
+                      style={{
+                        flex: "1 1 100%",
+                        margin: 0,
+                        padding: "0.5rem 0.65rem",
+                        borderRadius: 6,
+                      }}
+                    >
+                      {titleError}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    className="form-input analysis-title-input"
+                    placeholder="Optional title (shown on dashboard)"
+                    aria-label="Analysis title"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    maxLength={500}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={titleGenerating}
+                    onClick={() => void handleGenerateTitle()}
+                  >
+                    {titleGenerating ? "Generating…" : "Generate title"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={
+                      titleSaving ||
+                      titleDraft.trim() ===
+                        (viewRun.analysis_title ?? "").trim()
+                    }
+                    onClick={() => void handleSaveTitle()}
+                  >
+                    {titleSaving ? "Saving…" : "Save title"}
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         <div
           style={{
@@ -465,8 +627,6 @@ export default function AnalysisDetailPage() {
             </p>
           </div>
         )}
-
-        <PodcastPlaybookPlayer slug={run.slug} runStatus={run.status} />
 
         {viewRun.summary && (
           <div className="analysis-summary">{viewRun.summary}</div>
@@ -572,7 +732,8 @@ export default function AnalysisDetailPage() {
                   title="Orchestration & knowledge graph"
                   defaultOpen={false}
                   summaryLine="3D model, log scrubber, node details"
-                  storageKey={`${storageBase}:panel:orch`}
+                  open={executionPanelsOpen}
+                  onOpenChange={setExecutionPanelsOpen}
                 >
                   <Suspense
                     fallback={
@@ -596,7 +757,8 @@ export default function AnalysisDetailPage() {
                   title="Pipeline log"
                   defaultOpen={false}
                   summaryLine={pipelineSummary}
-                  storageKey={`${storageBase}:panel:pipeline`}
+                  open={executionPanelsOpen}
+                  onOpenChange={setExecutionPanelsOpen}
                 >
                   <pre className="pipeline-log-block">
                     {logs.length > 0
@@ -615,6 +777,8 @@ export default function AnalysisDetailPage() {
                 </StatusPanel>
               </div>
             </div>
+            {/*
+            Standalone 2D knowledge graph card (replaced by KG nodes in 3D orchestration view).
             {embedKgInCompletedColumn && kg?.nodes && (
               <div className="analysis-completed-kg-row">
                 <StatusPanel
@@ -633,6 +797,7 @@ export default function AnalysisDetailPage() {
                 </StatusPanel>
               </div>
             )}
+            */}
           </section>
         )}
 
@@ -652,43 +817,33 @@ export default function AnalysisDetailPage() {
                 Recommendations, KPIs, charts, and summaries from this run.
               </p>
             </header>
+            {/*
             <div className="analysis-detail-tab-bar">
-              <button
-                type="button"
-                className={
-                  effectiveTab === "analysis" ? "btn-primary" : "btn-secondary"
-                }
-                onClick={() => setTab("analysis")}
-              >
-                Charts &amp; insights
-              </button>
-              {showKnowledgeGraphTab && (
-                <button
-                  type="button"
-                  className={
-                    effectiveTab === "graph" ? "btn-primary" : "btn-secondary"
-                  }
-                  onClick={() => setTab("graph")}
-                >
-                  Knowledge graph
-                </button>
-              )}
+              <button type="button" className="btn-primary">Charts & insights</button>
+              <button type="button" className="btn-secondary">Knowledge graph</button>
             </div>
-            {effectiveTab === "analysis" && (
-              <TrackRenderer
-                track={viewRun.track}
-                agentResults={agentResults}
-                visualizationPlan={vizPlan}
-                slug={viewRun.slug}
-                hideConfidenceStrip
-              />
-            )}
             {effectiveTab === "graph" && showKnowledgeGraphTab && kg?.nodes && (
               <div style={{ marginTop: "1rem", minHeight: 400 }}>
                 <KnowledgeGraphViewer
                   nodes={kg.nodes}
                   edges={kg.edges ?? []}
                   clusters={kg.clusters ?? []}
+                />
+              </div>
+            )}
+            */}
+            <TrackRenderer
+              track={viewRun.track}
+              agentResults={agentResults}
+              visualizationPlan={vizPlan}
+              slug={viewRun.slug}
+              runStatus={viewRun.status}
+              hideConfidenceStrip
+            />
+            {agentResults.executive_summary && (
+              <div className="analysis-executive-finale">
+                <ExecutiveSummarySection
+                  data={agentResults.executive_summary}
                 />
               </div>
             )}

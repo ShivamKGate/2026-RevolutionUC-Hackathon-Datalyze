@@ -295,6 +295,11 @@ export function OrchestrationModeling({
             dispatchOrderByAgent={dispatchOrderByAgent}
             autoRotate={!live}
             remountKey={canvasRemountKey}
+            knowledgeGraph={
+              agentResults.knowledge_graph_builder?.nodes?.length
+                ? agentResults.knowledge_graph_builder
+                : null
+            }
           />
           {selected && (
             <NodeDetailPanel

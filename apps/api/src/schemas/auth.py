@@ -38,6 +38,12 @@ class CompanyUpdateRequest(BaseModel):
     onboarding_path: str | None = Field(default=None, max_length=120)
 
 
+class PreferencesUpdateRequest(BaseModel):
+    """User-scoped settings (not shared across the company workspace)."""
+
+    onboarding_path: str = Field(min_length=1, max_length=120)
+
+
 class SetupRequest(BaseModel):
     company_name: str
     display_name: str | None = None

@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { onboardingPathToAnalysisTrackId } from "../lib/trackOnboarding";
+import {
+  onboardingPathToAnalysisTrackId,
+  trackIdToStartOnboarding,
+} from "../lib/trackOnboarding";
 import UploadedFileList from "../components/uploads/UploadedFileList";
 import {
   deleteUploadedFile,
@@ -38,14 +41,14 @@ const TRACKS = [
 ] as const;
 
 export default function UploadPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
-  const trackInitDone = useRef(false);
-  const [track, setTrack] = useState<string>(TRACKS[0]!.id);
+  /** null until user session is read — avoids listing predictive files before we know preferred track */
+  const [track, setTrack] = useState<string | null>(null);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [starting, setStarting] = useState(false);
   const [busyDelete, setBusyDelete] = useState<number | null>(null);
@@ -54,6 +57,7 @@ export default function UploadPage() {
   const [forceNew, setForceNew] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (!track) return;
     setLoading(true);
     setError(null);
     try {
@@ -68,23 +72,17 @@ export default function UploadPage() {
   }, [track]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!user || trackInitDone.current) return;
-    trackInitDone.current = true;
-    const email = user.email?.trim().toLowerCase() ?? "";
-    if (email === "singhk6@mail.uc.edu") {
-      setTrack("predictive");
-      return;
-    }
-    if (email === "sinayksp@mail.uc.edu") {
-      setTrack("automation");
+    if (authLoading) return;
+    if (!user) {
+      setTrack(TRACKS[0]!.id);
       return;
     }
     setTrack(onboardingPathToAnalysisTrackId(user.onboarding_path));
-  }, [user]);
+  }, [authLoading, user, user?.onboarding_path]);
+
+  useEffect(() => {
+    if (track) void refresh();
+  }, [track, refresh]);
 
   function toggleSelect(id: number) {
     setSelectedIds((prev) => {
@@ -109,7 +107,7 @@ export default function UploadPage() {
     setError(null);
     try {
       for (let i = 0; i < fileList.length; i += 1) {
-        await uploadDataFile(fileList[i]!, track);
+        await uploadDataFile(fileList[i]!, track ?? TRACKS[0]!.id);
       }
       await refresh();
     } catch (e) {
@@ -142,13 +140,13 @@ export default function UploadPage() {
       );
       return;
     }
-    const meta = TRACKS.find((t) => t.id === track);
+    const tid = track ?? TRACKS[0]!.id;
     setStarting(true);
     setError(null);
     try {
       const run = await startPipelineRun({
         uploaded_file_ids: ids,
-        onboarding_path: meta?.onboarding,
+        onboarding_path: trackIdToStartOnboarding(tid),
         force_new: forceNew,
       });
       navigate(`/analysis/${run.slug}`);
@@ -171,17 +169,17 @@ export default function UploadPage() {
         )}
       </div>
 
-      <div style={{ marginBottom: "1.25rem", maxWidth: 480 }}>
-        <label
-          className="section-title"
-          style={{ display: "block", marginBottom: "0.35rem" }}
-        >
+      <div
+        className="form-group"
+        style={{ marginBottom: "1.25rem", maxWidth: 480 }}
+      >
+        <label className="form-label" htmlFor="upload-analysis-track">
           Analysis track
         </label>
         <select
-          className="btn-secondary"
-          style={{ width: "100%", padding: "0.5rem 0.75rem" }}
-          value={track}
+          id="upload-analysis-track"
+          className="form-input"
+          value={track ?? TRACKS[0]!.id}
           onChange={(e) => setTrack(e.target.value)}
         >
           {TRACKS.map((t) => (
@@ -191,11 +189,8 @@ export default function UploadPage() {
           ))}
         </select>
         <p
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--text-muted)",
-            marginTop: "0.35rem",
-          }}
+          className="toggle-hint"
+          style={{ marginTop: "0.35rem", marginBottom: 0 }}
         >
           Files are filtered to this track (plus untagged files). New uploads
           are tagged for this track.
@@ -275,7 +270,10 @@ export default function UploadPage() {
           type="button"
           className="btn-primary"
           disabled={
-            starting || (!selectedIds.size && !user?.public_scrape_enabled)
+            authLoading ||
+            !track ||
+            starting ||
+            (!selectedIds.size && !user?.public_scrape_enabled)
           }
           onClick={() => void handleStartAnalysis()}
         >
@@ -309,7 +307,7 @@ export default function UploadPage() {
           Deselect all
         </button>
       </div>
-      {loading ? (
+      {authLoading || !track || loading ? (
         <div className="spinner-page" style={{ minHeight: 120 }}>
           <div className="spinner" />
         </div>

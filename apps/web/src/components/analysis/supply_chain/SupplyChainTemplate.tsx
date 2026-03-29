@@ -12,7 +12,6 @@ import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
 import { ConfidenceStrip } from "../shared/ConfidenceStrip";
-import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
 import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import type { RecommendationCardProps } from "../../charts";
 import "../analysis.css";
@@ -129,6 +128,8 @@ type Props = {
   visualizationPlan?: VisualizationPlan;
   collapseStoragePrefix?: string;
   hideConfidenceStrip?: boolean;
+  runSlug: string;
+  runStatus: string;
 };
 
 export function SupplyChainTemplate({
@@ -136,6 +137,8 @@ export function SupplyChainTemplate({
   visualizationPlan,
   collapseStoragePrefix = "",
   hideConfidenceStrip = false,
+  runSlug,
+  runStatus,
 }: Props) {
   const evaluator = agentResults.output_evaluator;
   const p = collapseStoragePrefix;
@@ -310,8 +313,6 @@ export function SupplyChainTemplate({
           {b.node}
         </CollapsibleAnalysisSection>
       ))}
-
-      <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );
 }

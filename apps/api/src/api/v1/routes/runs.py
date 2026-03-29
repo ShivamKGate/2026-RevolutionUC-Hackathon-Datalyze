@@ -16,7 +16,13 @@ from sqlalchemy import text
 
 from api.v1.routes.auth import get_current_user
 from db.session import SessionLocal
-from schemas.files_runs import PipelineRunLogOut, PipelineRunOut, StartPipelineRunRequest
+from schemas.files_runs import (
+    PipelineRunLogOut,
+    PipelineRunOut,
+    RunTitlePatchRequest,
+    StartPipelineRunRequest,
+)
+from services.run_title import propose_analysis_title_from_replay_payload
 from services.orchestrator_runtime.cancellation import request_cancel_run
 from services.orchestrator_runtime.persistence import db_get_run_logs
 from services.orchestrator_runtime.run_job import run_orchestrator_job
@@ -85,17 +91,42 @@ def _resolve_run_dir(rel_or_abs_path: str | None) -> Path | None:
     return resolved
 
 
-def _select_run_columns() -> str:
+def _sql_select_run_list(prefix: str = "pr") -> str:
+    """Columns for list / insert return (no memory_json — keep payloads small)."""
+    p = prefix
+    return (
+        f"{p}.id, {p}.slug, {p}.status, "
+        f"to_char({p}.started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS started_at, "
+        f"to_char({p}.ended_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS ended_at, "
+        f"{p}.summary, {p}.pipeline_log, {p}.agent_activity, {p}.source_file_ids, "
+        f"{p}.track, {p}.config_json, {p}.final_status_class, {p}.analysis_title, "
+        f"{p}.replay_payload, {p}.run_dir_path"
+    )
+
+
+def _sql_select_run_detail() -> str:
+    return f"{_sql_select_run_list('pr')}, pr.memory_json"
+
+
+def _sql_insert_returning_cols() -> str:
+    """Plain column names for INSERT ... RETURNING (no table prefix)."""
     return (
         "id, slug, status, "
         "to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS started_at, "
         "to_char(ended_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS ended_at, "
         "summary, pipeline_log, agent_activity, source_file_ids, "
-        "track, config_json, final_status_class, replay_payload, run_dir_path"
+        "track, config_json, final_status_class, analysis_title, replay_payload, run_dir_path"
     )
 
 
-def _row_to_out(row) -> PipelineRunOut:
+def _normalize_analysis_title(val: Any) -> str | None:
+    if val is None:
+        return None
+    s = str(val).strip()
+    return s if s else None
+
+
+def _row_to_out(row, *, started_by_name: str | None = None) -> PipelineRunOut:
     sfi = row.source_file_ids
     if sfi is None:
         ids: list[int] = []
@@ -103,6 +134,10 @@ def _row_to_out(row) -> PipelineRunOut:
         ids = [int(x) for x in sfi]
     else:
         ids = []
+    mem = getattr(row, "memory_json", None)
+    sbn = getattr(row, "started_by_name", None)
+    if started_by_name is not None:
+        sbn = started_by_name
     return PipelineRunOut(
         id=row.id,
         slug=row.slug,
@@ -118,6 +153,9 @@ def _row_to_out(row) -> PipelineRunOut:
         final_status_class=row.final_status_class,
         replay_payload=_coerce_json_obj(row.replay_payload) if row.replay_payload is not None else None,
         run_dir_path=row.run_dir_path,
+        analysis_title=_normalize_analysis_title(getattr(row, "analysis_title", None)),
+        memory_json=_coerce_json_obj(mem) if mem is not None else None,
+        started_by_name=str(sbn).strip() if sbn else None,
     )
 
 
@@ -240,7 +278,7 @@ def start_run(request: Request, body: StartPipelineRunRequest):
                 "summary, pipeline_log, agent_activity, source_file_ids, track, config_json) "
                 "VALUES (:slug, :cid, :uid, 'pending', :st, :summary, "
                 "CAST(:log AS jsonb), CAST(:agents AS jsonb), :fids, :track, CAST(:cfg AS jsonb)) "
-                f"RETURNING {_select_run_columns()}"
+                f"RETURNING {_sql_insert_returning_cols()}"
             ),
             {
                 "slug": slug,
@@ -301,7 +339,11 @@ def start_run(request: Request, body: StartPipelineRunRequest):
         daemon=True,
     ).start()
 
-    return _row_to_out(row)
+    return _row_to_out(
+        row,
+        started_by_name=str(user.get("name") or user.get("email") or "").strip()
+        or None,
+    )
 
 
 @router.post("/stop-active")
@@ -357,8 +399,11 @@ def list_runs(request: Request):
     try:
         rows = db.execute(
             text(
-                f"SELECT {_select_run_columns()} "
-                "FROM pipeline_runs WHERE company_id=:cid ORDER BY started_at DESC LIMIT 100"
+                f"SELECT {_sql_select_run_list()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.company_id=:cid ORDER BY pr.started_at DESC LIMIT 10000"
             ),
             {"cid": company_id},
         ).fetchall()
@@ -375,8 +420,11 @@ def latest_run(request: Request):
     try:
         row = db.execute(
             text(
-                f"SELECT {_select_run_columns()} "
-                "FROM pipeline_runs WHERE company_id=:cid ORDER BY started_at DESC LIMIT 1"
+                f"SELECT {_sql_select_run_list()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.company_id=:cid ORDER BY pr.started_at DESC LIMIT 1"
             ),
             {"cid": company_id},
         ).fetchone()
@@ -414,8 +462,11 @@ def get_run_replay(request: Request, slug: str):
     try:
         row = db.execute(
             text(
-                f"SELECT {_select_run_columns()} FROM pipeline_runs "
-                "WHERE slug=:slug AND company_id=:cid"
+                f"SELECT {_sql_select_run_list()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.slug=:slug AND pr.company_id=:cid"
             ),
             {"slug": slug, "cid": company_id},
         ).fetchone()
@@ -500,6 +551,140 @@ def get_narration_final_audio(request: Request, slug: str) -> FileResponse:
     return FileResponse(path, media_type="audio/mpeg", filename="narration.mp3")
 
 
+@router.patch("/{slug}/title", response_model=PipelineRunOut)
+def patch_run_title(request: Request, slug: str, body: RunTitlePatchRequest):
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    payload = body.model_dump(exclude_unset=True)
+    if "analysis_title" not in payload:
+        raise HTTPException(
+            status_code=400,
+            detail="Request body must include analysis_title (string or null).",
+        )
+    raw = payload.get("analysis_title")
+    if raw is None:
+        title_db = None
+    else:
+        t = str(raw).strip()
+        title_db = t if t else None
+    db = SessionLocal()
+    try:
+        upd = db.execute(
+            text(
+                "UPDATE pipeline_runs SET analysis_title=:at "
+                "WHERE slug=:slug AND company_id=:cid RETURNING id"
+            ),
+            {"at": title_db, "slug": slug, "cid": company_id},
+        ).fetchone()
+        if upd is None:
+            raise HTTPException(status_code=404, detail="Run not found")
+        rid = int(upd.id)
+        row = db.execute(
+            text(
+                f"SELECT {_sql_select_run_detail()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.id=:rid"
+            ),
+            {"rid": rid},
+        ).fetchone()
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return _row_to_out(row)
+
+
+@router.post("/{slug}/generate-title", response_model=PipelineRunOut)
+def generate_run_title(request: Request, slug: str):
+    user = get_current_user(request)
+    company_id, _ = _require_company(user)
+    db = SessionLocal()
+    try:
+        row = db.execute(
+            text(
+                f"SELECT {_sql_select_run_list()}, pr.replay_payload, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.slug=:slug AND pr.company_id=:cid"
+            ),
+            {"slug": slug, "cid": company_id},
+        ).fetchone()
+    finally:
+        db.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    st = str(row.status)
+    if st not in ("completed", "completed_with_warnings"):
+        raise HTTPException(
+            status_code=400,
+            detail="Title generation is only available for completed analyses.",
+        )
+    rp = _coerce_json_obj(getattr(row, "replay_payload", None))
+    if not rp:
+        raise HTTPException(
+            status_code=400,
+            detail="Run has no replay payload yet; try again shortly.",
+        )
+    try:
+        title = propose_analysis_title_from_replay_payload(rp)
+    except Exception as e:
+        logger.warning("generate-title failed: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=502,
+            detail="Could not generate a title (unexpected error).",
+        ) from e
+    if not (title or "").strip():
+        raise HTTPException(
+            status_code=502,
+            detail="Could not derive a title — add an executive summary or set a title manually.",
+        )
+
+    db = SessionLocal()
+    try:
+        upd = db.execute(
+            text(
+                "UPDATE pipeline_runs SET analysis_title=:at "
+                "WHERE slug=:slug AND company_id=:cid RETURNING id"
+            ),
+            {"at": title[:500], "slug": slug, "cid": company_id},
+        ).fetchone()
+        if upd is None:
+            raise HTTPException(status_code=404, detail="Run not found")
+        rid = int(upd.id)
+        row2 = db.execute(
+            text(
+                f"SELECT {_sql_select_run_detail()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.id=:rid"
+            ),
+            {"rid": rid},
+        ).fetchone()
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+    if row2 is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return _row_to_out(row2)
+
+
 @router.get("/{slug}", response_model=PipelineRunOut)
 def get_run(request: Request, slug: str):
     user = get_current_user(request)
@@ -508,8 +693,11 @@ def get_run(request: Request, slug: str):
     try:
         row = db.execute(
             text(
-                f"SELECT {_select_run_columns()} "
-                "FROM pipeline_runs WHERE slug=:slug AND company_id=:cid"
+                f"SELECT {_sql_select_run_detail()}, "
+                "COALESCE(u.name, u.email, 'Teammate') AS started_by_name "
+                "FROM pipeline_runs pr "
+                "LEFT JOIN users u ON u.id = pr.user_id "
+                "WHERE pr.slug=:slug AND pr.company_id=:cid"
             ),
             {"slug": slug, "cid": company_id},
         ).fetchone()

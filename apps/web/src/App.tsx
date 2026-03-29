@@ -8,8 +8,6 @@ import HomePage from "./pages/HomePage";
 import SetupPage from "./pages/SetupPage";
 import DashboardPage from "./pages/DashboardPage";
 import UploadPage from "./pages/UploadPage";
-import PipelinePage from "./pages/PipelinePage";
-import AgentsPage from "./pages/AgentsPage";
 import DeveloperPage from "./pages/DeveloperPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AnalysisDetailPage from "./pages/AnalysisDetailPage";
@@ -31,8 +29,6 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
-            <Route path="/pipeline" element={<PipelinePage />} />
-            <Route path="/agents" element={<AgentsPage />} />
             <Route path="/analysis/:slug" element={<AnalysisDetailPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/settings">

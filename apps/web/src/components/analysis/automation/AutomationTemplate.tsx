@@ -5,7 +5,6 @@ import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
 import { ConfidenceStrip } from "../shared/ConfidenceStrip";
-import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
 import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import { BottleneckSankey } from "./BottleneckSankey";
 import { OpportunityMatrix } from "./OpportunityMatrix";
@@ -20,6 +19,8 @@ type Props = {
   visualizationPlan?: VisualizationPlan;
   collapseStoragePrefix?: string;
   hideConfidenceStrip?: boolean;
+  runSlug: string;
+  runStatus: string;
 };
 
 function formatCurrency(n: number): string {
@@ -88,6 +89,8 @@ export function AutomationTemplate({
   visualizationPlan,
   collapseStoragePrefix = "",
   hideConfidenceStrip = false,
+  runSlug,
+  runStatus,
 }: Props) {
   const automation = agentResults.automation_strategy;
   const evaluator = agentResults.output_evaluator;
@@ -174,8 +177,6 @@ export function AutomationTemplate({
       <StrategicPriorities processes={automation?.processes} />
 
       <SOPPanel sopDraft={automation?.sop_draft} />
-
-      <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );
 }

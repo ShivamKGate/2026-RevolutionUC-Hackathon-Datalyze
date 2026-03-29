@@ -90,15 +90,236 @@
 }
 
 .executive-summary-confidence {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.35rem 0.75rem;
+  margin-top: 1.15rem;
+  padding: 0.65rem 1rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  background: rgba(37, 99, 235, 0.22);
+  color: #bfdbfe;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+}
+
+/* Centered finale card (board summary) after SOP / charts */
+.analysis-executive-finale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 1.5rem;
+}
+
+.analysis-executive-finale .executive-summary {
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.65rem clamp(1.25rem, 4vw, 2rem);
+  border-radius: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #0f172a;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.analysis-executive-finale .executive-summary h2 {
+  font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+  line-height: 1.3;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.85rem;
+}
+
+.analysis-executive-finale .executive-summary-overview {
+  color: #94a3b8;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  margin: 0 0 1.1rem;
+}
+
+.analysis-executive-finale .executive-summary-list-title {
+  font-size: 0.72rem;
   font-weight: 600;
-  background: rgba(37, 99, 235, 0.2);
-  color: var(--accent, #2563eb);
-  border: 1px solid var(--accent, #2563eb);
+  letter-spacing: 0.08em;
+  color: #cbd5e1;
+  margin: 1.1rem 0 0.45rem;
+}
+
+.analysis-executive-finale .executive-summary ul {
+  color: #94a3b8;
+}
+
+.analysis-executive-finale .executive-summary-confidence {
+  margin-top: 1.35rem;
+  width: 100%;
+  max-width: none;
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: rgba(37, 99, 235, 0.55);
+  color: #e0f2fe;
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  box-sizing: border-box;
+}
+
+.executive-summary-media-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.65);
+}
+
+.executive-summary-overview--pending {
+  margin-bottom: 0;
+}
+
+/* ── Insight podcast (ElevenLabs) ────────────────────────────────── */
+
+.podcast-playbook--page {
+  margin-bottom: 1.25rem;
+  padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 3vw, 1.25rem);
+}
+
+.podcast-playbook {
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.96),
+    rgba(30, 27, 75, 0.9)
+  );
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.podcast-playbook--executive-inline {
+  margin-bottom: 0;
+  flex: 1 1 200px;
+  min-width: min(100%, 220px);
+  max-width: min(100%, 440px);
+}
+
+.podcast-playbook__brand-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.45rem;
+}
+
+.podcast-playbook__kicker {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.podcast-playbook__ad {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.podcast-playbook__ad::before {
+  content: "· ";
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.podcast-playbook__status {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.4;
+}
+
+.podcast-playbook__error {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+}
+
+.podcast-playbook__track-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.podcast-playbook__track-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+}
+
+.podcast-playbook__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.podcast-playbook__btn-play {
+  min-width: 4.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.podcast-playbook__controls .btn-secondary {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.podcast-playbook__mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+}
+
+.podcast-playbook__time {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+
+.podcast-playbook__seek-wrap {
+  transition:
+    max-height 0.3s ease,
+    opacity 0.25s ease,
+    margin 0.25s ease;
+}
+
+.podcast-playbook__seek {
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.podcast-playbook--executive-inline .podcast-playbook__seek-wrap {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.podcast-playbook--executive-inline.podcast-playbook--expanded
+  .podcast-playbook__seek-wrap {
+  max-height: 2.75rem;
+  opacity: 1;
+  margin-top: 0.4rem;
+  pointer-events: auto;
+}
+
+.podcast-playbook:not(.podcast-playbook--executive-inline)
+  .podcast-playbook__seek-wrap {
+  max-height: none;
+  opacity: 1;
+  margin-top: 0.45rem;
 }
 
 /* ── Recommendations Panel ───────────────────────────────────────── */
@@ -650,20 +871,47 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem 1.5rem;
   margin-bottom: 0.25rem;
 }
 
 .analysis-detail-head-main {
-  flex: 1 1 240px;
+  flex: 1 1 220px;
   min-width: 0;
 }
 
+.analysis-detail-id-faint .inline-code {
+  opacity: 0.62;
+  font-size: 0.82em;
+  font-weight: 400;
+}
+
+.analysis-detail-head-insights {
+  flex: 1 1 280px;
+  max-width: 420px;
+  min-width: 200px;
+}
+
 .analysis-detail-head-confidence {
-  flex: 0 0 auto;
-  min-width: 0;
+  flex: 0 1 300px;
+  min-width: 180px;
   align-self: flex-start;
+}
+
+.analysis-title-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.analysis-title-toolbar .analysis-title-input {
+  flex: 1 1 220px;
+  min-width: 160px;
+  max-width: 420px;
+  margin: 0;
 }
 
 /* ── Analysis detail: major sections (execution → charts → footer) ─ */

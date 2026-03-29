@@ -279,6 +279,8 @@ def db_update_run_status(
     replay_payload: dict | None = None,
     run_dir_path: str | None = None,
     input_hash: str | None = None,
+    memory_json: dict | None = None,
+    analysis_title: str | None = None,
 ) -> None:
     """Update pipeline_runs row with current status and optional projections."""
     db = SessionLocal()
@@ -310,6 +312,12 @@ def db_update_run_status(
         if input_hash is not None:
             sets.append("input_hash = :ihash")
             params["ihash"] = input_hash
+        if memory_json is not None:
+            sets.append("memory_json = CAST(:mem AS jsonb)")
+            params["mem"] = json.dumps(memory_json)
+        if analysis_title is not None:
+            sets.append("analysis_title = :atitle")
+            params["atitle"] = analysis_title
 
         if status in (
             "completed",

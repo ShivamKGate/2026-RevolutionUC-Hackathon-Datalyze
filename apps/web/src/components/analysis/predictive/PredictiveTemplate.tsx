@@ -10,7 +10,6 @@ import { sortByChartPriority } from "../chartSectionOrder";
 import { KPIRow } from "../shared/KPIRow";
 import { RecommendationsPanel } from "../shared/RecommendationsPanel";
 import { ConfidenceStrip } from "../shared/ConfidenceStrip";
-import { ExecutiveSummarySection } from "../shared/ExecutiveSummarySection";
 import { CollapsibleAnalysisSection } from "../shared/CollapsibleAnalysisSection";
 import { ForecastPanel } from "./ForecastPanel";
 import { DriverWaterfall } from "./DriverWaterfall";
@@ -26,6 +25,8 @@ type Props = {
   cohortData?: { rows: string[]; cols: string[]; values: number[][] };
   segmentForecasts?: AgentResults["trend_forecasting"];
   hideConfidenceStrip?: boolean;
+  runSlug: string;
+  runStatus: string;
 };
 
 function buildKPIs(results: AgentResults): KPICardProps[] {
@@ -77,6 +78,8 @@ export function PredictiveTemplate({
   cohortData,
   segmentForecasts,
   hideConfidenceStrip = false,
+  runSlug,
+  runStatus,
 }: Props) {
   const forecasting = agentResults.trend_forecasting;
   const evaluator = agentResults.output_evaluator;
@@ -199,8 +202,6 @@ export function PredictiveTemplate({
           {b.node}
         </CollapsibleAnalysisSection>
       ))}
-
-      <ExecutiveSummarySection data={agentResults.executive_summary} />
     </div>
   );
 }

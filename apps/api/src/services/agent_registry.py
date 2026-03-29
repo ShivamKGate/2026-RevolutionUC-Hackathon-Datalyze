@@ -295,7 +295,9 @@ def _agent_specs() -> list[AgentSpec]:
             input_description="Finalized insight package + SWOT + risk/conflict highlights",
             output_description="Board-ready concise summary",
             responsibilities="Human-readable synthesis for decision-makers",
-            dependencies=["insight_generation", "swot_analysis", "conflict_detection"],
+            # Do not depend on swot_analysis: it is optional on several tracks; skipped SWOT
+            # must not block the board summary (or narration / title generation).
+            dependencies=["insight_generation", "conflict_detection"],
             implementation_notes="Export-safe formatting",
             priority="Core",
         ),
