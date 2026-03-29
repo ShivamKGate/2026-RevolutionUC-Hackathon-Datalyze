@@ -1,19 +1,37 @@
 import { useState } from "react";
 
+import { exportRunHTML, exportRunPDF } from "../../../lib/api";
+
 type Props = {
   slug: string;
 };
 
 export function ExportButton({ slug }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"html" | "pdf" | null>(null);
 
-  async function handleExport() {
-    setLoading(true);
+  async function downloadHtml() {
+    setLoading("html");
     try {
-      const res = await fetch(`/api/v1/runs/${encodeURIComponent(slug)}/export/pdf`);
-      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await exportRunHTML(slug);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${slug}-report.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      console.error("HTML export failed");
+    } finally {
+      setLoading(null);
+    }
+  }
 
-      const blob = await res.blob();
+  async function downloadPdf() {
+    setLoading("pdf");
+    try {
+      const blob = await exportRunPDF(slug);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -25,17 +43,32 @@ export function ExportButton({ slug }: Props) {
     } catch {
       console.error("PDF export failed");
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
 
+  const busy = loading !== null;
+
   return (
-    <button
-      className="export-button"
-      onClick={handleExport}
-      disabled={loading}
-    >
-      {loading ? "Generating…" : "Export PDF"}
-    </button>
+    <div className="export-actions">
+      <button
+        type="button"
+        className="export-button export-button-primary"
+        onClick={() => void downloadHtml()}
+        disabled={busy}
+        title="Charts and full insight text; open the file, then Print → Save as PDF"
+      >
+        {loading === "html" ? "Generating…" : "Export HTML report"}
+      </button>
+      <button
+        type="button"
+        className="export-button"
+        onClick={() => void downloadPdf()}
+        disabled={busy}
+        title="PDF with charts as images and knowledge-graph node table"
+      >
+        {loading === "pdf" ? "Generating…" : "Export summary PDF"}
+      </button>
+    </div>
   );
 }
