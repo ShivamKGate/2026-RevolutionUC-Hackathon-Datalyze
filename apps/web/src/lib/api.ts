@@ -399,6 +399,20 @@ export async function getPipelineRunReplay(
   return (await response.json()) as PipelineRunReplay;
 }
 
+// ─── Export ──────────────────────────────────────────────────────────────────
+
+export async function exportRunPDF(slug: string): Promise<Blob> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/export/pdf`,
+    { credentials: "include" },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`PDF export failed (${response.status}): ${detail}`);
+  }
+  return response.blob();
+}
+
 export async function clearAllPipelineRuns(): Promise<ClearRunsResponse> {
   const response = await fetch("/api/v1/runs", {
     method: "DELETE",

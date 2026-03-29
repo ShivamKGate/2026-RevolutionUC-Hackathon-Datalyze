@@ -7,6 +7,29 @@ isProject: false
 
 # Final Sprint Plan — Kartavya Singh
 
+## Sprint alignment (after Shivam’s implementation — 2026-03-29)
+
+The items below are **already implemented** on `main` (or your current branch). This plan is trimmed so your remaining work is explicit—**orchestrator, DB, pages you own, optimization/supply-chain tracks, and your half of the presentation**.
+
+**Done by Shivam (do not duplicate):**
+
+- Chart primitives (`apps/web/src/components/charts/`), analysis templates for **predictive** and **automation** (`apps/web/src/components/analysis/predictive/`, `automation/`, `TrackRenderer.tsx`, shared `ExecutiveSummarySection`, `KPIRow`, `RecommendationsPanel`, `ConfidencePanel`, `ExportButton`).
+- Knowledge graph viewer (`apps/web/src/components/knowledge-graph/`).
+- PDF export service + route: `apps/api/src/services/export_pdf.py`, `apps/api/src/api/v1/routes/exports.py`, and `exports_router` is **already** included in `apps/api/src/api/v1/router.py` (prefix `/runs` → `GET /{slug}/export/pdf`).
+- Frontend helper: `exportRunPDF(slug)` in `apps/web/src/lib/api.ts`.
+- Synthetic data for **predictive** and **automation** tracks: `Miscellaneous/data/sources/E2E_Analytics_Co/predictive/` and `.../automation/` (CSV + JSON only; no binary xlsx/pdf in repo).
+- Presentation shell + tech sections: `Miscellaneous/presentation/datalyze_demo.html` (you still add business strategy + demo-flow slides per Phase 9).
+- Playbook: sections **19–20** (E2E data paths + demo credentials) in `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md`.
+
+**Still yours (this document):**
+
+- Phases **1–4** below (orchestrator selection, DB/admin, dashboard, **AnalysisDetailPage** wiring to `TrackRenderer`).
+- Phases **5–6** (optimization + supply chain **templates** only—Shivam owns predictive/automation folders).
+- Phase **7** here = synthetic data for **optimization/** and **supply_chain/** only.
+- Phases **8–9** (testing those tracks, presentation **content** for business/demo).
+
+---
+
 ## Meta
 
 - **Owner:** Kartavya Singh
@@ -67,9 +90,9 @@ This company profile must be referenced in all synthetic data generation, seed s
 
 ### Shared Files (Coordinate Before Editing)
 
-- `apps/web/src/App.tsx` — You own routes; add admin route, import Shivam's exported components
-- `apps/web/src/lib/api.ts` — You add admin/replay/run API functions; Shivam adds chart/export functions
-- `apps/api/src/api/v1/router.py` — You add admin router; Shivam adds export router
+- `apps/web/src/App.tsx` — You own routes; add admin route; import `TrackRenderer` only inside **your** `AnalysisDetailPage` (or a thin wrapper), not scattered across the app.
+- `apps/web/src/lib/api.ts` — You add admin/replay/upload-track helpers; **`exportRunPDF(slug)` already exists** — extend with admin/replay types as needed.
+- `apps/api/src/api/v1/router.py` — **`exports_router` is already wired.** You add **`admin_router`** only; do not remove or duplicate the exports include.
 - `apps/api/src/services/agent_registry.py` — Read-only dependency; if edits needed, coordinate
 
 ---
@@ -195,12 +218,10 @@ In `_dispatch_single()`, after receiving the envelope:
 
 ### 1.6 Wire Output Evaluator
 
-After Shivam creates `apps/api/src/services/agents/output_evaluator.py`:
+`output_evaluator` exists in `apps/api/src/services/agents/output_evaluator.py`. **Your job:**
 
-- Add it as the last agent in the SYNTHESIZE stage (before FINALIZE) for all tracks
-- It receives all prior_outputs and produces the `visualization_plan`
-- The visualization_plan is included in the `replay_payload` stored in DB
-- The frontend reads this plan to decide which chart components to render
+- Ensure it runs as the last analysis step before `executive_summary` in the orchestrator DAG (per original design).
+- Persist `visualization_plan` (and full agent JSON blobs needed by the UI) in `replay_payload` / DB so `AnalysisDetailPage` can pass them into `TrackRenderer`.
 
 ---
 
@@ -388,7 +409,9 @@ Add track selection to the upload flow:
 
 **File: `apps/web/src/lib/api.ts`**
 
-Add new functions:
+**Already present:** `exportRunPDF(slug): Promise<Blob>` for PDF download.
+
+**Add** (your features):
 
 ```typescript
 // Admin replay
@@ -405,7 +428,7 @@ export async function startPipelineRun(opts: {
   track?: string;
 }): Promise<PipelineRun> { ... }
 
-// Visualization plan from run
+// Visualization plan from run (if not embedded in replay_payload client-side)
 export async function getVisualizationPlan(slug: string): Promise<VisualizationPlan> { ... }
 ```
 
@@ -413,9 +436,11 @@ export async function getVisualizationPlan(slug: string): Promise<VisualizationP
 
 ## Phase 4: Analysis Detail Page Redesign (Frontend)
 
-**File: `apps/web/src/pages/AnalysisDetailPage.tsx`**
+**File: `apps/web/src/pages/AnalysisDetailPage.tsx`** (you own this file)
 
 This is the most important frontend page. It must transform from a raw log viewer into a rich, interactive analysis dashboard.
+
+**Shivam’s UI is ready:** import `TrackRenderer` from `../components/analysis` (see barrel `index.ts`). You supply `track`, structured `agentResults`, `visualizationPlan`, and `slug` (for export). Do **not** fork duplicate layouts inside predictive/automation folders.
 
 ### 4.1 Page Structure
 
@@ -481,16 +506,13 @@ If the API returns `redirect_to_slug` (from deduplication in Phase 1.4):
 
 ### 4.5 Integration of Shivam's Components
 
-Import from Shivam's modules:
+Prefer a single import from the analysis barrel (export + layout already composed inside templates):
 
 ```tsx
-import { TrackRenderer } from "../components/analysis/TrackRenderer";
-import { ExportButton } from "../components/analysis/shared/ExportButton";
-import { ConfidencePanel } from "../components/analysis/shared/ConfidencePanel";
-import { KPIRow } from "../components/analysis/shared/KPIRow";
-import { RecommendationsPanel } from "../components/analysis/shared/RecommendationsPanel";
-import { ExecutiveSummarySection } from "../components/analysis/shared/ExecutiveSummarySection";
+import { TrackRenderer } from "../components/analysis";
 ```
+
+`TrackRenderer` includes the export control and track templates; use shared pieces only if you need them outside `TrackRenderer` (e.g. custom page chrome).
 
 ---
 
@@ -782,45 +804,66 @@ These are explicitly deferred:
 
 ## Execution Order & Priority
 
-| Priority | Phase                              | Est. Effort  | Dependencies                                 |
-| -------- | ---------------------------------- | ------------ | -------------------------------------------- |
-| **P0**   | Phase 1: Smart Orchestrator Fix    | 2 sessions   | None — start immediately                     |
-| **P0**   | Phase 2: Database & Infrastructure | 1 session    | None — can parallel with Phase 1             |
-| **P0**   | Phase 7: Synthetic Data            | 1 session    | Needed for testing                           |
-| **P1**   | Phase 3: Dashboard & Admin         | 2 sessions   | Phase 2 (DB migrations)                      |
-| **P1**   | Phase 4: Analysis Detail Page      | 2 sessions   | Shivam's Phase 2 (chart components)          |
-| **P1**   | Phase 5: Optimization Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives |
-| **P1**   | Phase 6: Supply Chain Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives |
-| **P2**   | Phase 8: Testing                   | 1–2 sessions | Phases 1-7 complete                          |
-| **P3**   | Phase 9: Presentation              | 1 session    | After all testing passes                     |
+| Priority | Phase                              | Est. Effort  | Dependencies                                 | Notes (post-Shivam) |
+| -------- | ---------------------------------- | ------------ | -------------------------------------------- | ------------------- |
+| **P0**   | Phase 1: Smart Orchestrator Fix    | 2 sessions   | None — start immediately                     | Still fully open |
+| **P0**   | Phase 2: Database & Infrastructure | 1 session    | None — can parallel with Phase 1             | Still fully open |
+| **P0**   | Phase 7 (below): Opt/SC Synthetic Data | 1 session | Needed for your track testing              | Predictive/automation data **done** (Shivam) |
+| **P1**   | Phase 3: Dashboard & Admin         | 2 sessions   | Phase 2 (DB migrations)                      | Open |
+| **P1**   | Phase 4: Analysis Detail Page      | 2 sessions   | `TrackRenderer` + export route exist         | **Integration only** — you wire data |
+| **P1**   | Phase 5: Optimization Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives | Open |
+| **P1**   | Phase 6: Supply Chain Visuals      | 1 session    | Phase 4 structure, Shivam's chart primitives | Open |
+| **P2**   | Phase 8: Testing                   | 1–2 sessions | Phases 1-7 complete                          | Open |
+| **P3**   | Phase 9: Presentation              | 1 session    | After all testing passes                     | HTML file exists — add your slides |
 
-**Total estimated sessions:** 12–14 focused work sessions
+**Total estimated sessions:** 12–14 focused work sessions (unchanged; UI prefactor may shave Phase 4 slightly)
 
 ---
 
 ## Coordination Checkpoints with Shivam
 
-| When                 | What                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| **Before Phase 1**   | Agree on `pipeline_classifier` output schema (recommended_agents, skip_agents fields) |
-| **Before Phase 4**   | Shivam exports `TrackRenderer` and shared components; agree on props interface        |
-| **Before Phase 4**   | Agree on `visualization_plan` JSON schema (what fields, what chart types)             |
-| **After Phase 2**    | Shivam generates bcrypt hash for demo password; insert into seed SQL                  |
-| **After Phases 5-6** | Shivam reviews your chart components; you review his chart components                 |
-| **Before Phase 9**   | Coordinate presentation HTML structure and design theme                               |
-| **End of each day**  | Joint `npm run dev` walkthrough on one machine                                        |
+| When                 | What                                                                                  | Status |
+| -------------------- | ------------------------------------------------------------------------------------- | ------ |
+| **Before Phase 1**   | Agree on `pipeline_classifier` output schema (recommended_agents, skip_agents fields) | **Done** (schema in agents + contracts) |
+| **Before Phase 4**   | `TrackRenderer` + props (`track`, `agentResults`, `visualizationPlan`, `slug`)       | **Done** — integrate in `AnalysisDetailPage` |
+| **Before Phase 4**   | `visualization_plan` JSON (output_evaluator contract)                                 | **Done** — wire persistence + pass-through |
+| **After Phase 2**    | bcrypt hash for demo password in seed SQL                                           | Open if seed still has placeholder |
+| **After Phases 5-6** | Optimization/supply-chain templates use Shivam’s **chart** primitives only          | Open (your Phase 5–6) |
+| **Before Phase 9**   | Add your slides to `datalyze_demo.html` (business + demo script)                      | Open |
+| **End of each day**  | Joint `npm run dev` walkthrough                                                     | Ongoing |
 
 ---
 
 ## Playbook Additions
 
-Add the following to `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md`:
+Already added to `Miscellaneous/Datalyze_Analysis_Testing_Playbook.md`:
 
-- Section 6.1.2: E2E_Analytics_Co synthetic data location → `Miscellaneous/data/sources/E2E_Analytics_Co/`
-- Section 6.1.3: Demo account credentials for testing → `demo@revuc.com` / `admin@123`
-- Section 6.5: Upload track association testing — verify files are filtered by track
-- Section 16: Agent prompt version tracking → `Miscellaneous/tests/agent_prompt_versions.jsonl`
-- Section 17: Demo replay testing procedure — verify admin replay mode works end-to-end
+- **§19:** E2E_Analytics_Co synthetic data location (predictive + automation paths).
+- **§20:** Demo account credentials.
+
+Still add when you implement the corresponding features:
+
+- Upload track association testing (tie to Phase 2.5) — can extend §18 or add §21.
+- Agent prompt version tracking → `Miscellaneous/tests/agent_prompt_versions.jsonl` (§16 exists).
+- Demo replay testing procedure (§17 exists) — execute once admin replay ships.
+
+---
+
+## Notes for Kartavya (handoff — read first)
+
+1. **Orchestrator is still the main gap:** Phase 1 in this plan (consume `recommended_agents` / `skip_agents`, file-type processor routing, time budget, dedup hash, output_evaluator ordering) is unchanged and **not** done by Shivam’s UI work.
+
+2. **UI building blocks are ready:** Import `TrackRenderer` and pass data from `replay_payload` / stored run artifacts. Paths you **must not** edit: `components/charts/**`, `components/analysis/predictive/**`, `components/analysis/automation/**`, `components/knowledge-graph/**`, `services/export_pdf.py`, agent modules.
+
+3. **PDF export:** Route is live at `GET /api/v1/runs/{slug}/export/pdf`. Ensure API venv has `reportlab` (`pip install -r apps/api/requirements.txt`). Frontend already has `exportRunPDF`; `ExportButton` inside `TrackRenderer` uses the download path—keep CORS/cookies consistent with other `/api/v1/runs/*` calls.
+
+4. **Synthetic data:** Shivam added **predictive/** and **automation/** CSV+JSON. Your Phase **7** in *this* plan is **optimization/** and **supply_chain/** datasets only (still open).
+
+5. **Presentation:** `Miscellaneous/presentation/datalyze_demo.html` exists with tech/architecture slides. Add your **Phase 9** sections (business strategy, scripted demo, roadmap) in the same file or a linked deck—coordinate styling with Shivam.
+
+6. **Testing:** Use playbook §§17–20 plus your track campaigns (Phase 8). Predictive/automation E2E can use Shivam’s files under `Miscellaneous/data/sources/E2E_Analytics_Co/`.
+
+7. **Router:** Do not remove `exports_router` from `router.py` when adding `admin_router`.
 
 ---
 

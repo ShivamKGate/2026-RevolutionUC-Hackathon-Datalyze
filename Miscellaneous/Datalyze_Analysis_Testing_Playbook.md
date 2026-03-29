@@ -382,4 +382,33 @@ When testing file uploads with track association:
 
 ---
 
+## 19. E2E_Analytics_Co synthetic data location
+
+All synthetic demo data lives under:
+
+```
+Miscellaneous/data/sources/E2E_Analytics_Co/
+├── predictive/
+│   ├── sales_revenue_24months.csv
+│   └── market_trends_2024_2025.json
+└── automation/
+    ├── workflow_process_logs.csv
+    └── system_audit_results.json
+```
+
+Use these files when running predictive or automation track test campaigns on the demo account (`demo@revuc.com`). The data tells a coherent story about a ~75-employee analytics startup with 24 months of multi-regional data, seasonal patterns, and realistic anomalies (Aug 2024 supply disruption, Mar 2025 dip).
+
+---
+
+## 20. Demo account credentials for testing
+
+| Field       | Value            |
+|-------------|------------------|
+| Email       | `demo@revuc.com` |
+| Password    | `admin@123`      |
+| Company     | `E2E_Analytics_Co` (End-to-End Analytics Co.) |
+| Role        | Admin            |
+
+---
+
 _End of playbook — attach user custom instructions below this line when pasting into a chat._
