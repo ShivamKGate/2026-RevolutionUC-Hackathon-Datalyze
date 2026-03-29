@@ -14,12 +14,22 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
+    Image as RLImage,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
 )
+
+from services.export_common import (
+    extract_parsed_output,
+    merge_agent_results,
+    merge_replay_agent_results,
+    read_agent_outputs,
+    section_dict,
+)
+from services.export_html import collect_figures_for_pdf, knowledge_graph_node_rows
 
 logger = logging.getLogger("export_pdf")
 
@@ -121,41 +131,6 @@ def _make_table(headers: list[str], rows: list[list[str]], col_widths: list[floa
     return tbl
 
 
-def _read_agent_outputs(run_dir: str) -> dict[str, dict[str, Any]]:
-    """Read individual agent output envelopes from the run directory."""
-    agent_dir = Path(run_dir) / "context" / "agent_outputs"
-    outputs: dict[str, dict[str, Any]] = {}
-    if not agent_dir.is_dir():
-        return outputs
-    for child in agent_dir.iterdir():
-        if not child.is_dir():
-            continue
-        agent_id = child.name
-        steps = sorted(child.glob("step_*.json"), key=lambda p: p.name)
-        if not steps:
-            continue
-        try:
-            data = json.loads(steps[-1].read_text(encoding="utf-8"))
-            outputs[agent_id] = data
-        except (json.JSONDecodeError, OSError):
-            pass
-    return outputs
-
-
-def _extract_parsed_output(envelope: dict[str, Any]) -> dict[str, Any]:
-    """Pull structured data from an agent envelope's artifacts."""
-    for artifact in envelope.get("artifacts", []):
-        if isinstance(artifact, dict):
-            parsed = artifact.get("parsed_output") or artifact.get("data")
-            if isinstance(parsed, dict):
-                return parsed
-            if isinstance(artifact.get("content"), dict):
-                return artifact["content"]
-    if isinstance(envelope.get("summary"), dict):
-        return envelope["summary"]
-    return {}
-
-
 def _priority_color(priority: str) -> str:
     p = str(priority).lower()
     if "high" in p or "critical" in p:
@@ -165,7 +140,12 @@ def _priority_color(priority: str) -> str:
     return ACCENT_GREEN.hexval()
 
 
-async def generate_pdf_report(run_slug: str, run_dir: str, run_data: dict) -> bytes:
+async def generate_pdf_report(
+    run_slug: str,
+    run_dir: str,
+    run_data: dict,
+    replay_payload: dict[str, Any] | None = None,
+) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=letter,
@@ -183,15 +163,22 @@ async def generate_pdf_report(run_slug: str, run_dir: str, run_data: dict) -> by
         except (json.JSONDecodeError, OSError):
             pass
 
-    agent_outputs = _read_agent_outputs(run_dir)
+    ar = merge_replay_agent_results(replay_payload or {})
+    if not ar:
+        ar = merge_agent_results(replay_payload or {}, run_dir)
+    agent_outputs = read_agent_outputs(run_dir)
+
+    def merged_section(key: str) -> dict[str, Any]:
+        d = section_dict(ar, key)
+        if d:
+            return d
+        return extract_parsed_output(agent_outputs.get(key, {}))
+
     exec_envelope = agent_outputs.get("executive_summary", {})
-    exec_data = _extract_parsed_output(exec_envelope)
-    insight_envelope = agent_outputs.get("insight_generation", {})
-    insight_data = _extract_parsed_output(insight_envelope)
-    trend_envelope = agent_outputs.get("trend_forecasting", {})
-    trend_data = _extract_parsed_output(trend_envelope)
-    swot_envelope = agent_outputs.get("swot_analysis", {})
-    swot_data = _extract_parsed_output(swot_envelope)
+    exec_data = merged_section("executive_summary")
+    insight_data = merged_section("insight_generation")
+    trend_data = merged_section("trend_forecasting")
+    swot_data = merged_section("swot_analysis")
 
     # ── Header ──────────────────────────────────────────────
     elements.append(Paragraph("DATALYZE", s["title"]))
@@ -249,6 +236,70 @@ async def generate_pdf_report(run_slug: str, run_dir: str, run_data: dict) -> by
             elements.append(Paragraph(f"⚠ {r}", s["bullet"]))
         elements.append(Spacer(1, 6))
 
+    # ── Charts (static images via Kaleido / Plotly) ─────────
+    track_for_charts = str(run_data.get("track") or report.get("track") or "")
+    try:
+        fig_pairs = collect_figures_for_pdf(track_for_charts, ar)
+        if fig_pairs:
+            elements.append(Paragraph("Charts &amp; visualizations", s["section"]))
+            elements.append(
+                Paragraph(
+                    "Figures mirror the in-app analysis. The knowledge graph section includes "
+                    "a node detail table (like the side panel in the app).",
+                    s["body_muted"],
+                )
+            )
+            elements.append(Spacer(1, 6))
+            import plotly.io as pio
+
+            for title, fig in fig_pairs:
+                try:
+                    png = pio.to_image(fig, format="png", width=1100, height=620, engine="kaleido")
+                except Exception as chart_err:
+                    logger.warning("PDF chart export failed (%s): %s", title, chart_err)
+                    elements.append(
+                        Paragraph(f"{title} — chart unavailable ({chart_err})", s["body_muted"])
+                    )
+                    elements.append(Spacer(1, 8))
+                    continue
+                bio = BytesIO(png)
+                bio.seek(0)
+                img_w = CONTENT_W
+                img_h = img_w * (620 / 1100)
+                elements.append(Paragraph(str(title), s["body"]))
+                elements.append(Spacer(1, 4))
+                elements.append(RLImage(bio, width=img_w, height=img_h))
+                elements.append(Spacer(1, 10))
+                if title == "Knowledge graph":
+                    kg = section_dict(ar, "knowledge_graph_builder")
+                    kn = kg.get("nodes") or []
+                    if isinstance(kn, list) and kn:
+                        elements.append(
+                            Paragraph("Node details (context &amp; insights per node)", s["body"])
+                        )
+                        elements.append(Spacer(1, 4))
+                        nrows = knowledge_graph_node_rows([x for x in kn if isinstance(x, dict)])
+                        if nrows:
+                            elements.append(
+                                _make_table(
+                                    ["Node ID", "Label", "Type", "Value", "Context", "Insights"],
+                                    nrows,
+                                    [
+                                        0.85 * inch,
+                                        1.0 * inch,
+                                        0.65 * inch,
+                                        0.55 * inch,
+                                        1.95 * inch,
+                                        1.45 * inch,
+                                    ],
+                                )
+                            )
+                        elements.append(Spacer(1, 10))
+    except Exception as e:
+        logger.warning("PDF charts section failed: %s", e)
+        elements.append(Paragraph(f"Charts could not be generated: {e}", s["body_muted"]))
+        elements.append(Spacer(1, 8))
+
     # ── KPI / Forecast Summary ──────────────────────────────
     forecasts = trend_data.get("forecasts") or []
     if forecasts:
@@ -272,10 +323,17 @@ async def generate_pdf_report(run_slug: str, run_dir: str, run_data: dict) -> by
     insights_list = insight_data.get("insights") or []
     if insights_list:
         elements.append(Paragraph("Key Insights", s["section"]))
-        for ins in insights_list[:10]:
+        for ins in insights_list[:12]:
             if isinstance(ins, dict):
-                label = ins.get("title") or ins.get("insight") or ins.get("description", "")
-                elements.append(Paragraph(f"• {label}", s["bullet"]))
+                label = ins.get("title") or ins.get("insight") or "Insight"
+                desc = ins.get("description") or ""
+                impact = ins.get("impact") or ""
+                elements.append(Paragraph(f"<b>{label}</b>", s["body"]))
+                if desc:
+                    elements.append(Paragraph(str(desc), s["body_muted"]))
+                if impact:
+                    elements.append(Paragraph(f"Impact: {impact}", s["body_muted"]))
+                elements.append(Spacer(1, 4))
             else:
                 elements.append(Paragraph(f"• {ins}", s["bullet"]))
         elements.append(Spacer(1, 6))

@@ -446,6 +446,19 @@ export async function exportRunPDF(slug: string): Promise<Blob> {
   return response.blob();
 }
 
+/** Full report as HTML (charts + insights); open in browser and use Print → Save as PDF. */
+export async function exportRunHTML(slug: string): Promise<Blob> {
+  const response = await fetch(
+    `/api/v1/runs/${encodeURIComponent(slug)}/export/html`,
+    { credentials: "include" },
+  );
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`HTML export failed (${response.status}): ${detail}`);
+  }
+  return response.blob();
+}
+
 export type DemoReplayListEntry = {
   track: string;
   captured_at: string | null;
