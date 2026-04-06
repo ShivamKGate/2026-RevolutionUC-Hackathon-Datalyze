@@ -2,170 +2,332 @@
 
 **Raw Data ↓, AI-Driven Strategies ↑**
 
-Local-first, multi-agent business intelligence platform scaffold for RevolutionUC.
+Datalyze is a local-first, multi-agent business intelligence platform built for RevolutionUC. It takes messy business inputs such as CSVs, Excel workbooks, PDFs, JSON, text files, and optional public context, then turns them into structured analysis runs with dashboards, reports, chat, narration, and replayable artifacts.
 
 **Team:** Kartavya Singh & Shivam Kharangate
 
-## What This Repository Now Includes
+## What The Project Does
 
-- **Integration baseline & changelog:** see [`Miscellaneous/Datalyze.md`](Miscellaneous/Datalyze.md) for post-merge wiring, first successful run metrics, and an expectations-vs-achieved accuracy sheet.
-- Full monorepo skeleton with backend, frontend, docs, infra, scripts, and tests.
-- Strong folder boundaries to support parallel development during hackathon pressure.
-- Directory-level `README.md` files describing what belongs in each area.
-- `.gitkeep` placeholders for intentionally empty but required directories.
-- A working frontend-backend connectivity baseline (`React + FastAPI`).
-- One command (`npm run dev`) that starts both web and API servers together.
+Datalyze is designed around one idea: most organizations already have the data they need, but it is fragmented across incompatible formats and disconnected tools. Instead of forcing users into a rigid BI workflow, Datalyze accepts raw uploads, classifies the analysis track, routes files to specialized processors, and coordinates a set of focused agents that build decision-ready output.
 
-## Tech Baseline
+Current product flow:
 
-- Frontend: React + TypeScript + Vite
-- Backend: FastAPI (Python)
-- Orchestration script: root `npm run dev` with `concurrently`
-- AI stack: **Featherless** (remote OpenAI-compatible API) for CrewAI agents; optional Gemini / ElevenLabs for specific agents
+1. User signs in and selects an analysis path during onboarding.
+2. User uploads company files through the web app.
+3. The backend stores files privately and starts a pipeline run.
+4. The orchestrator dispatches specialized agents based on track, file types, and policy.
+5. Results are stored in PostgreSQL plus filesystem run artifacts for replay and export.
+6. The frontend surfaces dashboards, analysis detail, grounded chat, and downloadable HTML/PDF reports.
 
-## Quick Start (Windows / PowerShell)
+The app currently includes:
+
+- Auth, onboarding, dashboard, upload, analysis detail, chat, admin, and settings flows in the React frontend.
+- FastAPI endpoints for auth, users, files, runs, exports, admin replay, health, and agent boot status.
+- A replayable orchestrator runtime with logs, artifacts, run memory, and cancellation support.
+- HTML/PDF export generation and ElevenLabs narration support.
+
+## Why The Agent System Matters
+
+The highlight of this repository is the multi-agent architecture. Datalyze does not rely on one model to do everything. It uses a boot-time registry of specialized agents with explicit dependencies, different model tiers, and clear responsibilities. That lets the orchestrator run a dependency-aware pipeline instead of a single opaque LLM call.
+
+This gives the project a few important properties:
+
+- Better routing for mixed-format data.
+- Clear separation between ingestion, cleaning, analysis, synthesis, and delivery.
+- More reliable control over retries, timeouts, optional steps, and fallbacks.
+- Better observability because each stage produces its own logs and artifacts.
+
+## Architecture Overview
+
+### Monorepo
+
+- `apps/web`: React + TypeScript + Vite frontend.
+- `apps/api`: FastAPI backend, orchestrator runtime, agents, exports, auth, and database access.
+- `scripts`: root automation for Python setup, DB schema setup, and dev startup.
+- `data`: private uploads and generated pipeline run artifacts.
+- `Miscellaneous`: planning docs, demo assets, exported reports, and test runs.
+
+### Frontend
+
+The web app is a feature-rich client rather than a placeholder. It includes:
+
+- Public landing and authentication entry.
+- Protected app shell with dashboard, upload, and analysis routes.
+- Analysis detail views with charts, knowledge graph, orchestration visualization, and export actions.
+- Datalyze Chat and per-analysis grounded chat.
+- Admin replay tools and developer-focused inspection surfaces.
+
+### Backend
+
+The API is organized around thin route handlers and service-heavy business logic:
+
+- `api/v1/routes`: auth, users, files, runs, exports, admin, health, database, and agents.
+- `services/orchestrator_runtime`: execution engine, policies, persistence, cancellation, run job management, and track profiles.
+- `services/agents`: specialized agent implementations and output contracts.
+- `services/export_*`: HTML/PDF report generation.
+- `services/startup_bootstrap.py`: migrations, seed users, demo data, and seeded analysis runs.
+- `db/migrations`: schema for auth, uploads, pipeline runs, replay/admin features, and analysis metadata.
+
+### Data And Persistence
+
+Datalyze uses a hybrid persistence model:
+
+- PostgreSQL stores users, companies, uploaded files, pipeline runs, logs, titles, and replay metadata.
+- Filesystem run directories store artifacts such as final reports, intermediate agent outputs, narration assets, and replay context.
+
+That split is important to the architecture: the database gives the app queryable state, while the run directory gives reproducibility and export-friendly artifacts.
+
+## Agent Architecture
+
+Datalyze boots a registry of **24 specialized agents** from `apps/api/src/services/agent_registry.py`. Each agent has:
+
+- An `id`
+- A model type
+- A declared dependency list
+- A defined responsibility
+- A runtime kind such as CrewAI-backed LLM agent, external service, or system-layer service
+
+The orchestrator uses those specs to build and execute a DAG-like pipeline.
+
+### Core agent groups
+
+**1. Orchestration and planning**
+
+- `orchestrator`: global coordination, dispatch, retries, dependency enforcement, strategic control.
+- `pipeline_classifier`: chooses the active analysis track and configures emphasis.
+- `public_data_scraper`: optional public evidence gathering for public-mode enrichment.
+
+**2. Ingestion and file routing**
+
+- `file_type_classifier`
+- `pdf_processor`
+- `csv_processor`
+- `excel_processor`
+- `json_processor`
+- `image_multimodal_processor`
+- `plain_text_processor`
+
+These agents decide how each upload should be interpreted and transformed into usable chunks.
+
+**3. Data preparation**
+
+- `data_cleaning`
+- `smart_categorizer_metadata`
+- `aggregator`
+
+These stages normalize extracted data, tag it, and consolidate it into a synthesis-ready corpus.
+
+**4. Analysis and synthesis**
+
+- `conflict_detection`
+- `knowledge_graph_builder`
+- `trend_forecasting`
+- `sentiment_analysis`
+- `insight_generation`
+- `swot_analysis`
+- `executive_summary`
+- `automation_strategy`
+
+These agents generate the actual business intelligence layer: insights, forecasts, SWOT framing, contradictions, and executive-level summaries.
+
+**5. Explainability, retrieval, and delivery**
+
+- `data_provenance_tracker`
+- `natural_language_search`
+- `elevenlabs_narration`
+
+These agents support lineage, grounded chat, and audio output.
+
+### Dependency flow
+
+At a high level, the pipeline works like this:
+
+`pipeline_classifier` and `file_type_classifier` decide how the run should proceed.  
+Format-specific processors extract content.  
+`data_cleaning` and `smart_categorizer_metadata` prepare the data.  
+`aggregator` creates the analysis corpus.  
+Downstream agents such as `trend_forecasting`, `conflict_detection`, `knowledge_graph_builder`, `insight_generation`, and `swot_analysis` build higher-level outputs.  
+`executive_summary` and `elevenlabs_narration` convert the result into executive-facing delivery formats.
+
+## Model Architecture
+
+The model stack is another major highlight of the project. Datalyze does not bind every task to the same model. It routes work by capability and cost.
+
+### Primary provider
+
+- **Featherless** is the main inference provider.
+- It is used through an OpenAI-compatible API and wired into CrewAI.
+- The backend normalizes model IDs and environment variables so CrewAI-backed agents can run against Featherless without local model hosting.
+
+### Default model roles
+
+The core runtime model split is:
+
+- **`Kimi-K2.5` for the orchestrator**
+  Chosen for the orchestration layer because it is the most agentic model in the stack and is used for planning, dispatch, dependency-aware coordination, and higher-level run control.
+
+- **`DeepSeek-V3.2` for aggregation and reasoning-heavy tasks**
+  Used for the aggregator and the heavier synthesis stages where deeper reasoning matters most, including insight generation, SWOT-style framing, and executive-summary level output.
+
+- **`Qwen/Qwen2.5-7B-Instruct` for light tasks**
+  Used for faster and cheaper utility work such as routing, normalization, tagging, cleaning, and other structured intermediate stages.
+
+- **`nomic-embed-text` for embeddings**
+  Used for retrieval-oriented workflows such as grounded search and chat support.
+
+### Specialized external models and services
+
+- **Gemini `gemini-2.5-flash`**
+  Used for classifier and multimodal/vision-heavy situations where image or document interpretation is helpful.
+
+- **ElevenLabs**
+  Used for narration output, turning executive summary text into MP3 audio.
+
+### Runtime strategy
+
+The runtime uses a tiered model policy:
+
+- Heavy reasoning only where it matters.
+- Lighter models for repetitive or structured intermediate work.
+- External specialist services for vision and narration.
+- Optional heavy-brain refinement after classification to decide skips and shared context.
+
+This is one of the strongest engineering ideas in the repository because it balances quality, speed, and cost instead of treating every pipeline stage equally.
+
+## Orchestrator Runtime
+
+The orchestrator runtime is implemented under `apps/api/src/services/orchestrator_runtime`. Its job is not just to call agents, but to manage the run as a controlled system.
+
+It currently handles:
+
+- Dependency-aware dispatch
+- Policy-driven retries and timeout windows
+- Parallel branches for safe non-heavy stages
+- Run persistence and replay payload generation
+- Worker-process based execution
+- Stop/cancel support for active analyses
+- Run logs and agent activity history
+
+Pipeline runs are started through the API, persisted in PostgreSQL, executed in a spawned worker process, and written to a run directory under `data/pipeline_runs/...`.
+
+## Local Setup
 
 ### Prerequisites
 
-- **Node.js** 20+ or 22+ (LTS recommended)
-- **Python 3.12** on your PATH (see below if missing)
+- Node.js 20+ or 22+
+- Python 3.12
+- PostgreSQL running locally or on a reachable LAN host
 
-`npm run dev` does **not** auto-download Python. Install 3.12 once per machine; the dev script then manages a **local venv** and dependencies for you.
+### Environment files
 
-### 1) Install Node dependencies at repo root
+Copy the example files:
+
+```bash
+copy apps/api/.env.example apps/api/.env
+copy apps/web/.env.example apps/web/.env.local
+```
+
+Important values in `apps/api/.env`:
+
+- `DATABASE_URL`
+- `LLM_API_KEY`
+- `GEMINI_API_KEY` if Gemini-backed steps should work
+- `ELEVENLABS_API_KEY` if narration should work
+
+### Start the project
 
 ```bash
 npm install
-```
-
-### 2) Optional env files
-
-```bash
-copy apps/web/.env.example apps/web/.env.local
-copy apps/api/.env.example apps/api/.env
-```
-
-### 3) Run both servers together
-
-```bash
 npm run dev
 ```
 
-### What `npm run dev` does for the API
+`npm run dev` does the following for the API:
 
-`npm run dev:api` runs `node scripts/run-api.mjs`, which:
+1. Finds Python 3.12
+2. Creates `apps/api/.venv` if needed
+3. Installs `apps/api/requirements.txt` when dependencies change
+4. Applies DB schema setup
+5. Starts Uvicorn on port `8000`
 
-1. Finds an interpreter that is **exactly Python 3.12** (`py -3.12` on Windows, then `python3.12` / `python3` / `python` on other platforms).
-2. Creates **`apps/api/.venv`** if it does not exist (no need to `activate` manually).
-3. Runs **`pip install -r apps/api/requirements.txt`** when that file changes (tracked via a small hash stamp inside the venv).
-4. Starts **Uvicorn** with the venv’s Python.
+Services:
 
-If Python 3.12 is missing, the script prints install hints (e.g. `winget install -e --id Python.Python.3.12` on Windows).
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Swagger docs: `http://localhost:8000/docs`
 
-### Terminals
+## Demo Data And Seeded Users
 
-- **Typical:** **one** terminal — `npm run dev` (web + API). Set `LLM_API_KEY` in `apps/api/.env` for Featherless-backed agents.
+On startup, the backend bootstrap process can:
 
-## Running Services
+- Apply SQL migrations
+- Upsert demo companies and users
+- Seed uploaded files
+- Materialize demo pipeline runs and replay data
 
-- Frontend: [http://localhost:5173](http://localhost:5173)
-- Backend API: [http://localhost:8000](http://localhost:8000)
-- API docs (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
+Default demo accounts include:
 
-### Demo logins
+- `demo@revuc.com`
+- `demo.automation@revuc.com`
+- `demo.optimization@revuc.com`
+- `demo.predictive@revuc.com`
+- `demo.supplychain@revuc.com`
 
-All accounts use the **viewer** role (same as normal self-serve registration) and share password **`Demo@123`**.
-
-| Email                         | Purpose                  |
-| ----------------------------- | ------------------------ |
-| `demo@revuc.com`              | General demo             |
-| `demo.automation@revuc.com`   | Automation track demos   |
-| `demo.optimization@revuc.com` | Optimization track demos |
-| `demo.predictive@revuc.com`   | Predictive track demos   |
-| `demo.supplychain@revuc.com`  | Supply chain track demos |
-
-Password: Demo@123
-
-Use it to test for yourself, you would have to setup the database on postgres yourself, actually I will add instructions or automation for this at a later time, if I remember.
-
-**Seeding (idempotent):** with Postgres configured in `apps/api/.env`, run:
-
-```bash
-cd apps/api
-.\.venv\Scripts\python.exe scripts/seed_demo_users.py
-```
-
-Users are attached to a shared company **`Datalyze Demo Org`**. The script upserts by email (password hash refreshed each run).
-
-**Note:** `apps/api/src/db/seeds/001_seed.sql` may still define `demo@revuc.com` as **admin** for older E2E flows. After you run `seed_demo_users.py`, that row becomes **viewer** with password `Demo@123`. Keep a separate admin if you still need elevated E2E.
-
-## Current Connectivity Contract
-
-- Frontend button in `apps/web/src/App.tsx` calls:
-  - `GET /api/v1/health`
-- Backend route returns:
-  - `status`
-  - `service`
-  - `timestamp`
-
-This proves the web app and API are connected and communicating.
+Password: `Demo@123`
 
 ## Project Structure
 
 ```text
 .
-├── .github/                    # workflow and repo automation metadata
-├── Miscellaneous/              # your planning and ideation files
 ├── apps/
-│   ├── api/                    # FastAPI backend
-│   │   ├── src/
-│   │   │   ├── api/v1/routes/  # versioned route modules
-│   │   │   ├── core/           # config and app-level setup
-│   │   │   ├── db/             # migration and seed placeholders
-│   │   │   ├── models/         # domain/db model location
-│   │   │   ├── schemas/        # Pydantic schemas
-│   │   │   └── services/       # business logic services
-│   │   └── tests/              # backend tests
-│   └── web/                    # React + Vite frontend
-│       ├── public/             # static public assets
-│       └── src/
-│           ├── assets/         # bundled static assets
-│           ├── components/     # reusable UI components
-│           ├── features/       # feature-first modules
-│           ├── hooks/          # reusable React hooks
-│           ├── lib/            # API client and utilities
-│           ├── styles/         # global and shared styles
-│           └── types/          # TypeScript contracts
-├── docs/                       # architecture, API, QA, runbooks
-├── infra/                      # docker/compose/terraform placeholders
-├── packages/
-│   └── shared/                 # cross-app shared contracts
-├── scripts/                    # setup/data/ci script placeholders
-├── tests/                      # e2e and integration test placeholders
-├── .env.example
-├── .gitignore
+│   ├── api/
+│   │   ├── src/main.py
+│   │   ├── src/api/v1/router.py
+│   │   ├── src/api/v1/routes/
+│   │   │   ├── agents.py
+│   │   │   ├── auth.py
+│   │   │   ├── files.py
+│   │   │   ├── runs.py
+│   │   │   └── exports.py
+│   │   ├── src/core/
+│   │   │   ├── config.py
+│   │   │   └── ollama_models.py
+│   │   ├── src/db/
+│   │   │   ├── session.py
+│   │   │   └── migrations/
+│   │   └── src/services/
+│   │       ├── agent_registry.py
+│   │       ├── startup_bootstrap.py
+│   │       ├── datalyze_chat.py
+│   │       ├── export_html.py
+│   │       ├── export_pdf.py
+│   │       ├── orchestrator_runtime/
+│   │       └── agents/
+│   └── web/
+│       ├── src/App.tsx
+│       ├── src/main.tsx
+│       ├── src/lib/api.ts
+│       ├── src/contexts/AuthContext.tsx
+│       ├── src/layouts/
+│       ├── src/pages/
+│       └── src/components/
+├── scripts/
+│   ├── run-api.mjs
+│   └── setup-schema.mjs
+├── data/
+│   └── pipeline_runs/
+├── Miscellaneous/
+│   └── Plans/plan.md
 ├── package.json
 └── README.md
 ```
 
-## Folder Conventions
+## Useful References
 
-- Feature-first over layer-first for frontend (`src/features/*`).
-- Thin route handlers and thick services for backend.
-- Shared contracts should eventually be centralized in `packages/shared`.
-- Keep docs close to reality: every major feature should update corresponding docs.
+- `Miscellaneous/Plans/plan.md`: original product and system planning notes
+- `apps/api/README.md`: backend-focused notes
+- `apps/web/README.md`: frontend-focused notes
+- `Miscellaneous/Test Runs/`: captured runs, reports, and runtime evidence
 
-## Suggested Next Steps (Build Order)
+## Summary
 
-1. Harden **ElevenLabs** handoff (pass executive summary text into narration context).
-2. Improve **file routing fidelity** (classifier anchored to real upload metadata).
-3. Add **CI smoke** for orchestrator (dispatch + terminal status) on each PR.
-4. Expand **replay payload** toward full dashboard card parity (insights graph, etc.).
-5. Optional: **duplicate-run cache** by input signature (plan Phase 4).
-6. Optional: **SSE** live log stream for Analysis detail (polling works today).
-
-## Hackathon Notes
-
-- This scaffold is intentionally strong on structure so both teammates can work in parallel with minimal merge conflicts.
-- Empty strategic folders are tracked with `.gitkeep` so clone/pull reproduces the exact architecture.
-- You can now scale quickly from skeleton to production-grade demo without re-organizing under time pressure.
+Datalyze is not just a frontend plus API demo. The core of the project is a model-aware, multi-agent orchestration system for turning fragmented business data into explainable strategic output. The agent architecture and tiered model routing are the most distinctive parts of the repository, and they are the main reason the project is interesting from both a product and engineering perspective.
